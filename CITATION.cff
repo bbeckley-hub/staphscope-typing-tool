@@ -1,0 +1,12 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "Staphscope Typing Tool: Unified MLST + spa + SCCmec typing for Staphylococcus aureus"
+version: "0.1.0"
+authors:
+  - family-names: "Brown"
+    given-names: "Beckley"
+    email: "brownbeckley94@gmail.com"
+date-released: "2025-08-19"
+url: "https://github.com/bbeckley-hub/staphscope-typing-tool"
+repository-code: "https://github.com/bbeckley-hub/staphscope-typing-tool"
+type: "software"

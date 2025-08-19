@@ -1,0 +1,24 @@
+{
+  "sample": "SA12C_S67_L001.fna",
+  "mlst": {
+    "scheme": "saureus",
+    "ST": "2077",
+    "loci": {
+      "arcC": "1",
+      "aroE": "13",
+      "glpF": "1",
+      "gmk": "1",
+      "pta": "1",
+      "tpi": "10",
+      "yqiL": "10"
+    }
+  },
+  "spa": {
+    "spa_type": "t091",
+    "score": null
+  },
+  "sccmec": {
+    "type": "NA",
+    "hits": []
+  }
+}

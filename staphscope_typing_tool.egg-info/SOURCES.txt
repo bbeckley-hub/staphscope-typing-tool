@@ -1,0 +1,16 @@
+LICENSE
+README.md
+pyproject.toml
+setup.cfg
+setup.py
+staphscope/__init__.py
+staphscope/cli.py
+staphscope/core.py
+staphscope_typing_tool.egg-info/PKG-INFO
+staphscope_typing_tool.egg-info/SOURCES.txt
+staphscope_typing_tool.egg-info/dependency_links.txt
+staphscope_typing_tool.egg-info/entry_points.txt
+staphscope_typing_tool.egg-info/requires.txt
+staphscope_typing_tool.egg-info/top_level.txt
+tests/__init__.py
+tests/test_staphscope.py

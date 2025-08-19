@@ -1,0 +1,24 @@
+{
+  "sample": "14_S13.fna",
+  "mlst": {
+    "scheme": "saureus",
+    "ST": "4552",
+    "loci": {
+      "arcC": "3",
+      "aroE": "1",
+      "glpF": "1",
+      "gmk": "37",
+      "pta": "1",
+      "tpi": "5",
+      "yqiL": "611"
+    }
+  },
+  "spa": {
+    "spa_type": "t416",
+    "score": null
+  },
+  "sccmec": {
+    "type": "NA",
+    "hits": []
+  }
+}

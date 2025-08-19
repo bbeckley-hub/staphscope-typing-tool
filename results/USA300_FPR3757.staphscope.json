@@ -1,0 +1,24 @@
+{
+  "sample": "USA300_FPR3757.fna",
+  "mlst": {
+    "scheme": "saureus",
+    "ST": "8",
+    "loci": {
+      "arcC": "3",
+      "aroE": "3",
+      "glpF": "1",
+      "gmk": "1",
+      "pta": "4",
+      "tpi": "4",
+      "yqiL": "3"
+    }
+  },
+  "spa": {
+    "spa_type": "t008",
+    "score": null
+  },
+  "sccmec": {
+    "type": "SCCmec_type_IV(2B)",
+    "hits": []
+  }
+}
