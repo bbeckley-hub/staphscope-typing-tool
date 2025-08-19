@@ -1,0 +1,16 @@
+# StaphScope - Requirements File
+# This file lists the Python package dependencies for StaphScope.
+# System dependencies (mlst, spatyper, blastn, makeblastdb) must be installed separately.
+# See installation instructions: https://github.com/bbeckley-hub/StaphScope
+
+# Core Requirements
+argparse==1.4.0               # For parsing command-line arguments (standard library in Py3.2+, but included for clarity)
+
+# Optional but Recommended for potential future features
+pandas>=1.3.0                 # For powerful data manipulation and output handling
+numpy>=1.21.0                 # For numerical operations (a dependency for pandas)
+tqdm>=4.62.0                  # For adding progress bars to long-running tasks
+biopython>=1.79               # For advanced sequence parsing and handling
+
+# Set a low minimum Python version
+python>=3.6

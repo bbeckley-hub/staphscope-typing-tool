@@ -1,0 +1,27 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*.so
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
+.pybuild/
+
+# Debian packaging
+debian/
+
+# Conda recipe
+conda-recipe/
+
+# Local results/output
+results/
+
+# VSCode/IDE files
+.vscode/
+.idea/
+
+# Temporary files
+*.log
+*.tmp
