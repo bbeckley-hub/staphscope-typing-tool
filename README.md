@@ -21,6 +21,34 @@ A unified MLST + spa + SCCmec typing tool for *Staphylococcus aureus*.
 ### Using Conda (Recommended)
 ```bash
 conda install -c bioconda staphscope-typing-tool
-pip install staphscope-typing-tool
-sudo apt install staphscope-typing-tool
 
+pip install staphscope-typing-tool
+
+sudo apt install staphscope-typing-tool
+# Basic Commands
+staphscope -i /path/to/genomes/*.fasta -o results/
+# Enable Multithreading
+staphscope -i /path/to/genomes/*.fasta -o results/ --threads 4
+# Check Environment
+staphscope --check
+# Update Databases
+staphscope --update
+# Display Help
+staphscope --help
+# Output
+Organized output directory with MLST, spa, and SCCmec typing results.
+
+Supports multiple output formats (CSV, JSON).
+
+Includes logs for traceability of results.
+# Dependencies
+Python 3.6+
+
+pandas, numpy, biopython, tqdm
+
+System tools: mlst, spaTyper, blastn, makeblastdb
+#Notes
+
+High-throughput genome analysis is recommended with --threads set according to available CPU cores.
+
+For SCCmec typing, the CGE SCCmecFinder database must be downloaded and configured separately.
