@@ -1,7 +1,7 @@
 # StaphScope - Requirements File
 # This file lists the Python package dependencies for StaphScope.
-# System dependencies (mlst, spatyper, blastn, makeblastdb) must be installed separately.
-# See installation instructions: https://github.com/bbeckley-hub/StaphScope
+# System dependencies (blastn, makeblastdb) must be installed separately.
+# See installation instructions: https://github.com/bbeckley-hub/Staphscope-typing-tool
 
 # Core Requirements
 argparse==1.4.0               # For parsing command-line arguments (standard library in Py3.2+, but included for clarity)

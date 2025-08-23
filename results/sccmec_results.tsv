@@ -1,9 +1,11 @@
 sample	sccmec_type
-14_S13.fna	NA
-GCA_002905535.1_ASM290553v1_genomic.fna	NA
+BU_W12_t13.fna	NA
 GHA_LAMRSA_2016_25.fna	NA
+GCA_002905535.1_ASM290553v1_genomic.fna	NA
+14_S13.fna	NA
 GHA_LAMRSA_2016_4.fna	NA
+GHA_LAMRSA_2016_6.fna	NA
+MRSA252.fna	SCCmec_type_II(2A)
+N315.fna	SCCmec_type_II(2A)
 SA12C_S67_L001.fna	NA
 USA300_FPR3757.fna	SCCmec_type_IV(2B)
-N315.fna	SCCmec_type_II(2A)
-MRSA252.fna	SCCmec_type_II(2A)

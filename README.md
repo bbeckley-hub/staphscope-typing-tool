@@ -20,7 +20,7 @@ A unified MLST + spa + SCCmec typing tool for *Staphylococcus aureus*.
 
 ### Using Conda (Recommended)
 ```bash
-conda install -c bioconda staphscope-typing-tool
-pip install staphscope-typing-tool
-sudo apt install staphscope-typing-tool
-
+conda create -n staphscope -c bioconda -c conda-forge blast python=3.8
+conda activate staphscope
+pip install staphscope
+sudo apt-get staphscope

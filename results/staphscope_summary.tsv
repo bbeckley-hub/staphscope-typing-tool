@@ -1,9 +1,11 @@
 sample	mlst_scheme	mlst_ST	spa_type	sccmec_type
-14_S13.fna	saureus	4552	t416	NA
-GCA_002905535.1_ASM290553v1_genomic.fna	saureus	1	t127	NA
+BU_W12_t13.fna	saureus	508	NA	NA
 GHA_LAMRSA_2016_25.fna	saureus	6	t1476	NA
+GCA_002905535.1_ASM290553v1_genomic.fna	saureus	1	t127	NA
+14_S13.fna	saureus	4552	t416	NA
 GHA_LAMRSA_2016_4.fna	saureus	133	t8662	NA
+GHA_LAMRSA_2016_6.fna	saureus	133	t8662	NA
+MRSA252.fna	saureus	36	t018	SCCmec_type_II(2A)
+N315.fna	saureus	5	t002	SCCmec_type_II(2A)
 SA12C_S67_L001.fna	saureus	2077	t091	NA
 USA300_FPR3757.fna	saureus	8	t008	SCCmec_type_IV(2B)
-N315.fna	saureus	5	t002	SCCmec_type_II(2A)
-MRSA252.fna	saureus	36	t018	SCCmec_type_II(2A)
