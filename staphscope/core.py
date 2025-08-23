@@ -31,15 +31,15 @@ GitHub repository: https://github.com/bbeckley-hub/staphscope-typing-tool
 BASE_DIR = Path(__file__).resolve().parent
 
 # ===== Bundled Tools =====
-MLST_BIN = BASE_DIR / "database" / "mlst" / "bin" / "mlst"
-SPATYPER_BIN = BASE_DIR / "database" / "spatyper" / "spa_typing" / "main" / "spaTyper"
-SCCMECFINDER_SCRIPT = BASE_DIR / "database" / "sccmecfinder" / "SCCmecFinder_v4.py"
-SCCMEC_DB_DIR = BASE_DIR / "database" / "sccmecfinder" / "database"
-SCCMEC_SCRIPT_DIR = BASE_DIR / "database" / "sccmecfinder" / "script_dir"
+MLST_BIN = BASE_DIR / "tools" / "mlst" / "bin" / "mlst"
+SPATYPER_BIN = BASE_DIR / "tools" / "spatyper" / "spa_typing" / "main" / "spaTyper"
+SCCMECFINDER_SCRIPT = BASE_DIR / "tools" / "sccmecfinder" / "SCCmecFinder_v4.py"
+SCCMEC_DB_DIR = BASE_DIR / "tools" / "sccmecfinder" / "database"
+SCCMEC_SCRIPT_DIR = BASE_DIR / "tools" / "sccmecfinder" / "script_dir"
 
 # ===== Database Paths =====
-SPA_REPEATS_FILE = BASE_DIR / "database" / "spatyper" / "sparepeats.fasta"
-SPA_TYPES_FILE = BASE_DIR / "database" / "spatyper" / "spatypes.txt"
+SPA_REPEATS_FILE = BASE_DIR / "tools" / "spatyper" / "sparepeats.fasta"
+SPA_TYPES_FILE = BASE_DIR / "tools" / "spatyper" / "spatypes.txt"
 
 # ===== Utilities =====
 def log(msg: str):
@@ -77,7 +77,7 @@ def run_mlst(sample: Path, mlst_bin: Optional[str]) -> Tuple[str, str]:
         return "NA", "NA"
     
     env = os.environ.copy()
-    env['PERL5LIB'] = str(BASE_DIR / "database" / "mlst" / "perl5")
+    env['PERL5LIB'] = str(BASE_DIR / "tools" / "mlst" / "perl5")
     
     cp = run_cmd([mlst_bin, str(sample)], env=env)
     if cp.returncode != 0:
@@ -108,7 +108,7 @@ def run_spa(sample: Path, spatyper_bin: Optional[str], tmpdir: Path) -> str:
     cmd = ["python3", spatyper_bin, "-f", str(sample), "--output", str(outfile)]
     
     env = os.environ.copy()
-    env["PYTHONPATH"] = str(BASE_DIR / "database" / "spatyper" / "spa_typing")
+    env["PYTHONPATH"] = str(BASE_DIR / "tools" / "spatyper" / "spa_typing")
     
     cp = run_cmd(cmd, env=env)
     if cp.returncode != 0:

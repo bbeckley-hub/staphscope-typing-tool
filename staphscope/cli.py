@@ -21,11 +21,12 @@ from .core import (
 
 def parse_args(argv=None):
     p = argparse.ArgumentParser(
-        description="Staphscope Typing Tool — unified MLST + spa + SCCmec typing",
+        description="Staphscope Typing Tool — unified MLST + spa + SCCmec typing "
+                    "(bundled under staphscope/tools/)",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     p.add_argument("-i", "--inputs", nargs="+", required=False,
-                   help="Input genome files (FASTA FILES). Accepts globs.")
+                   help="Input genome FASTA files (supports globs, e.g. '*.fasta').")
     p.add_argument("-o", "--outdir", type=lambda x: Path(x),
                    default=Path("staphscope_results"),
                    help="Output directory")
@@ -128,7 +129,7 @@ def main(argv=None):
     # Citation notice
     print("\nIf you use Staphscope Typing Tool in your research, please cite it as:\n")
     print("Brown, B. (2025). Staphscope Typing Tool: Unified MLST + spa + SCCmec typing for Staphylococcus aureus.")
-    print("K.N.U.S.T/U.G.M.S - Department of Medical Biochemistry.")
+    print("K.N.U.S.T/U.G.M.S - Department of Medical Biochemistry, University of Ghana.")
     print("GitHub repository: https://github.com/bbeckley-hub/staphscope-typing-tool\n")
 
     print(FOOTER)
