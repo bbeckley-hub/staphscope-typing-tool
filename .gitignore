@@ -25,3 +25,5 @@ results/
 # Temporary files
 *.log
 *.tmp
+results/
+staphscope_test/
