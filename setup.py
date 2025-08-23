@@ -1,17 +1,24 @@
 from setuptools import setup, find_packages
 
+# Load long description from README.md
+with open("README.md", "r", encoding="utf-8") as fh:
+    long_description = fh.read()
+
 setup(
     name="staphscope",
-    version="0.2.0",
-    description="A typing tool for Staphylococcus aureus (spa, MLST, SCCmec typing)",
-    author="Beckley Brown",
+    version="0.2.1",
+    description="Unified MLST + spa + SCCmec typing tool for Staphylococcus aureus",
+    long_description=long_description,
+    long_description_content_type="text/markdown",
+    author="Brown Beckley",
     author_email="brownbeckley94@gmail.com",
+    url="https://github.com/bbeckley-hub/staphscope-typing-tool",
     packages=find_packages(),
     package_data={
-        'staphscope': [
-            'database/mlst/**/*',
-            'database/spatyper/**/*',
-            'database/sccmecfinder/**/*',
+        "staphscope": [
+            "database/mlst/**/*",
+            "database/spatyper/**/*",
+            "database/sccmecfinder/**/*",
         ]
     },
     include_package_data=True,
@@ -29,6 +36,12 @@ setup(
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
+        "Topic :: Scientific/Engineering :: Bio-Informatics",
     ],
     python_requires=">=3.7",
+    keywords="staphylococcus aureus typing mlst spa sccmec bioinformatics",
+    project_urls={
+        "Source": "https://github.com/bbeckley-hub/staphscope-typing-tool",
+        "Bug Reports": "https://github.com/bbeckley-hub/staphscope-typing-tool/issues",
+    },
 )

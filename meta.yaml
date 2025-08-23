@@ -1,5 +1,5 @@
 {% set name = "staphscope" %}
-{% set version = "0.1.0" %}
+{% set version = "0.2.1" %}
 
 package:
   name: {{ name|lower }}
