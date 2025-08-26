@@ -21,13 +21,26 @@ A unified MLST + spa + SCCmec typing tool for *Staphylococcus aureus*.
 ### Using Conda (Recommended)
 ```bash
 conda install -c bbeckley-hub staphscope or 
+
 conda create -n staphscope -c bioconda -c conda-forge blast python=3.8
+
 conda activate staphscope
+
 pip install staphscope
+
 sudo apt-get staphscope
 
 # Usage
+
 Staphscope is a unified typing tool for Staphylococcus aureus, supporting MLST, spa typing, and SCCmec typing. It also supports parallel processing for faster analysis of multiple genomes.
+
 #Command-Line Interface (CLI)
+
 staphscope -i <input_files> -o <output_dir> [options]
+
 staphscope -i genomes/*.fna -o results --threads 4
+
+
+
+
+
