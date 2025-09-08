@@ -40,5 +40,7 @@ Thumbs.db
 *.fasta
 *.faa
 # Ignore large generated DB files
-staphscope/tools/sccmecfinder/database/template_db/
+staphscope/tools/sccmecfinder/database/template_db/*.p
 staphscope/tools/mlst/db/blast/
+staphscope/tools/mlst/db/blast/mlst.fa
+staphscope/tools/sccmecfinder/database/template_db/*.p
