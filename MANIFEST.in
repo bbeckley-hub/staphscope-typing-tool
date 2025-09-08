@@ -1,1 +1,9 @@
-recursive-include staphscope/database *
+include LICENSE
+include README.md
+include requirements.txt
+include CITATION.cff
+
+recursive-include staphscope/tools *
+recursive-include docs *
+recursive-include scripts *
+recursive-include tests *

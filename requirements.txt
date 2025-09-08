@@ -1,7 +1,10 @@
-# StaphScope - Requirements File
-# System dependencies (blastn, makeblastdb) must be installed separately.
+# StaphScope - Python Requirements
+# System dependencies must be installed separately:
+# - BLAST+ (blastn, makeblastdb)
+# - any2fasta
+# - Perl 5+ with JSON module
 
-# Core Requirements
+# Core Python dependencies
 biopython>=1.79
 pandas>=1.3.0
 click>=8.0.0

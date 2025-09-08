@@ -47,3 +47,19 @@ Staphscope is a unified typing tool for Staphylococcus aureus, supporting MLST, 
 #Command-Line Interface (CLI)
 staphscope -i <input_files> -o <output_dir> [options]
 staphscope -i genomes/*.fna -o results --threads 4
+
+# Install system dependencies (Ubuntu/Debian)
+sudo apt-get install blastn makeblastdb any2fasta
+
+# Or install BLAST via conda
+conda install -c bioconda blast
+
+#System Dependencies
+
+The following system tools must be installed separately:
+
+    BLAST+: blastn and makeblastdb
+
+    any2fasta: For sequence format conversion
+
+    Perl 5+ with JSON module
