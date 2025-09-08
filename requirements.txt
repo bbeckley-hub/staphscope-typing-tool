@@ -1,0 +1,10 @@
+# StaphScope - Requirements File
+# System dependencies (blastn, makeblastdb) must be installed separately.
+
+# Core Requirements
+biopython>=1.79
+pandas>=1.3.0
+click>=8.0.0
+
+# Optional for future features
+tqdm>=4.62.0

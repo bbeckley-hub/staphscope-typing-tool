@@ -1,0 +1,46 @@
+package:
+  name: staphscope
+  version: "0.2.1"
+
+source:
+  path: ../  # assuming recipe is in staphscope/conda-recipe/
+
+build:
+  number: 0
+  script: "{{ PYTHON }} -m pip install . --no-deps --ignore-installed -vv"
+
+requirements:
+  host:
+    - python >=3.7
+    - pip
+  run:
+    - python >=3.7
+    - biopython >=1.79
+    - pandas >=1.3.0
+    - click >=8.0.0
+
+about:
+  home: https://github.com/bbeckley-hub/staphscope-typing-tool
+  license: MIT
+  license_family: MIT
+  summary: "A unified MLST + spa + SCCmec typing tool for Staphylococcus aureus"
+  description: |
+    Staphscope Typing Tool
+
+    Features:
+      - Multi-locus sequence typing (MLST)
+      - spa typing
+      - SCCmec typing using CGE SCCmecFinder
+      - Parallel processing for high-throughput analysis
+      - Comprehensive reporting in multiple formats
+
+    Citation:
+      Brown, B. (2025). Staphscope Typing Tool: Unified MLST + spa + SCCmec typing for Staphylococcus aureus. GitHub repository: https://github.com/bbeckley-hub/staphscope-typing-tool
+
+extra:
+  recipe-maintainers:
+    - bbeckley-hub
+
+build:
+  entry_points:
+    - staphscope=staphscope.cli:main
