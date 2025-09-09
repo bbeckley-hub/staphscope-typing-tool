@@ -1,7 +1,7 @@
 # Python
 __pycache__/
 *.py[cod]
-*.class
+*$py.class
 *.so
 .Python
 build/
@@ -21,7 +21,11 @@ wheels/
 *.egg
 MANIFEST
 
-# Test results
+# Test and output directories
+results/
+test_fixed*/
+test_fixed2*/
+AAAA/
 R/
 R2/
 
@@ -30,17 +34,51 @@ R2/
 .idea/
 *.swp
 *.swo
+*~
 
 # OS files
 .DS_Store
 Thumbs.db
 
-# Large data files (if any)
+# Large data files - but ALLOW the specific ones we need
 *.fna
-*.fasta
 *.faa
-# Ignore large generated DB files
-staphscope/tools/sccmecfinder/database/template_db/*.p
-staphscope/tools/mlst/db/blast/
-staphscope/tools/mlst/db/blast/mlst.fa
-staphscope/tools/sccmecfinder/database/template_db/*.p
+
+# BUT DO NOT IGNORE these specific fasta files that our tools need:
+!staphscope/tools/spatyper/spa_typing/main/sparepeats.fasta
+!staphscope/tools/sccmecfinder/database/*.fasta
+!staphscope/tools/mlst/db/blast/mlst.fa
+
+# Allow the BLAST database files but not other generated files
+staphscope/tools/mlst/db/blast/*
+!staphscope/tools/mlst/db/blast/mlst.fa.*
+!staphscope/tools/mlst/db/blast/mlst.fa
+
+# Allow SCCmecFinder template database files
+!staphscope/tools/sccmecfinder/database/template_db/*.p
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+
+# Environment files
+.env
+venv/
+env/
+
+# Jupyter notebooks
+.ipynb_checkpoints/
+
+# PyCharm
+.idea/
+
+# VS Code
+.vscode/
+
+# Custom
+.pytest_cache/
+.coverage
+htmlcov/
