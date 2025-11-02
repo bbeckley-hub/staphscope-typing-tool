@@ -1,0 +1,2 @@
+Sequence name	Repeats	Type
+NZ_CP160409.1 Staphylococcus aureus strain BSN42 chromosome, complete genome	11-19-12-21-17-34-22-25	t622

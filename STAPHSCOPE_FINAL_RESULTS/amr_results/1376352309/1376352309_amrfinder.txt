@@ -1,0 +1,29 @@
+Protein identifier	Contig id	Start	Stop	Strand	Gene symbol	Sequence name	Scope	Element type	Element subtype	Class	Subclass	Method	Target length	Reference sequence length	% Coverage of reference sequence	% Identity to reference sequence	Alignment length	Accession of closest sequence	Name of closest sequence	HMM id	HMM description
+NA	NZ_CP021105.1	40956	42959	-	mecA	PBP2a family beta-lactam-resistant peptidoglycan transpeptidase MecA	core	AMR	AMR	BETA-LACTAM	METHICILLIN	EXACTX	668	668	100.00	100.00	668	WP_000721310.1	PBP2a family beta-lactam-resistant peptidoglycan transpeptidase MecA	NA	NA
+NA	NZ_CP021105.1	43059	44033	+	mecR1	beta-lactam sensor/signal transducer MecR1	core	AMR	AMR	BETA-LACTAM	METHICILLIN	PARTIALX	325	585	55.56	100.00	325	WP_000952923.1	beta-lactam sensor/signal transducer MecR1	NA	NA
+NA	NZ_CP021105.1	117186	118535	+	tet(38)	tetracycline efflux MFS transporter Tet(38)	core	AMR	AMR	TETRACYCLINE	TETRACYCLINE	EXACTX	450	450	100.00	100.00	450	WP_001100299.1	tetracycline efflux MFS transporter Tet(38)	NA	NA
+NA	NZ_CP021105.1	346050	347402	+	mepA	multidrug efflux MATE transporter MepA	plus	AMR	AMR	TETRACYCLINE	TIGECYCLINE	EXACTX	451	451	100.00	100.00	451	BAB41547.1	multidrug efflux MATE transporter MepA	NA	NA
+NA	NZ_CP021105.1	380713	381321	+	selX	staphylococcal enterotoxin-like toxin X	plus	VIRULENCE	VIRULENCE	NA	NA	BLASTX	203	203	100.00	96.06	203	AEI60187.1	staphylococcal enterotoxin-like toxin X	NA	NA
+NA	NZ_CP021105.1	1812024	1812743	-	splB	serine protease SplB	plus	VIRULENCE	VIRULENCE	NA	NA	BLASTX	240	240	100.00	98.75	240	ABD31003.1	serine protease SplB	NA	NA
+NA	NZ_CP021105.1	1812871	1813575	-	splA	serine protease SplA	plus	VIRULENCE	VIRULENCE	NA	NA	BLASTX	235	235	100.00	97.02	235	ABD31004.1	serine protease SplA	NA	NA
+NA	NZ_CP021105.1	1817708	1818688	-	lukD	bi-component leukocidin LukED subunit D	plus	VIRULENCE	VIRULENCE	NA	NA	BLASTX	327	327	100.00	94.19	327	CAA73668.1	bi-component leukocidin LukED subunit D	NA	NA
+NA	NZ_CP021105.1	1818693	1819625	-	lukE	bi-component leukocidin LukED subunit E	plus	VIRULENCE	VIRULENCE	NA	NA	BLASTX	311	311	100.00	99.68	311	RCV70079.1	bi-component leukocidin LukED subunit E	NA	NA
+NA	NZ_CP021105.1	1825766	1826581	-	sen	staphylococcal enterotoxin type N	plus	VIRULENCE	VIRULENCE	NA	NA	INTERNAL_STOP	272	272	100.00	99.26	272	SAO78304.1	staphylococcal enterotoxin type N	NA	NA
+NA	NZ_CP021105.1	1826623	1827030	-	seu	staphylococcal enterotoxin type U	plus	VIRULENCE	VIRULENCE	NA	NA	PARTIALX	136	261	52.11	93.38	136	SGR88168.1	staphylococcal enterotoxin type U	NA	NA
+NA	NZ_CP021105.1	1827548	1828273	-	sei	staphylococcal enterotoxin type I	plus	VIRULENCE	VIRULENCE	NA	NA	BLASTX	242	243	99.59	93.80	242	SGR88193.1	staphylococcal enterotoxin type I	NA	NA
+NA	NZ_CP021105.1	1828311	1829027	-	sem	staphylococcal enterotoxin type M	plus	VIRULENCE	VIRULENCE	NA	NA	BLASTX	239	239	100.00	94.14	239	SGR88215.1	staphylococcal enterotoxin type M	NA	NA
+NA	NZ_CP021105.1	1829311	1830090	-	seo	staphylococcal enterotoxin type O	plus	VIRULENCE	VIRULENCE	NA	NA	EXACTX	260	260	100.00	100.00	260	BAB42916.1	staphylococcal enterotoxin type O	NA	NA
+NA	NZ_CP021105.1	1954987	1955334	-	scn	complement inhibitor SCIN-A	plus	VIRULENCE	VIRULENCE	NA	NA	BLASTX	116	116	100.00	99.14	116	ADL23798.1	complement inhibitor SCIN-A	NA	NA
+NA	NZ_CP021105.1	1957545	1958033	-	sak	staphylokinase	plus	VIRULENCE	VIRULENCE	NA	NA	BLASTX	163	163	100.00	99.39	163	CAA24957.1	staphylokinase	NA	NA
+NA	NZ_CP021105.1	1959843	1960622	-	sep	staphylococcal enterotoxin type P	plus	VIRULENCE	VIRULENCE	NA	NA	EXACTX	260	260	100.00	100.00	260	ADC38120.1	staphylococcal enterotoxin type P	NA	NA
+NA	NZ_CP021105.1	2005593	2006312	+	sel	staphylococcal enterotoxin type L	plus	VIRULENCE	VIRULENCE	NA	NA	BLASTX	240	240	100.00	99.17	240	AMG40538.1	staphylococcal enterotoxin type L	NA	NA
+NA	NZ_CP021105.1	2006487	2007284	-	sec3	staphylococcal enterotoxin type C3	plus	VIRULENCE	VIRULENCE	NA	NA	EXACTX	266	266	100.00	100.00	266	BAB43097.1	staphylococcal enterotoxin type C3	NA	NA
+NA	NZ_CP021105.1	2009510	2010211	+	tst	toxic shock syndrome toxin TSST-1	plus	VIRULENCE	VIRULENCE	NA	NA	BLASTX	234	234	100.00	99.15	234	AAA26682.1	toxic shock syndrome toxin TSST-1	NA	NA
+NA	NZ_CP021105.1	2022893	2022970	-	hld	delta-hemolysin	plus	VIRULENCE	VIRULENCE	NA	NA	EXACTX	26	26	100.00	100.00	26	AGU62139.1	delta-hemolysin	NA	NA
+NA	NZ_CP021105.1	2175020	2176459	-	lmrS	multidrug efflux MFS transporter LmrS	plus	STRESS	BIOCIDE	MACROLIDE/PHENICOL	CHLORAMPHENICOL/ERYTHROMYCIN	BLASTX	480	480	100.00	99.17	480	AAW38464.1	multidrug efflux MFS transporter LmrS	NA	NA
+NA	NZ_CP021105.1	2326801	2327217	+	fosB	FosB/FosD family fosfomycin resistance bacillithiol transferase	core	AMR	AMR	FOSFOMYCIN	FOSFOMYCIN	EXACTX	139	139	100.00	100.00	139	WP_000920239.1	FosB/FosD family fosfomycin resistance bacillithiol transferase	NA	NA
+NA	NZ_CP021105.1	2415390	2416316	+	hlgA	bi-component gamma-hemolysin HlgAB subunit A	plus	VIRULENCE	VIRULENCE	NA	NA	BLASTX	309	309	100.00	99.68	309	AUU54669.1	bi-component gamma-hemolysin HlgAB subunit A	NA	NA
+NA	NZ_CP021105.1	2416886	2417830	+	hlgC	bi-component gamma-hemolysin HlgCB subunit C	plus	VIRULENCE	VIRULENCE	NA	NA	BLASTX	315	315	100.00	97.46	315	CAA57277.1	bi-component gamma-hemolysin HlgCB subunit C	NA	NA
+NA	NZ_CP021105.1	2417835	2418809	+	hlgB	bi-component gamma-hemolysin HlgAB/HlgCB subunit B	plus	VIRULENCE	VIRULENCE	NA	NA	BLASTX	325	325	100.00	97.54	325	CAA57278.1	bi-component gamma-hemolysin HlgAB/HlgCB subunit B	NA	NA
+NA	NZ_CP021105.1	2658898	2660424	-	aur	zinc metalloproteinase aureolysin	plus	VIRULENCE	VIRULENCE	NA	NA	BLASTX	509	509	100.00	99.21	509	EHO93748.1	zinc metalloproteinase aureolysin	NA	NA
+NA	NZ_CP021105.1	2703754	2704803	+	icaC	polysaccharide intercellular adhesin biosynthesis/export protein IcaC	plus	VIRULENCE	VIRULENCE	NA	NA	EXACTX	350	350	100.00	100.00	350	AUU58561.1	polysaccharide intercellular adhesin biosynthesis/export protein IcaC	NA	NA

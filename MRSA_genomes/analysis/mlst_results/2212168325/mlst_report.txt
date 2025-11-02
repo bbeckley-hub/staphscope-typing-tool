@@ -1,0 +1,41 @@
+MLST Analysis Report
+===================
+
+Sample: 2212168325.fna
+Analysis Date: 2025-10-31 21:19:10
+
+MLST TYPING RESULTS:
+-------------------
+Sequence Type (ST): 5
+Scheme: saureus
+Confidence: HIGH
+
+Allele Profile:
+arcC(1)-aroE(4)-glpF(1)-gmk(4)-pta(12)-tpi(1)-yqiL(10)
+
+Detailed Alleles:
+- arcC: 1
+- aroE: 4
+- glpF: 1
+- gmk: 4
+- pta: 12
+- tpi: 1
+- yqiL: 10
+
+LINEAGE ANALYSIS:
+-----------------
+Clonal Complex: CC5
+Classification: Healthcare-associated MRSA
+Geographic Distribution: Global
+Clinical Significance: Major healthcare-associated lineage, includes New York/Japan clone, often multidrug-resistant with extensive virulence arsenal
+Outbreak Potential: VERY HIGH
+
+Typical SCCmec Types: II, IV
+Typical spa Types: t002, t242, t548, t688
+Resistance Profile: Methicillin, Multiple aminoglycosides, Macrolides, Tetracyclines
+
+Common Virulence Factors:
+- Enterotoxins (SEC, SEL, SEI, SEM, SEO)
+- Immune evasion cluster (scn, chp, sak)
+- Hemolysins
+- Proteases

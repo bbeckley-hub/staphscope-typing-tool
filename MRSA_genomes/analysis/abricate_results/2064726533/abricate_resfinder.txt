@@ -1,0 +1,13 @@
+#FILE	SEQUENCE	START	END	STRAND	GENE	COVERAGE	COVERAGE_MAP	GAPS	%COVERAGE	%IDENTITY	DATABASE	ACCESSION	PRODUCT	RESISTANCE
+2064726533.fna	NZ_CP077755.1	260809	262236	-	fexA_1	1-1428/1428	===============	0/0	100.00	99.79	resfinder	AJ549214	fexA	Chloramphenicol;Florfenicol
+2064726533.fna	NZ_CP077755.1	1856855	1857625	-	aadD_1	1-771/771	===============	0/0	100.00	99.74	resfinder	AF181950	aadD	Amikacin;Tobramycin
+2064726533.fna	NZ_CP077755.1	1864888	1865691	-	lnu(B)_2	1-804/804	===============	0/0	100.00	100.00	resfinder	JQ861959	lnu(B)	Lincomycin;Clindamycin
+2064726533.fna	NZ_CP077755.1	1865745	1867229	-	lsa(E)_1	1-1485/1485	===============	0/0	100.00	100.00	resfinder	JX560992	lsa(E)	Lincomycin;Clindamycin;Dalfopristin;Pristinamycin_IIA;Virginiamycin_M;Tiamulin
+2064726533.fna	NZ_CP077755.1	1870808	1871671	-	ant(6)-Ia_2	1-864/864	===============	0/0	100.00	100.00	resfinder	KF421157	ant(6)-Ia	Streptomycin
+2064726533.fna	NZ_CP077755.1	1874244	1875620	+	tet(L)_2	1-1377/1377	===============	0/0	100.00	100.00	resfinder	M29725	tet(L)	Doxycycline;Tetracycline
+2064726533.fna	NZ_CP077755.1	1878325	1879059	-	erm(C)_2	1-735/735	===============	0/0	100.00	99.05	resfinder	M19652	erm(C)	Erythromycin;Lincomycin;Clindamycin;Quinupristin;Pristinamycin_IA;Virginiamycin_S
+2064726533.fna	NZ_CP077755.1	1882350	1883789	+	aac(6')-aph(2'')_1	1-1440/1440	===============	0/0	100.00	100.00	resfinder	M13771	aac(6')-aph(2'')	Amikacin;Gentamicin;Tobramycin
+2064726533.fna	NZ_CP077755.1	1886670	1887557	-	blaZ_78	1-888/888	===============	0/0	100.00	99.66	resfinder	KU607301	blaZ	Amoxicillin;Ampicillin;Penicillin;Piperacillin
+2064726533.fna	NZ_CP077755.1	1944106	1946112	-	mecA_2	1-2007/2007	===============	0/0	100.00	99.95	resfinder	NC_002951	mecA	Amoxicillin;Amoxicillin+Clavulanic_acid;Ampicillin;Ampicillin+Clavulanic_acid;Cefepime;Cefixime;Cefotaxime;Cefoxitin;Ceftazidime;Ertapenem;Imipenem;Meropenem;Piperacillin;Piperacillin+Tazobactam
+2064726533.fna	NZ_CP077755.1	2398301	2398798	-	dfrG_1	1-498/498	===============	0/0	100.00	100.00	resfinder	AB205645	dfrG	Trimethoprim
+2064726533.fna	NZ_CP077755.1	2773002	2773889	-	blaZ_138	1-888/888	===============	0/0	100.00	99.78	resfinder	CP003979	blaZ	Amoxicillin;Ampicillin;Penicillin;Piperacillin

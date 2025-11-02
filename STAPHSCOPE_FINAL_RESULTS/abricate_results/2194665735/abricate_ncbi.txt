@@ -1,0 +1,15 @@
+#FILE	SEQUENCE	START	END	STRAND	GENE	COVERAGE	COVERAGE_MAP	GAPS	%COVERAGE	%IDENTITY	DATABASE	ACCESSION	PRODUCT	RESISTANCE
+2194665735.fna	NZ_CP080249.1	39615	41621	-	mecA	1-2007/2007	===============	0/0	100.00	100.00	ncbi	NG_047937.1	PBP2a family beta-lactam-resistant peptidoglycan transpeptidase MecA	METHICILLIN
+2194665735.fna	NZ_CP080249.1	41721	43478	+	mecR1	1-1758/1758	===============	0/0	100.00	99.89	ncbi	NG_051163.1	beta-lactam sensor/signal transducer MecR1	METHICILLIN
+2194665735.fna	NZ_CP080249.1	43478	43849	+	mecI_of_mecA	1-372/372	===============	0/0	100.00	100.00	ncbi	NG_055650.1	mecA-type methicillin resistance repressor MecI	METHICILLIN
+2194665735.fna	NZ_CP080249.1	50001	51428	+	fexA	1-1428/1428	===============	0/0	100.00	98.74	ncbi	NG_047857.1	chloramphenicol/florfenicol efflux MFS transporter FexA	CHLORAMPHENICOL;FLORFENICOL
+2194665735.fna	NZ_CP080249.1	146538	147890	+	tet(38)	1-1353/1353	===============	0/0	100.00	100.00	ncbi	NG_048133.1	tetracycline efflux MFS transporter Tet(38)	TETRACYCLINE
+2194665735.fna	NZ_CP080249.1	1479481	1480277	+	aph(2'')-Ih	70-866/894	.==============	0/0	89.15	82.43	ncbi	NG_047408.1	aminoglycoside O-phosphotransferase APH(2'')-Ih	AMIKACIN;GENTAMICIN;KANAMYCIN;TOBRAMYCIN
+2194665735.fna	NZ_CP080249.1	1480907	1481644	+	erm(B)	1-738/738	===============	0/0	100.00	100.00	ncbi	NG_047794.1	23S rRNA (adenine(2058)-N(6))-methyltransferase Erm(B)	MACROLIDE
+2194665735.fna	NZ_CP080249.1	1481949	1482857	+	ant(6)-Ia	1-909/909	===============	0/0	100.00	100.00	ncbi	NG_047393.1	aminoglycoside nucleotidyltransferase ANT(6)-Ia	STREPTOMYCIN
+2194665735.fna	NZ_CP080249.1	1486310	1487047	+	erm(B)	1-738/738	===============	0/0	100.00	99.86	ncbi	NG_047797.1	23S rRNA (adenine(2058)-N(6))-methyltransferase Erm(B)	MACROLIDE
+2194665735.fna	NZ_CP080249.1	1797554	1798981	+	fexA	1-1428/1428	===============	0/0	100.00	98.74	ncbi	NG_047857.1	chloramphenicol/florfenicol efflux MFS transporter FexA	CHLORAMPHENICOL;FLORFENICOL
+2194665735.fna	NZ_CP080249.1	2118811	2119191	-	blaI_of_Z	1-381/381	===============	0/0	100.00	95.54	ncbi	NG_047499.1	penicillinase repressor BlaI	BETA-LACTAM
+2194665735.fna	NZ_CP080249.1	2119181	2120938	-	blaR1	1-1758/1758	===============	0/0	100.00	92.61	ncbi	NG_047539.1	beta-lactam sensor/signal transducer BlaR1	BETA-LACTAM
+2194665735.fna	NZ_CP080249.1	2121045	2121890	+	blaZ	1-846/846	===============	0/0	100.00	96.69	ncbi	NG_055999.1	penicillin-hydrolyzing class A beta-lactamase BlaZ	BETA-LACTAM
+2194665735.fna	NZ_CP080249.1	2522532	2522951	+	fosB-Saur	1-420/420	===============	0/0	100.00	99.76	ncbi	NG_065844.1	FosB1/FosB3 family fosfomycin resistance bacillithiol transferase	FOSFOMYCIN

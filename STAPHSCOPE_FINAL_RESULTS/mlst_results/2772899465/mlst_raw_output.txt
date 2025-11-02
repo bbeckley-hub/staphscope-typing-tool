@@ -1,0 +1,19 @@
+STDOUT:
+2772899465.fna,saureus,8,arcC(3),aroE(3),glpF(1),gmk(1),pta(4),tpi(4),yqiL(3)
+
+STDERR:
+[17:27:33] This is mlst 2.23.0 running on linux with Perl 5.032001
+[17:27:33] Checking mlst dependencies:
+[17:27:33] Found 'blastn' => /home/brown-beckley/anaconda3/envs/klebcrispr/bin/blastn
+[17:27:33] Found 'any2fasta' => /home/brown-beckley/anaconda3/envs/klebcrispr/bin/any2fasta
+[17:27:34] Found blastn: 2.16.0+ (002016)
+[17:27:34] Setting --minscore=0 because user chose --scheme
+[17:27:36] Found exact allele match saureus.yqiL-3
+[17:27:36] Found exact allele match saureus.pta-4
+[17:27:36] Found exact allele match saureus.glpF-1
+[17:27:36] Found exact allele match saureus.aroE-3
+[17:27:36] Found exact allele match saureus.arcC-3
+[17:27:36] Found exact allele match saureus.gmk-1
+[17:27:36] Found exact allele match saureus.tpi-4
+[17:27:36] Did you know mlst also works on .gbk and .gz files?
+[17:27:36] Done.

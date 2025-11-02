@@ -1,0 +1,868 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>StaphScope AMRfinderPlus Analysis Report</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .header { background: #2c3e50; color: white; padding: 20px; border-radius: 5px; }
+        .summary { background: #ecf0f1; padding: 15px; border-radius: 5px; margin: 10px 0; }
+        .gene-table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+        .gene-table th, .gene-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        .gene-table th { background-color: #34495e; color: white; }
+        .present { background-color: #d4edda; }
+        .mrsa { background-color: #fff3cd; font-weight: bold; }
+        .resistance-class { background-color: #e8f4fd; }
+        .stat-table { width: auto; border-collapse: collapse; margin: 10px 0; }
+        .stat-table th, .stat-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        .stat-table th { background-color: #34495e; color: white; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>StaphScope AMRfinderPlus Analysis Report</h1>
+        <p>Genome: 2999172154 | Generated on: 2025-10-28 17:35</p>
+    </div>
+    
+    <div class="summary">
+        <h2>Summary</h2>
+        <p><strong>Total AMR genes detected:</strong> 26</p>
+        <p><strong>Resistance classes:</strong> 11</p>
+        <p><strong>MRSA status:</strong> positive</p>
+    </div>
+
+    <div class="summary mrsa">
+        <h2>🔴 MRSA DETECTED</h2>
+        <p>mecA gene found in AMR results</p>
+    </div>
+
+    <h2>Resistance Classes Detected</h2>
+    <table class="stat-table">
+        <tr>
+            <th>Resistance Class</th>
+            <th>Genes Count</th>
+            <th>Genes</th>
+        </tr>
+
+        <tr class="resistance-class">
+            <td>AMINOGLYCOSIDE</td>
+            <td>4</td>
+            <td>spw, aadD1, aac(6')-Ie/aph(2'')-Ia, ant(6)-Ia</td>
+        </tr>
+
+        <tr class="resistance-class">
+            <td>LINCOSAMIDE/STREPTOGRAMIN</td>
+            <td>1</td>
+            <td>lsa(E)</td>
+        </tr>
+
+        <tr class="resistance-class">
+            <td>LINCOSAMIDE</td>
+            <td>1</td>
+            <td>lnu(B)</td>
+        </tr>
+
+        <tr class="resistance-class">
+            <td>BETA-LACTAM</td>
+            <td>4</td>
+            <td>blaI, blaR1, blaPC1, mecA</td>
+        </tr>
+
+        <tr class="resistance-class">
+            <td>TRIMETHOPRIM</td>
+            <td>1</td>
+            <td>dfrG</td>
+        </tr>
+
+        <tr class="resistance-class">
+            <td>TETRACYCLINE</td>
+            <td>4</td>
+            <td>mepA, tet(M), tet(38), tet(L)</td>
+        </tr>
+
+        <tr class="resistance-class">
+            <td>NA</td>
+            <td>7</td>
+            <td>sel26, hld, hlgA, hlgC, hlgB, aur, icaC</td>
+        </tr>
+
+        <tr class="resistance-class">
+            <td>PHENICOL</td>
+            <td>1</td>
+            <td>fexA</td>
+        </tr>
+
+        <tr class="resistance-class">
+            <td>MACROLIDE/PHENICOL</td>
+            <td>1</td>
+            <td>lmrS</td>
+        </tr>
+
+        <tr class="resistance-class">
+            <td>COPPER</td>
+            <td>1</td>
+            <td>mco</td>
+        </tr>
+
+        <tr class="resistance-class">
+            <td>LINCOSAMIDE/MACROLIDE/STREPTOGRAMIN</td>
+            <td>1</td>
+            <td>erm(T)</td>
+        </tr>
+</table>
+    <h2>Detailed AMR Genes Detected</h2>
+    <table class="gene-table">
+        <tr>
+            <th>Gene Symbol</th>
+            <th>Sequence Name</th>
+            <th>Class</th>
+            <th>Subclass</th>
+            <th>Coverage</th>
+            <th>Identity</th>
+            <th>Scope</th>
+        </tr>
+
+        <tr class="present">
+            <td>spw</td>
+            <td title="ANT(9) family aminoglycoside nucleotidyltransferase Spw">ANT(9) family aminoglycoside nucleotidyltransferase Spw</td>
+            <td>AMINOGLYCOSIDE</td>
+            <td>AMINOGLYCOSIDE</td>
+            <td>100.00%</td>
+            <td>100.00%</td>
+            <td>core</td>
+        </tr>
+
+        <tr class="present">
+            <td>lsa(E)</td>
+            <td title="ABC-F type ribosomal protection protein Lsa(E)">ABC-F type ribosomal protection protein Lsa(E)</td>
+            <td>LINCOSAMIDE/STREPTOGRAMIN</td>
+            <td>LINCOSAMIDE/STREPTOGRAMIN</td>
+            <td>100.00%</td>
+            <td>100.00%</td>
+            <td>core</td>
+        </tr>
+
+        <tr class="present">
+            <td>lnu(B)</td>
+            <td title="lincosamide nucleotidyltransferase Lnu(B)">lincosamide nucleotidyltransferase Lnu(B)</td>
+            <td>LINCOSAMIDE</td>
+            <td>LINCOSAMIDE</td>
+            <td>100.00%</td>
+            <td>100.00%</td>
+            <td>core</td>
+        </tr>
+
+        <tr class="present">
+            <td>aadD1</td>
+            <td title="aminoglycoside O-nucleotidyltransferase ANT(4')-Ia">aminoglycoside O-nucleotidyltransferase ANT(4')-Ia</td>
+            <td>AMINOGLYCOSIDE</td>
+            <td>KANAMYCIN/TOBRAMYCIN</td>
+            <td>100.00%</td>
+            <td>100.00%</td>
+            <td>core</td>
+        </tr>
+
+        <tr class="present">
+            <td>blaI</td>
+            <td title="penicillinase repressor BlaI">penicillinase repressor BlaI</td>
+            <td>BETA-LACTAM</td>
+            <td>BETA-LACTAM</td>
+            <td>100.00%</td>
+            <td>100.00%</td>
+            <td>core</td>
+        </tr>
+
+        <tr class="present">
+            <td>blaR1</td>
+            <td title="beta-lactam sensor/signal transducer BlaR1">beta-lactam sensor/signal transducer BlaR1</td>
+            <td>BETA-LACTAM</td>
+            <td>BETA-LACTAM</td>
+            <td>100.00%</td>
+            <td>99.83%</td>
+            <td>core</td>
+        </tr>
+
+        <tr class="present">
+            <td>blaPC1</td>
+            <td title="BlaZ family penicillin-hydrolyzing class A beta-lactamase PC1">BlaZ family penicillin-hydrolyzing class A beta-lactamase PC1</td>
+            <td>BETA-LACTAM</td>
+            <td>BETA-LACTAM</td>
+            <td>100.00%</td>
+            <td>100.00%</td>
+            <td>core</td>
+        </tr>
+
+        <tr class="present">
+            <td>dfrG</td>
+            <td title="trimethoprim-resistant dihydrofolate reductase DfrG">trimethoprim-resistant dihydrofolate reductase DfrG</td>
+            <td>TRIMETHOPRIM</td>
+            <td>TRIMETHOPRIM</td>
+            <td>100.00%</td>
+            <td>100.00%</td>
+            <td>core</td>
+        </tr>
+
+        <tr class="present">
+            <td>mepA</td>
+            <td title="multidrug efflux MATE transporter MepA">multidrug efflux MATE transporter MepA</td>
+            <td>TETRACYCLINE</td>
+            <td>TIGECYCLINE</td>
+            <td>100.00%</td>
+            <td>98.67%</td>
+            <td>plus</td>
+        </tr>
+
+        <tr class="present">
+            <td>tet(M)</td>
+            <td title="tetracycline resistance ribosomal protection protein Tet(M)">tetracycline resistance ribosomal protection protein Tet(M)</td>
+            <td>TETRACYCLINE</td>
+            <td>TETRACYCLINE</td>
+            <td>100.00%</td>
+            <td>100.00%</td>
+            <td>core</td>
+        </tr>
+
+        <tr class="present">
+            <td>sel26</td>
+            <td title="staphylococcal enterotoxin type 26">staphylococcal enterotoxin type 26</td>
+            <td>NA</td>
+            <td>NA</td>
+            <td>100.00%</td>
+            <td>96.40%</td>
+            <td>plus</td>
+        </tr>
+
+        <tr class="present">
+            <td>fexA</td>
+            <td title="chloramphenicol/florfenicol efflux MFS transporter FexA">chloramphenicol/florfenicol efflux MFS transporter FexA</td>
+            <td>PHENICOL</td>
+            <td>CHLORAMPHENICOL/FLORFENICOL</td>
+            <td>100.00%</td>
+            <td>99.79%</td>
+            <td>core</td>
+        </tr>
+
+        <tr class="present">
+            <td>hld</td>
+            <td title="delta-hemolysin">delta-hemolysin</td>
+            <td>NA</td>
+            <td>NA</td>
+            <td>100.00%</td>
+            <td>100.00%</td>
+            <td>plus</td>
+        </tr>
+
+        <tr class="present">
+            <td>lmrS</td>
+            <td title="multidrug efflux MFS transporter LmrS">multidrug efflux MFS transporter LmrS</td>
+            <td>MACROLIDE/PHENICOL</td>
+            <td>CHLORAMPHENICOL/ERYTHROMYCIN</td>
+            <td>100.00%</td>
+            <td>97.08%</td>
+            <td>plus</td>
+        </tr>
+
+        <tr class="present">
+            <td>hlgA</td>
+            <td title="bi-component gamma-hemolysin HlgAB subunit A">bi-component gamma-hemolysin HlgAB subunit A</td>
+            <td>NA</td>
+            <td>NA</td>
+            <td>100.00%</td>
+            <td>99.35%</td>
+            <td>plus</td>
+        </tr>
+
+        <tr class="present">
+            <td>hlgC</td>
+            <td title="bi-component gamma-hemolysin HlgCB subunit C">bi-component gamma-hemolysin HlgCB subunit C</td>
+            <td>NA</td>
+            <td>NA</td>
+            <td>100.00%</td>
+            <td>99.37%</td>
+            <td>plus</td>
+        </tr>
+
+        <tr class="present">
+            <td>hlgB</td>
+            <td title="bi-component gamma-hemolysin HlgAB/HlgCB subunit B">bi-component gamma-hemolysin HlgAB/HlgCB subunit B</td>
+            <td>NA</td>
+            <td>NA</td>
+            <td>100.00%</td>
+            <td>100.00%</td>
+            <td>plus</td>
+        </tr>
+
+        <tr class="present">
+            <td>mco</td>
+            <td title="multi-copper oxidase Mco">multi-copper oxidase Mco</td>
+            <td>COPPER</td>
+            <td>COPPER</td>
+            <td>100.00%</td>
+            <td>99.13%</td>
+            <td>plus</td>
+        </tr>
+
+        <tr class="present">
+            <td>aur</td>
+            <td title="zinc metalloproteinase aureolysin">zinc metalloproteinase aureolysin</td>
+            <td>NA</td>
+            <td>NA</td>
+            <td>100.00%</td>
+            <td>99.21%</td>
+            <td>plus</td>
+        </tr>
+
+        <tr class="present">
+            <td>icaC</td>
+            <td title="polysaccharide intercellular adhesin biosynthesis/export protein IcaC">polysaccharide intercellular adhesin biosynthesis/export protein IcaC</td>
+            <td>NA</td>
+            <td>NA</td>
+            <td>100.00%</td>
+            <td>100.00%</td>
+            <td>plus</td>
+        </tr>
+
+        <tr class="mrsa">
+            <td>mecA</td>
+            <td title="PBP2a family beta-lactam-resistant peptidoglycan transpeptidase MecA">PBP2a family beta-lactam-resistant peptidoglycan transpeptidase MecA</td>
+            <td>BETA-LACTAM</td>
+            <td>METHICILLIN</td>
+            <td>100.00%</td>
+            <td>100.00%</td>
+            <td>core</td>
+        </tr>
+
+        <tr class="present">
+            <td>tet(38)</td>
+            <td title="tetracycline efflux MFS transporter Tet(38)">tetracycline efflux MFS transporter Tet(38)</td>
+            <td>TETRACYCLINE</td>
+            <td>TETRACYCLINE</td>
+            <td>100.00%</td>
+            <td>100.00%</td>
+            <td>core</td>
+        </tr>
+
+        <tr class="present">
+            <td>aac(6')-Ie/aph(2'')-Ia</td>
+            <td title="bifunctional aminoglycoside N-acetyltransferase AAC(6')-Ie/aminoglycoside O-phosphotransferase APH(2'')-Ia">bifunctional aminoglycoside N-acetyltransferase AAC(6')-Ie/aminoglycoside O-phos...</td>
+            <td>AMINOGLYCOSIDE</td>
+            <td>AMIKACIN/GENTAMICIN/KANAMYCIN/TOBRAMYCIN</td>
+            <td>100.00%</td>
+            <td>100.00%</td>
+            <td>core</td>
+        </tr>
+
+        <tr class="present">
+            <td>tet(L)</td>
+            <td title="tetracycline efflux MFS transporter Tet(L)">tetracycline efflux MFS transporter Tet(L)</td>
+            <td>TETRACYCLINE</td>
+            <td>TETRACYCLINE</td>
+            <td>100.00%</td>
+            <td>99.56%</td>
+            <td>core</td>
+        </tr>
+
+        <tr class="present">
+            <td>erm(T)</td>
+            <td title="23S rRNA (adenine(2058)-N(6))-methyltransferase Erm(T)">23S rRNA (adenine(2058)-N(6))-methyltransferase Erm(T)</td>
+            <td>LINCOSAMIDE/MACROLIDE/STREPTOGRAMIN</td>
+            <td>ERYTHROMYCIN/LINCOSAMIDE/STREPTOGRAMIN/TYLOSIN</td>
+            <td>100.00%</td>
+            <td>100.00%</td>
+            <td>core</td>
+        </tr>
+
+        <tr class="present">
+            <td>ant(6)-Ia</td>
+            <td title="aminoglycoside nucleotidyltransferase ANT(6)-Ia">aminoglycoside nucleotidyltransferase ANT(6)-Ia</td>
+            <td>AMINOGLYCOSIDE</td>
+            <td>STREPTOMYCIN</td>
+            <td>100.00%</td>
+            <td>100.00%</td>
+            <td>core</td>
+        </tr>
+</table>
+    <h2>
+        <button onclick="toggleFullTable()" style="background: #34495e; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer;">
+            📊 Show Full AMR Data Table
+        </button>
+    </h2>
+    <div id="fullTable" style="display: none;">
+        <table class="gene-table">
+            <tr>
+                <th>Protein ID</th>
+                <th>Contig</th>
+                <th>Start</th>
+                <th>Stop</th>
+                <th>Strand</th>
+                <th>Gene Symbol</th>
+                <th>Sequence Name</th>
+                <th>Scope</th>
+                <th>Element Type</th>
+                <th>Class</th>
+                <th>Subclass</th>
+                <th>Coverage</th>
+                <th>Identity</th>
+                <th>Accession</th>
+            </tr>
+
+            <tr class="present">
+                <td>NA</td>
+                <td>NZ_CP049976.1</td>
+                <td>427</td>
+                <td>1233</td>
+                <td>+</td>
+                <td>spw</td>
+                <td title="ANT(9) family aminoglycoside nucleotidyltransferase Spw">ANT(9) family aminoglycoside nucleotidyltransferase Spw</td>
+                <td>core</td>
+                <td>AMR</td>
+                <td>AMINOGLYCOSIDE</td>
+                <td>AMINOGLYCOSIDE</td>
+                <td>100.00%</td>
+                <td>100.00%</td>
+                <td>WP_002294509.1</td>
+            </tr>
+
+            <tr class="present">
+                <td>NA</td>
+                <td>NZ_CP049976.1</td>
+                <td>3303</td>
+                <td>4784</td>
+                <td>+</td>
+                <td>lsa(E)</td>
+                <td title="ABC-F type ribosomal protection protein Lsa(E)">ABC-F type ribosomal protection protein Lsa(E)</td>
+                <td>core</td>
+                <td>AMR</td>
+                <td>LINCOSAMIDE/STREPTOGRAMIN</td>
+                <td>LINCOSAMIDE/STREPTOGRAMIN</td>
+                <td>100.00%</td>
+                <td>100.00%</td>
+                <td>WP_002294513.1</td>
+            </tr>
+
+            <tr class="present">
+                <td>NA</td>
+                <td>NZ_CP049976.1</td>
+                <td>4841</td>
+                <td>5641</td>
+                <td>+</td>
+                <td>lnu(B)</td>
+                <td title="lincosamide nucleotidyltransferase Lnu(B)">lincosamide nucleotidyltransferase Lnu(B)</td>
+                <td>core</td>
+                <td>AMR</td>
+                <td>LINCOSAMIDE</td>
+                <td>LINCOSAMIDE</td>
+                <td>100.00%</td>
+                <td>100.00%</td>
+                <td>WP_002294514.1</td>
+            </tr>
+
+            <tr class="present">
+                <td>NA</td>
+                <td>NZ_CP049976.1</td>
+                <td>9033</td>
+                <td>9800</td>
+                <td>-</td>
+                <td>aadD1</td>
+                <td title="aminoglycoside O-nucleotidyltransferase ANT(4')-Ia">aminoglycoside O-nucleotidyltransferase ANT(4')-Ia</td>
+                <td>core</td>
+                <td>AMR</td>
+                <td>AMINOGLYCOSIDE</td>
+                <td>KANAMYCIN/TOBRAMYCIN</td>
+                <td>100.00%</td>
+                <td>100.00%</td>
+                <td>WP_001795128.1</td>
+            </tr>
+
+            <tr class="present">
+                <td>NA</td>
+                <td>NZ_CP049976.1</td>
+                <td>33057</td>
+                <td>33434</td>
+                <td>-</td>
+                <td>blaI</td>
+                <td title="penicillinase repressor BlaI">penicillinase repressor BlaI</td>
+                <td>core</td>
+                <td>AMR</td>
+                <td>BETA-LACTAM</td>
+                <td>BETA-LACTAM</td>
+                <td>100.00%</td>
+                <td>100.00%</td>
+                <td>WP_001284656.1</td>
+            </tr>
+
+            <tr class="present">
+                <td>NA</td>
+                <td>NZ_CP049976.1</td>
+                <td>33427</td>
+                <td>35181</td>
+                <td>-</td>
+                <td>blaR1</td>
+                <td title="beta-lactam sensor/signal transducer BlaR1">beta-lactam sensor/signal transducer BlaR1</td>
+                <td>core</td>
+                <td>AMR</td>
+                <td>BETA-LACTAM</td>
+                <td>BETA-LACTAM</td>
+                <td>100.00%</td>
+                <td>99.83%</td>
+                <td>WP_001096376.1</td>
+            </tr>
+
+            <tr class="present">
+                <td>NA</td>
+                <td>NZ_CP049976.1</td>
+                <td>35288</td>
+                <td>36130</td>
+                <td>+</td>
+                <td>blaPC1</td>
+                <td title="BlaZ family penicillin-hydrolyzing class A beta-lactamase PC1">BlaZ family penicillin-hydrolyzing class A beta-lactamase PC...</td>
+                <td>core</td>
+                <td>AMR</td>
+                <td>BETA-LACTAM</td>
+                <td>BETA-LACTAM</td>
+                <td>100.00%</td>
+                <td>100.00%</td>
+                <td>WP_000733283.1</td>
+            </tr>
+
+            <tr class="present">
+                <td>NA</td>
+                <td>NZ_CP049976.1</td>
+                <td>38878</td>
+                <td>39372</td>
+                <td>-</td>
+                <td>dfrG</td>
+                <td title="trimethoprim-resistant dihydrofolate reductase DfrG">trimethoprim-resistant dihydrofolate reductase DfrG</td>
+                <td>core</td>
+                <td>AMR</td>
+                <td>TRIMETHOPRIM</td>
+                <td>TRIMETHOPRIM</td>
+                <td>100.00%</td>
+                <td>100.00%</td>
+                <td>WP_000868795.1</td>
+            </tr>
+
+            <tr class="present">
+                <td>NA</td>
+                <td>NZ_CP049976.1</td>
+                <td>55755</td>
+                <td>57107</td>
+                <td>+</td>
+                <td>mepA</td>
+                <td title="multidrug efflux MATE transporter MepA">multidrug efflux MATE transporter MepA</td>
+                <td>plus</td>
+                <td>AMR</td>
+                <td>TETRACYCLINE</td>
+                <td>TIGECYCLINE</td>
+                <td>100.00%</td>
+                <td>98.67%</td>
+                <td>BAB41547.1</td>
+            </tr>
+
+            <tr class="present">
+                <td>NA</td>
+                <td>NZ_CP049976.1</td>
+                <td>643765</td>
+                <td>645681</td>
+                <td>-</td>
+                <td>tet(M)</td>
+                <td title="tetracycline resistance ribosomal protection protein Tet(M)">tetracycline resistance ribosomal protection protein Tet(M)</td>
+                <td>core</td>
+                <td>AMR</td>
+                <td>TETRACYCLINE</td>
+                <td>TETRACYCLINE</td>
+                <td>100.00%</td>
+                <td>100.00%</td>
+                <td>WP_000691736.1</td>
+            </tr>
+
+            <tr class="present">
+                <td>NA</td>
+                <td>NZ_CP049976.1</td>
+                <td>1398156</td>
+                <td>1398905</td>
+                <td>-</td>
+                <td>sel26</td>
+                <td title="staphylococcal enterotoxin type 26">staphylococcal enterotoxin type 26</td>
+                <td>plus</td>
+                <td>VIRULENCE</td>
+                <td>NA</td>
+                <td>NA</td>
+                <td>100.00%</td>
+                <td>96.40%</td>
+                <td>KAG18833.1</td>
+            </tr>
+
+            <tr class="present">
+                <td>NA</td>
+                <td>NZ_CP049976.1</td>
+                <td>1451176</td>
+                <td>1452600</td>
+                <td>+</td>
+                <td>fexA</td>
+                <td title="chloramphenicol/florfenicol efflux MFS transporter FexA">chloramphenicol/florfenicol efflux MFS transporter FexA</td>
+                <td>core</td>
+                <td>AMR</td>
+                <td>PHENICOL</td>
+                <td>CHLORAMPHENICOL/FLORFENICOL</td>
+                <td>100.00%</td>
+                <td>99.79%</td>
+                <td>WP_015585966.1</td>
+            </tr>
+
+            <tr class="present">
+                <td>NA</td>
+                <td>NZ_CP049976.1</td>
+                <td>1786413</td>
+                <td>1786490</td>
+                <td>-</td>
+                <td>hld</td>
+                <td title="delta-hemolysin">delta-hemolysin</td>
+                <td>plus</td>
+                <td>VIRULENCE</td>
+                <td>NA</td>
+                <td>NA</td>
+                <td>100.00%</td>
+                <td>100.00%</td>
+                <td>AGU62139.1</td>
+            </tr>
+
+            <tr class="present">
+                <td>NA</td>
+                <td>NZ_CP049976.1</td>
+                <td>1950364</td>
+                <td>1951803</td>
+                <td>-</td>
+                <td>lmrS</td>
+                <td title="multidrug efflux MFS transporter LmrS">multidrug efflux MFS transporter LmrS</td>
+                <td>plus</td>
+                <td>STRESS</td>
+                <td>MACROLIDE/PHENICOL</td>
+                <td>CHLORAMPHENICOL/ERYTHROMYCIN</td>
+                <td>100.00%</td>
+                <td>97.08%</td>
+                <td>AAW38464.1</td>
+            </tr>
+
+            <tr class="present">
+                <td>NA</td>
+                <td>NZ_CP049976.1</td>
+                <td>2192365</td>
+                <td>2193291</td>
+                <td>+</td>
+                <td>hlgA</td>
+                <td title="bi-component gamma-hemolysin HlgAB subunit A">bi-component gamma-hemolysin HlgAB subunit A</td>
+                <td>plus</td>
+                <td>VIRULENCE</td>
+                <td>NA</td>
+                <td>NA</td>
+                <td>100.00%</td>
+                <td>99.35%</td>
+                <td>AUU54669.1</td>
+            </tr>
+
+            <tr class="present">
+                <td>NA</td>
+                <td>NZ_CP049976.1</td>
+                <td>2193862</td>
+                <td>2194806</td>
+                <td>+</td>
+                <td>hlgC</td>
+                <td title="bi-component gamma-hemolysin HlgCB subunit C">bi-component gamma-hemolysin HlgCB subunit C</td>
+                <td>plus</td>
+                <td>VIRULENCE</td>
+                <td>NA</td>
+                <td>NA</td>
+                <td>100.00%</td>
+                <td>99.37%</td>
+                <td>CAA57277.1</td>
+            </tr>
+
+            <tr class="present">
+                <td>NA</td>
+                <td>NZ_CP049976.1</td>
+                <td>2194811</td>
+                <td>2195785</td>
+                <td>+</td>
+                <td>hlgB</td>
+                <td title="bi-component gamma-hemolysin HlgAB/HlgCB subunit B">bi-component gamma-hemolysin HlgAB/HlgCB subunit B</td>
+                <td>plus</td>
+                <td>VIRULENCE</td>
+                <td>NA</td>
+                <td>NA</td>
+                <td>100.00%</td>
+                <td>100.00%</td>
+                <td>CAA57278.1</td>
+            </tr>
+
+            <tr class="present">
+                <td>NA</td>
+                <td>NZ_CP049976.1</td>
+                <td>2395605</td>
+                <td>2396990</td>
+                <td>-</td>
+                <td>mco</td>
+                <td title="multi-copper oxidase Mco">multi-copper oxidase Mco</td>
+                <td>plus</td>
+                <td>STRESS</td>
+                <td>COPPER</td>
+                <td>COPPER</td>
+                <td>100.00%</td>
+                <td>99.13%</td>
+                <td>AAQ17236.1</td>
+            </tr>
+
+            <tr class="present">
+                <td>NA</td>
+                <td>NZ_CP049976.1</td>
+                <td>2432499</td>
+                <td>2434025</td>
+                <td>-</td>
+                <td>aur</td>
+                <td title="zinc metalloproteinase aureolysin">zinc metalloproteinase aureolysin</td>
+                <td>plus</td>
+                <td>VIRULENCE</td>
+                <td>NA</td>
+                <td>NA</td>
+                <td>100.00%</td>
+                <td>99.21%</td>
+                <td>EHO93748.1</td>
+            </tr>
+
+            <tr class="present">
+                <td>NA</td>
+                <td>NZ_CP049976.1</td>
+                <td>2476867</td>
+                <td>2477916</td>
+                <td>+</td>
+                <td>icaC</td>
+                <td title="polysaccharide intercellular adhesin biosynthesis/export protein IcaC">polysaccharide intercellular adhesin biosynthesis/export pro...</td>
+                <td>plus</td>
+                <td>VIRULENCE</td>
+                <td>NA</td>
+                <td>NA</td>
+                <td>100.00%</td>
+                <td>100.00%</td>
+                <td>AUU58561.1</td>
+            </tr>
+
+            <tr class="present">
+                <td>NA</td>
+                <td>NZ_CP049976.1</td>
+                <td>2557507</td>
+                <td>2559510</td>
+                <td>-</td>
+                <td>mecA</td>
+                <td title="PBP2a family beta-lactam-resistant peptidoglycan transpeptidase MecA">PBP2a family beta-lactam-resistant peptidoglycan transpeptid...</td>
+                <td>core</td>
+                <td>AMR</td>
+                <td>BETA-LACTAM</td>
+                <td>METHICILLIN</td>
+                <td>100.00%</td>
+                <td>100.00%</td>
+                <td>WP_000721306.1</td>
+            </tr>
+
+            <tr class="present">
+                <td>NA</td>
+                <td>NZ_CP049976.1</td>
+                <td>2663750</td>
+                <td>2665099</td>
+                <td>+</td>
+                <td>tet(38)</td>
+                <td title="tetracycline efflux MFS transporter Tet(38)">tetracycline efflux MFS transporter Tet(38)</td>
+                <td>core</td>
+                <td>AMR</td>
+                <td>TETRACYCLINE</td>
+                <td>TETRACYCLINE</td>
+                <td>100.00%</td>
+                <td>100.00%</td>
+                <td>WP_001100293.1</td>
+            </tr>
+
+            <tr class="present">
+                <td>NA</td>
+                <td>NZ_CP049976.1</td>
+                <td>2877723</td>
+                <td>2879159</td>
+                <td>-</td>
+                <td>aac(6')-Ie/aph(2'')-Ia</td>
+                <td title="bifunctional aminoglycoside N-acetyltransferase AAC(6')-Ie/aminoglycoside O-phosphotransferase APH(2'')-Ia">bifunctional aminoglycoside N-acetyltransferase AAC(6')-Ie/a...</td>
+                <td>core</td>
+                <td>AMR</td>
+                <td>AMINOGLYCOSIDE</td>
+                <td>AMIKACIN/GENTAMICIN/KANAMYCIN/TOBRAMYCIN</td>
+                <td>100.00%</td>
+                <td>100.00%</td>
+                <td>WP_001028144.1</td>
+            </tr>
+
+            <tr class="present">
+                <td>NA</td>
+                <td>NZ_CP049976.1</td>
+                <td>2885827</td>
+                <td>2887200</td>
+                <td>+</td>
+                <td>tet(L)</td>
+                <td title="tetracycline efflux MFS transporter Tet(L)">tetracycline efflux MFS transporter Tet(L)</td>
+                <td>core</td>
+                <td>AMR</td>
+                <td>TETRACYCLINE</td>
+                <td>TETRACYCLINE</td>
+                <td>100.00%</td>
+                <td>99.56%</td>
+                <td>WP_001574277.1</td>
+            </tr>
+
+            <tr class="present">
+                <td>NA</td>
+                <td>NZ_CP049976.1</td>
+                <td>2887850</td>
+                <td>2888581</td>
+                <td>-</td>
+                <td>erm(T)</td>
+                <td title="23S rRNA (adenine(2058)-N(6))-methyltransferase Erm(T)">23S rRNA (adenine(2058)-N(6))-methyltransferase Erm(T)</td>
+                <td>core</td>
+                <td>AMR</td>
+                <td>LINCOSAMIDE/MACROLIDE/STREPTOGRAMIN</td>
+                <td>ERYTHROMYCIN/LINCOSAMIDE/STREPTOGRAMIN/TYLOSIN</td>
+                <td>100.00%</td>
+                <td>100.00%</td>
+                <td>WP_002345002.1</td>
+            </tr>
+
+            <tr class="present">
+                <td>NA</td>
+                <td>NZ_CP049976.1</td>
+                <td>2894849</td>
+                <td>2895709</td>
+                <td>+</td>
+                <td>ant(6)-Ia</td>
+                <td title="aminoglycoside nucleotidyltransferase ANT(6)-Ia">aminoglycoside nucleotidyltransferase ANT(6)-Ia</td>
+                <td>core</td>
+                <td>AMR</td>
+                <td>AMINOGLYCOSIDE</td>
+                <td>STREPTOMYCIN</td>
+                <td>100.00%</td>
+                <td>100.00%</td>
+                <td>WP_002294505.1</td>
+            </tr>
+
+        </table>
+    </div>
+
+    <script>
+        function toggleFullTable() {
+            var fullTable = document.getElementById("fullTable");
+            var button = document.querySelector("button");
+            if (fullTable.style.display === "none") {
+                fullTable.style.display = "block";
+                button.innerHTML = "📊 Hide Full AMR Data Table";
+            } else {
+                fullTable.style.display = "none";
+                button.innerHTML = "📊 Show Full AMR Data Table";
+            }
+        }
+    </script>
+</body>
+</html>

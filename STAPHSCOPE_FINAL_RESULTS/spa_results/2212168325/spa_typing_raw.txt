@@ -1,0 +1,2 @@
+Sequence name	Repeats	Type
+NZ_CP092561.1 Staphylococcus aureus strain MRSA-WC101 chromosome, complete genome	26-23-17-34-17-20-17-12-17-16	t002

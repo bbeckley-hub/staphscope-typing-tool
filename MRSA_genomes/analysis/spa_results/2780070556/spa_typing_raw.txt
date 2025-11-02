@@ -1,0 +1,2 @@
+Sequence name	Repeats	Type
+NZ_CP160634.1 Staphylococcus aureus strain BSN43 chromosome, complete genome	26-17-34-17-16	t5923

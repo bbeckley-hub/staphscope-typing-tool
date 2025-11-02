@@ -1,0 +1,18 @@
+1376352309.fna:>NZ_CP021105.1 Staphylococcus aureus strain CC5 chromosome, complete genome
+1575502651.fna:>NZ_CP035671.1 Staphylococcus aureus strain VB31683 chromosome, complete genome
+2064726533.fna:>NZ_CP077755.1 Staphylococcus aureus strain WHC09 chromosome, complete genome
+2064751942.fna:>NZ_CP077757.1 Staphylococcus aureus strain WHC07 chromosome, complete genome
+2194665735.fna:>NZ_CP080249.1 Staphylococcus aureus strain NV_1 chromosome, complete genome
+2212168325.fna:>NZ_CP092561.1 Staphylococcus aureus strain MRSA-WC101 chromosome, complete genome
+2212168474.fna:>NZ_CP092563.1 Staphylococcus aureus strain MRSA-WC090 chromosome, complete genome
+2212168481.fna:>NZ_CP092565.1 Staphylococcus aureus strain MRSA-WC061 chromosome, complete genome
+2212172067.fna:>NZ_CP092567.1 Staphylococcus aureus strain MRSA-WC000 chromosome, complete genome
+2236627887.fna:>NZ_CP092475.1 Staphylococcus aureus strain P5 chromosome, complete genome
+2267348900.fna:>NZ_CP099576.1 Staphylococcus aureus strain MRSA1369 chromosome, complete genome
+2772899465.fna:>NZ_CP160409.1 Staphylococcus aureus strain BSN42 chromosome, complete genome
+2780070556.fna:>NZ_CP160634.1 Staphylococcus aureus strain BSN43 chromosome, complete genome
+2999172154.fna:>NZ_CP049976.1 Staphylococcus aureus strain PJFE-503 chromosome, complete genome
+3004670934.fna:>NZ_CP040665.2 Staphylococcus aureus strain D592 chromosome, complete genome
+NZ_CP077755.1.fna:>NZ_CP077755.1 Staphylococcus aureus strain WHC09 chromosome, complete genome
+NZ_CP077757.1.fna:>NZ_CP077757.1 Staphylococcus aureus strain WHC07 chromosome, complete genome
+The reference genome datasets (N315: NC_002745.2; USA300: NC_007793.1; MRSA252: BX571856)

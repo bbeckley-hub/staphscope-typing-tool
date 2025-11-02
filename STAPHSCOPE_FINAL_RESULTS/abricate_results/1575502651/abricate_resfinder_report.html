@@ -1,0 +1,71 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>StaphScope ABRicate Report - RESFINDER</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .header { background: #2c3e50; color: white; padding: 20px; border-radius: 5px; }
+        .summary { background: #ecf0f1; padding: 15px; border-radius: 5px; margin: 10px 0; }
+        .gene-table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+        .gene-table th, .gene-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        .gene-table th { background-color: #34495e; color: white; }
+        .present { background-color: #d4edda; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>StaphScope ABRicate Analysis Report</h1>
+        <p>Genome: 1575502651 | Database: RESFINDER | Generated on: 2025-10-28 17:47</p>
+    </div>
+    
+    <div class="summary">
+        <h2>Database Summary</h2>
+        <p><strong>Total genes detected:</strong> 4</p>
+        <p><strong>Database:</strong> RESFINDER</p>
+    </div>
+
+    <h2>Genes Detected</h2>
+    <table class="gene-table">
+        <tr>
+            <th>Gene</th>
+            <th>Product</th>
+            <th>Coverage</th>
+            <th>Identity</th>
+            <th>Accession</th>
+        </tr>
+
+        <tr class="present">
+            <td>aac(6')-aph(2'')_1</td>
+            <td title="aac(6')-aph(2'')">aac(6')-aph(2'')</td>
+            <td>100.00%</td>
+            <td>100.00%</td>
+            <td>M13771</td>
+        </tr>
+
+        <tr class="present">
+            <td>mecA_6</td>
+            <td title="mecA">mecA</td>
+            <td>100.00%</td>
+            <td>100.00%</td>
+            <td>BX571856</td>
+        </tr>
+
+        <tr class="present">
+            <td>blaZ_138</td>
+            <td title="blaZ">blaZ</td>
+            <td>100.00%</td>
+            <td>99.89%</td>
+            <td>CP003979</td>
+        </tr>
+
+        <tr class="present">
+            <td>blaZ_138</td>
+            <td title="blaZ">blaZ</td>
+            <td>99.77%</td>
+            <td>99.55%</td>
+            <td>CP003979</td>
+        </tr>
+</table>
+</body>
+</html>

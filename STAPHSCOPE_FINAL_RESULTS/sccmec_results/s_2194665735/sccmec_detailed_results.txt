@@ -1,0 +1,7 @@
+The input organism was predicted as a MRSA isolate
+The mecA gene was detected
+
+No SCCmec element was detected
+
+Detected gene complexes:
+mec class A

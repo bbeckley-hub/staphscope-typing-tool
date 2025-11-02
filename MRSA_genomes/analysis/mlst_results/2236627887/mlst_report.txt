@@ -1,0 +1,40 @@
+MLST Analysis Report
+===================
+
+Sample: 2236627887.fna
+Analysis Date: 2025-10-31 21:19:22
+
+MLST TYPING RESULTS:
+-------------------
+Sequence Type (ST): 22
+Scheme: saureus
+Confidence: HIGH
+
+Allele Profile:
+arcC(7)-aroE(6)-glpF(1)-gmk(5)-pta(8)-tpi(8)-yqiL(6)
+
+Detailed Alleles:
+- arcC: 7
+- aroE: 6
+- glpF: 1
+- gmk: 5
+- pta: 8
+- tpi: 8
+- yqiL: 6
+
+LINEAGE ANALYSIS:
+-----------------
+Clonal Complex: CC22
+Classification: Healthcare-associated MRSA
+Geographic Distribution: Europe, Middle East, Global
+Clinical Significance: Epidemic MRSA-15 (EMRSA-15), major healthcare clone with high transmission in hospital settings
+Outbreak Potential: VERY HIGH
+
+Typical SCCmec Types: IV, IVh
+Typical spa Types: t032, t022, t005, t852
+Resistance Profile: Methicillin, Multiple drug classes, Often gentamicin resistant
+
+Common Virulence Factors:
+- Enterotoxins
+- Immune evasion cluster
+- Hemolysins

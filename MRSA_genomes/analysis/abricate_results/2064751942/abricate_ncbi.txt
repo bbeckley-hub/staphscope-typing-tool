@@ -1,0 +1,17 @@
+#FILE	SEQUENCE	START	END	STRAND	GENE	COVERAGE	COVERAGE_MAP	GAPS	%COVERAGE	%IDENTITY	DATABASE	ACCESSION	PRODUCT	RESISTANCE
+2064751942.fna	NZ_CP077757.1	258248	259675	-	fexA	1-1428/1428	===============	0/0	100.00	99.79	ncbi	NG_047857.1	chloramphenicol/florfenicol efflux MFS transporter FexA	CHLORAMPHENICOL;FLORFENICOL
+2064751942.fna	NZ_CP077757.1	1831657	1833009	-	tet(38)	1-1353/1353	===============	0/0	100.00	100.00	ncbi	NG_048134.1	tetracycline efflux MFS transporter Tet(38)	TETRACYCLINE
+2064751942.fna	NZ_CP077757.1	1868275	1869045	-	ant(4')-Ia	1-771/771	===============	0/0	100.00	99.87	ncbi	NG_056101.1	aminoglycoside O-nucleotidyltransferase ANT(4')-Ia	KANAMYCIN;TOBRAMYCIN
+2064751942.fna	NZ_CP077757.1	1876309	1877112	-	lnu(B)	1-804/804	===============	0/0	100.00	100.00	ncbi	NG_047923.1	lincosamide nucleotidyltransferase Lnu(B)	LINCOSAMIDE
+2064751942.fna	NZ_CP077757.1	1877166	1878650	-	lsa(E)	1-1485/1485	===============	0/0	100.00	100.00	ncbi	NG_047935.1	ABC-F type ribosomal protection protein Lsa(E)	LINCOSAMIDE;STREPTOGRAMIN
+2064751942.fna	NZ_CP077757.1	1880717	1881526	-	spw	1-810/810	===============	0/0	100.00	100.00	ncbi	NG_048075.1	ANT(9) family aminoglycoside nucleotidyltransferase Spw	AMINOGLYCOSIDE
+2064751942.fna	NZ_CP077757.1	1882229	1883092	-	ant(6)-Ia	1-864/864	===============	0/0	100.00	100.00	ncbi	NG_050582.1	aminoglycoside nucleotidyltransferase ANT(6)-Ia	STREPTOMYCIN
+2064751942.fna	NZ_CP077757.1	1885665	1887041	+	tet(L)	1-1377/1377	===============	0/0	100.00	100.00	ncbi	NG_048203.1	tetracycline efflux MFS transporter Tet(L)	TETRACYCLINE
+2064751942.fna	NZ_CP077757.1	1889746	1890480	-	erm(C)	1-735/735	===============	0/0	100.00	99.05	ncbi	NG_047809.1	23S rRNA (adenine(2058)-N(6))-methyltransferase Erm(C)	MACROLIDE
+2064751942.fna	NZ_CP077757.1	1894399	1895195	+	aph(2'')-Ih	70-866/894	.==============	0/0	89.15	82.43	ncbi	NG_047408.1	aminoglycoside O-phosphotransferase APH(2'')-Ih	AMIKACIN;GENTAMICIN;KANAMYCIN;TOBRAMYCIN
+2064751942.fna	NZ_CP077757.1	1897915	1898295	+	blaI_of_Z	1-381/381	===============	0/0	100.00	100.00	ncbi	NG_047499.1	penicillinase repressor BlaI	BETA-LACTAM
+2064751942.fna	NZ_CP077757.1	2361145	2361642	-	dfrG	1-498/498	===============	0/0	100.00	100.00	ncbi	NG_047756.1	trimethoprim-resistant dihydrofolate reductase DfrG	TRIMETHOPRIM
+2064751942.fna	NZ_CP077757.1	2400511	2400930	-	fosB-Saur	1-420/420	===============	0/0	100.00	99.29	ncbi	NG_065844.1	FosB1/FosB3 family fosfomycin resistance bacillithiol transferase	FOSFOMYCIN
+2064751942.fna	NZ_CP077757.1	2735470	2736315	-	blaZ	1-846/846	===============	0/0	100.00	96.81	ncbi	NG_055999.1	penicillin-hydrolyzing class A beta-lactamase BlaZ	BETA-LACTAM
+2064751942.fna	NZ_CP077757.1	2736422	2738179	+	blaR1	1-1758/1758	===============	0/0	100.00	92.83	ncbi	NG_047539.1	beta-lactam sensor/signal transducer BlaR1	BETA-LACTAM
+2064751942.fna	NZ_CP077757.1	2738169	2738549	+	blaI_of_Z	1-381/381	===============	0/0	100.00	95.28	ncbi	NG_047499.1	penicillinase repressor BlaI	BETA-LACTAM

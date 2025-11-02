@@ -1,0 +1,4 @@
+#FILE	SEQUENCE	START	END	STRAND	GENE	COVERAGE	COVERAGE_MAP	GAPS	%COVERAGE	%IDENTITY	DATABASE	ACCESSION	PRODUCT	RESISTANCE
+1376352309.fna	NZ_CP021105.1	40953	42959	-	mecA	1-2007/2007	===============	0/0	100.00	99.95	ncbi	NG_047940.1	PBP2a family beta-lactam-resistant peptidoglycan transpeptidase MecA	METHICILLIN
+1376352309.fna	NZ_CP021105.1	117186	118538	+	tet(38)	1-1353/1353	===============	0/0	100.00	100.00	ncbi	NG_048133.1	tetracycline efflux MFS transporter Tet(38)	TETRACYCLINE
+1376352309.fna	NZ_CP021105.1	2326801	2327220	+	fosB-Saur	1-420/420	===============	0/0	100.00	99.76	ncbi	NG_065844.1	FosB1/FosB3 family fosfomycin resistance bacillithiol transferase	FOSFOMYCIN

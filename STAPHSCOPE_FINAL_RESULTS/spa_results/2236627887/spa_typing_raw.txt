@@ -1,0 +1,2 @@
+Sequence name	Repeats	Type
+NZ_CP092475.1 Staphylococcus aureus strain P5 chromosome, complete genome	26-23-23-13-23-31-29-17-31-29-17-25-17-25-16-28	t032

@@ -1,0 +1,17 @@
+#Template	Score	Expected	z	p_value	query coverage [%]	template coverage [%]	depth	Kmers in Template	Description
+SCCmec_type_XII(9C2)|gb|KR187111	   54256	   23525	  227.00	3.7e-25	    0.95	   62.12	    0.77	   87344	
+SCCmec_type_V(5C2&5)|SCCmec_type_Vb(5C2&5)|gb|AB462393.1	   31026	   25464	   39.90	3.7e-25	    0.54	   32.82	    0.40	   94540	
+SCCmec_type_V(5C2&5)|SCCmec_type_Vb(5C2&5)|gb|AB478780.1	   29505	   21872	   59.10	3.7e-25	    0.52	   36.33	    0.44	   81205	
+SCCmec_type_V(5C2&5)|SCCmec_type_Vb(5C2&5)|gb|AB512767.1	   29019	   21659	   57.30	3.7e-25	    0.51	   36.09	    0.43	   80414	
+SCCmec_type_V(5C2)|SCCmec_type_Va(5C2)|gb|AB121219.1	   27120	   14995	  113.80	3.7e-25	    0.47	   48.71	    0.61	   55673	
+SCCmec_type_V(5C2&5)|SCCmec_type_Vc(5C2&5)|gb|AB505629.1	   25718	   23631	   15.60	3.7e-25	    0.45	   29.31	    0.36	   87737	
+SCCmec_type_XIII(9A)|gb|MG674089	   24457	   17034	   65.40	3.7e-25	    0.43	   38.67	    1.08	   63244	
+SCCmec_type_IV(2B&5)|gb|AM292304.1	   22983	   17843	   44.30	3.7e-25	    0.40	   34.69	    1.00	   66245	
+SCCmec_type_I(1B)|gb|AB033763.2	   21990	   19965	   16.50	3.7e-25	    0.38	   29.67	    0.39	   74126	
+SCCmec_type_IV(2B)|SCCmec_type_IVc(2B)|gb|AB096217.1	   21503	   16019	   49.90	3.7e-25	    0.38	   36.16	    1.19	   59474	
+SCCmec_type_VII(5C1)|gb|AB373032.1	   18345	   17396	    8.30	3.7e-14	    0.32	   28.40	    0.39	   64587	
+SCCmec_type_IV(2B)|SCCmec_type_IVc(2B)|gb|AY271717.1	   16890	   12912	   40.50	3.7e-25	    0.30	   35.23	    0.51	   47939	
+SCCmec_type_IV(2B)|SCCmec_type_IVc(2B)|gb|EU437549.2	   16755	   15623	   10.50	3.7e-23	    0.29	   28.89	    0.41	   58005	
+SCCmec_type_IV(2B)|SCCmec_type_IVb(2B)|gb|AB063173.1	   15848	   11622	   45.40	3.7e-25	    0.28	   36.73	    0.54	   43148	
+SCCmec_type_IV(2B)|SCCmec_type_IVd(2B)|gb|NZ_JYBA01000013.1	   15270	   14082	   11.60	3.7e-25	    0.27	   29.21	    1.17	   52283	
+SCCmec_type_IV(2B)|SCCmec_type_IVj(2B)|gb|AB425824.1	   13470	   12453	   10.60	3.7e-24	    0.24	   29.13	    0.44	   46234	

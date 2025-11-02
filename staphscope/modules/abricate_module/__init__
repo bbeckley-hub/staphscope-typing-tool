@@ -1,0 +1,5 @@
+# Initialize available_ram before calculating threads
+self.available_ram = self._get_available_ram()
+
+# Then calculate resources
+self.threads = self._calculate_optimal_threads(threads)

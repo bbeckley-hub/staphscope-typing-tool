@@ -1,16 +1,28 @@
-name: staphscope
+name: staphscope-env
 channels:
   - conda-forge
   - bioconda
   - defaults
 dependencies:
-  - python>=3.7
-  - biopython>=1.79
-  - pandas>=1.3.0
-  - click>=8.0.0
-  - blast  # BLAST tools
-  - perl-json  # Perl JSON module
-  - any2fasta  # Required for MLST
+  - python
+  - pandas
+  - biopython
+  - psutil
+  - request
+  - tqdm
+  - click
+  - abricate=1.0.1
+  - ncbi-amrfinderplus=3.12.8
+  - perl
+  - any2fasta
+  - blast
   - pip
-  - pip:
-    - -e .  # Install staphscope in development mode
+  # Perl dependencies for abricate
+  - perl-moo
+  - perl-list-moreutils
+  - perl-json
+  - perl-lwp-protocol-https
+  - perl-path-tiny
+  - perl-data-dumper
+  - perl-getopt-long
+  - perl-file-which

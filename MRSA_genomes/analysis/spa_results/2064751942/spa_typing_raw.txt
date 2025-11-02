@@ -1,0 +1,2 @@
+Sequence name	Repeats	Type
+NZ_CP077757.1 Staphylococcus aureus strain WHC07 chromosome, complete genome	07-16-23-02-34	t899

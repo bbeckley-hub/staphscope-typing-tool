@@ -1,0 +1,12 @@
+#FILE	SEQUENCE	START	END	STRAND	GENE	COVERAGE	COVERAGE_MAP	GAPS	%COVERAGE	%IDENTITY	DATABASE	ACCESSION	PRODUCT	RESISTANCE
+3004670934.fna	NZ_CP040665.2	40177	40581	-	bleO	1-405/405	===============	0/0	100.00	100.00	ncbi	NG_047557.1	bleomycin binding protein	BLEOMYCIN
+3004670934.fna	NZ_CP040665.2	40798	41568	-	ant(4')-Ia	1-771/771	===============	0/0	100.00	99.87	ncbi	NG_047375.1	aminoglycoside O-nucleotidyltransferase ANT(4')-Ia	KANAMYCIN;TOBRAMYCIN
+3004670934.fna	NZ_CP040665.2	44014	46020	-	mecA	1-2007/2007	===============	0/0	100.00	99.95	ncbi	NG_047940.1	PBP2a family beta-lactam-resistant peptidoglycan transpeptidase MecA	METHICILLIN
+3004670934.fna	NZ_CP040665.2	46120	47877	+	mecR1	1-1758/1758	===============	0/0	100.00	99.94	ncbi	NG_051163.1	beta-lactam sensor/signal transducer MecR1	METHICILLIN
+3004670934.fna	NZ_CP040665.2	47877	48248	+	mecI_of_mecA	1-372/372	===============	0/0	100.00	100.00	ncbi	NG_055650.1	mecA-type methicillin resistance repressor MecI	METHICILLIN
+3004670934.fna	NZ_CP040665.2	54949	55680	+	erm(A)	1-732/732	===============	0/0	100.00	100.00	ncbi	NG_047789.1	23S rRNA (adenine(2058)-N(6))-methyltransferase Erm(A)	MACROLIDE
+3004670934.fna	NZ_CP040665.2	55806	56588	-	ant(9)-Ia	1-783/783	===============	0/0	100.00	100.00	ncbi	NG_047397.1	aminoglycoside nucleotidyltransferase ANT(9)-Ia	SPECTINOMYCIN
+3004670934.fna	NZ_CP040665.2	149922	151274	+	tet(38)	1-1353/1353	===============	0/0	100.00	100.00	ncbi	NG_048133.1	tetracycline efflux MFS transporter Tet(38)	TETRACYCLINE
+3004670934.fna	NZ_CP040665.2	1725918	1726649	+	erm(A)	1-732/732	===============	0/0	100.00	100.00	ncbi	NG_047789.1	23S rRNA (adenine(2058)-N(6))-methyltransferase Erm(A)	MACROLIDE
+3004670934.fna	NZ_CP040665.2	1726775	1727557	-	ant(9)-Ia	1-783/783	===============	0/0	100.00	100.00	ncbi	NG_047397.1	aminoglycoside nucleotidyltransferase ANT(9)-Ia	SPECTINOMYCIN
+3004670934.fna	NZ_CP040665.2	2403836	2404255	+	fosB-Saur	1-420/420	===============	0/0	100.00	99.76	ncbi	NG_065844.1	FosB1/FosB3 family fosfomycin resistance bacillithiol transferase	FOSFOMYCIN

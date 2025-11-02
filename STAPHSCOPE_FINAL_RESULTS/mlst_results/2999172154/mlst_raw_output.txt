@@ -1,0 +1,19 @@
+STDOUT:
+2999172154.fna,saureus,398,arcC(3),aroE(35),glpF(19),gmk(2),pta(20),tpi(26),yqiL(39)
+
+STDERR:
+[17:27:40] This is mlst 2.23.0 running on linux with Perl 5.032001
+[17:27:40] Checking mlst dependencies:
+[17:27:40] Found 'blastn' => /home/brown-beckley/anaconda3/envs/klebcrispr/bin/blastn
+[17:27:40] Found 'any2fasta' => /home/brown-beckley/anaconda3/envs/klebcrispr/bin/any2fasta
+[17:27:40] Found blastn: 2.16.0+ (002016)
+[17:27:40] Setting --minscore=0 because user chose --scheme
+[17:27:43] Found exact allele match saureus.yqiL-39
+[17:27:43] Found exact allele match saureus.pta-20
+[17:27:43] Found exact allele match saureus.glpF-19
+[17:27:43] Found exact allele match saureus.aroE-35
+[17:27:43] Found exact allele match saureus.arcC-3
+[17:27:43] Found exact allele match saureus.gmk-2
+[17:27:43] Found exact allele match saureus.tpi-26
+[17:27:43] Please also cite 'Jolley & Maiden 2010, BMC Bioinf, 11:595' if you use mlst.
+[17:27:43] Done.

@@ -1,0 +1,16 @@
+#Template	Score	Expected	z	p_value	query coverage [%]	template coverage [%]	depth	Kmers in Template	Description
+SCCmec_type_II(2A)|gb|CP000736	  117339	   58688	  334.20	3.7e-25	    2.09	   99.88	    1.17	  117483	
+SCCmec_type_II(2A)|gb|D86934.2	  111994	   57171	  316.70	3.7e-25	    1.99	   97.86	    1.13	  114446	
+SCCmec_type_II(2A)|gb|AP009324	  102572	   52418	  303.10	3.7e-25	    1.83	   97.75	    1.11	  104932	
+SCCmec_type_II(2A)|gb|BA000017	  102540	   52402	  303.10	3.7e-25	    1.83	   97.75	    1.11	  104900	
+SCCmec_type_II(2A)|gb|BX571856	  102123	   58226	  251.10	3.7e-25	    1.82	   87.62	    1.00	  116558	
+SCCmec_type_II(2A)|gb|CP000703	   93919	   46989	  300.20	3.7e-25	    1.67	   99.85	    1.17	   94063	
+SCCmec_type_VIII(4A)|gb|FJ670542.1	   46518	   33506	   99.10	3.7e-25	    0.83	   69.35	    0.92	   67074	
+SCCmec_type_VIII(4A)|gb|FJ390057.1	   43680	   31951	   91.50	3.7e-25	    0.78	   68.29	    0.92	   63960	
+SCCmec_type_IV(2B)|SCCmec_type_IVc(2B)|gb|EU437549.2	   34163	   28976	   42.50	3.7e-25	    0.61	   58.90	    0.62	   58005	
+SCCmec_type_IV(2B)|SCCmec_type_IVc(2B)|gb|AY271717.1	   31740	   23948	   70.50	3.7e-25	    0.56	   66.21	    0.71	   47939	
+SCCmec_type_IV(2B)|SCCmec_type_IVg(2B)|gb|DQ106887.1	   26883	   22950	   36.30	3.7e-25	    0.48	   58.52	    0.63	   45942	
+SCCmec_type_IV(2B)|SCCmec_type_IVj(2B)|gb|AB425824.1	   26148	   23096	   28.10	3.7e-25	    0.47	   56.56	    0.60	   46234	
+SCCmec_type_IV(2B)|SCCmec_type_IVh(2B)|gb|CP007659.1	   24187	   22077	   19.90	3.7e-25	    0.43	   54.73	    0.59	   44194	
+SCCmec_type_IV(2B)|SCCmec_type_IVb(2B)|gb|AB063173.1	   23583	   21554	   19.40	3.7e-25	    0.42	   54.66	    0.59	   43148	
+SCCmec_type_IV(2B)|SCCmec_type_IVi(2B)|gb|AB425823.1	   23419	   22859	    5.20	3.7e-05	    0.42	   51.18	    0.55	   45760	

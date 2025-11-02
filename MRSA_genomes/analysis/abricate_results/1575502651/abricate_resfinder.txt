@@ -1,0 +1,5 @@
+#FILE	SEQUENCE	START	END	STRAND	GENE	COVERAGE	COVERAGE_MAP	GAPS	%COVERAGE	%IDENTITY	DATABASE	ACCESSION	PRODUCT	RESISTANCE
+1575502651.fna	NZ_CP035671.1	180439	181878	+	aac(6')-aph(2'')_1	1-1440/1440	===============	0/0	100.00	100.00	resfinder	M13771	aac(6')-aph(2'')	Amikacin;Gentamicin;Tobramycin
+1575502651.fna	NZ_CP035671.1	1556763	1558769	+	mecA_6	1-2007/2007	===============	0/0	100.00	100.00	resfinder	BX571856	mecA	Amoxicillin;Amoxicillin+Clavulanic_acid;Ampicillin;Ampicillin+Clavulanic_acid;Cefepime;Cefixime;Cefotaxime;Cefoxitin;Ceftazidime;Ertapenem;Imipenem;Meropenem;Piperacillin;Piperacillin+Tazobactam
+1575502651.fna	NZ_CP035671.1	2408929	2409816	-	blaZ_138	1-888/888	===============	0/0	100.00	99.89	resfinder	CP003979	blaZ	Amoxicillin;Ampicillin;Penicillin;Piperacillin
+1575502651.fna	NZ_CP035671.1	2420677	2421562	-	blaZ_138	1-888/888	========/======	2/2	99.77	99.55	resfinder	CP003979	blaZ	Amoxicillin;Ampicillin;Penicillin;Piperacillin

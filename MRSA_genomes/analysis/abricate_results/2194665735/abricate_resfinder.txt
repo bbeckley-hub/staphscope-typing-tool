@@ -1,0 +1,9 @@
+#FILE	SEQUENCE	START	END	STRAND	GENE	COVERAGE	COVERAGE_MAP	GAPS	%COVERAGE	%IDENTITY	DATABASE	ACCESSION	PRODUCT	RESISTANCE
+2194665735.fna	NZ_CP080249.1	39615	41621	-	mecA_2	1-2007/2007	===============	0/0	100.00	100.00	resfinder	NC_002951	mecA	Amoxicillin;Amoxicillin+Clavulanic_acid;Ampicillin;Ampicillin+Clavulanic_acid;Cefepime;Cefixime;Cefotaxime;Cefoxitin;Ceftazidime;Ertapenem;Imipenem;Meropenem;Piperacillin;Piperacillin+Tazobactam
+2194665735.fna	NZ_CP080249.1	50001	51428	+	fexA_1	1-1428/1428	===============	0/0	100.00	98.74	resfinder	AJ549214	fexA	Chloramphenicol;Florfenicol
+2194665735.fna	NZ_CP080249.1	1478851	1480326	+	aph(2'')-Ia_2	1-1476/1476	===============	0/0	100.00	100.00	resfinder	AP009486	aph(2'')-Ia	Amikacin;Gentamicin;Tobramycin
+2194665735.fna	NZ_CP080249.1	1480882	1481644	+	erm(B)_18	1-762/762	========/======	1/1	100.00	99.21	resfinder	X66468	erm(B)	Erythromycin;Lincomycin;Clindamycin;Quinupristin;Pristinamycin_IA;Virginiamycin_S
+2194665735.fna	NZ_CP080249.1	1481949	1482857	+	ant(6)-Ia_1	1-909/909	===============	0/0	100.00	100.00	resfinder	AF330699	ant(6)-Ia	Streptomycin
+2194665735.fna	NZ_CP080249.1	1486285	1487047	+	erm(B)_18	1-762/762	========/======	1/1	100.00	99.61	resfinder	X66468	erm(B)	Erythromycin;Lincomycin;Clindamycin;Quinupristin;Pristinamycin_IA;Virginiamycin_S
+2194665735.fna	NZ_CP080249.1	1797554	1798981	+	fexA_1	1-1428/1428	===============	0/0	100.00	98.74	resfinder	AJ549214	fexA	Chloramphenicol;Florfenicol
+2194665735.fna	NZ_CP080249.1	2121003	2121890	+	blaZ_138	1-888/888	===============	0/0	100.00	99.89	resfinder	CP003979	blaZ	Amoxicillin;Ampicillin;Penicillin;Piperacillin

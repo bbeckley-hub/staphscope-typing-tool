@@ -1,9 +1,26 @@
-include LICENSE
 include README.md
+include LICENSE
 include requirements.txt
 include CITATION.cff
+include environment.yml
+include setup.py
+include meta.yaml
+include conda_build_config.yaml
 
-recursive-include staphscope/tools *
-recursive-include docs *
-recursive-include scripts *
-recursive-include tests *
+# Include EVERYTHING in staphscope directory
+recursive-include staphscope *
+
+# Only exclude things outside staphscope/ that are large
+exclude STAPHSCOPE_FINAL_RESULTS/*
+exclude MRSA_genomes/*
+exclude BROWN/*
+exclude *.fna
+exclude *.fasta
+exclude *_results
+
+# Keep these but exclude cache and temp files
+global-exclude __pycache__
+global-exclude *.pyc
+global-exclude *.pyo
+global-exclude *~
+global-exclude .DS_Store

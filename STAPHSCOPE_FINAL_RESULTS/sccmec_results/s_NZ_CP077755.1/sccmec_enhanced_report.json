@@ -1,0 +1,30 @@
+{
+  "sample": "NZ_CP077755.1.fna",
+  "mrsa_status": {
+    "classification": "CONFIRMED_MRSA",
+    "evidence": [
+      "mecA_detected"
+    ],
+    "confidence": "LOW"
+  },
+  "sccmec_typing": {
+    "primary_type": "NA",
+    "all_predicted_types": [],
+    "confidence": "LOW",
+    "typing_method": "gene_based"
+  },
+  "gene_detection": {
+    "mec_genes": [
+      {
+        "gene": "mecA",
+        "detected": true
+      }
+    ],
+    "ccr_genes": [],
+    "regulator_genes": []
+  },
+  "quality_metrics": {
+    "gene_completeness": "partial",
+    "contradictions": false
+  }
+}

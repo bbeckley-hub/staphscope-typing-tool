@@ -1,0 +1,805 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>StaphScope AMRfinderPlus Analysis Report</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .header { background: #2c3e50; color: white; padding: 20px; border-radius: 5px; }
+        .summary { background: #ecf0f1; padding: 15px; border-radius: 5px; margin: 10px 0; }
+        .gene-table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+        .gene-table th, .gene-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        .gene-table th { background-color: #34495e; color: white; }
+        .present { background-color: #d4edda; }
+        .mrsa { background-color: #fff3cd; font-weight: bold; }
+        .resistance-class { background-color: #e8f4fd; }
+        .stat-table { width: auto; border-collapse: collapse; margin: 10px 0; }
+        .stat-table th, .stat-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        .stat-table th { background-color: #34495e; color: white; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>StaphScope AMRfinderPlus Analysis Report</h1>
+        <p>Genome: 2267348900 | Generated on: 2025-10-28 17:40</p>
+    </div>
+    
+    <div class="summary">
+        <h2>Summary</h2>
+        <p><strong>Total AMR genes detected:</strong> 25</p>
+        <p><strong>Resistance classes:</strong> 5</p>
+        <p><strong>MRSA status:</strong> positive</p>
+    </div>
+
+    <div class="summary mrsa">
+        <h2>🔴 MRSA DETECTED</h2>
+        <p>mecA gene found in AMR results</p>
+    </div>
+
+    <h2>Resistance Classes Detected</h2>
+    <table class="stat-table">
+        <tr>
+            <th>Resistance Class</th>
+            <th>Genes Count</th>
+            <th>Genes</th>
+        </tr>
+
+        <tr class="resistance-class">
+            <td>BETA-LACTAM</td>
+            <td>2</td>
+            <td>mecA, mecR1</td>
+        </tr>
+
+        <tr class="resistance-class">
+            <td>TETRACYCLINE</td>
+            <td>2</td>
+            <td>tet(38), mepA</td>
+        </tr>
+
+        <tr class="resistance-class">
+            <td>NA</td>
+            <td>19</td>
+            <td>selX, sek, seq, lukF-PV, lukS-PV, sel26, splE, splB, splA, lukD, lukE, scn, sak, hld, hlgA, hlgC, hlgB, aur, icaC</td>
+        </tr>
+
+        <tr class="resistance-class">
+            <td>MACROLIDE/PHENICOL</td>
+            <td>1</td>
+            <td>lmrS</td>
+        </tr>
+
+        <tr class="resistance-class">
+            <td>FOSFOMYCIN</td>
+            <td>1</td>
+            <td>fosB</td>
+        </tr>
+</table>
+    <h2>Detailed AMR Genes Detected</h2>
+    <table class="gene-table">
+        <tr>
+            <th>Gene Symbol</th>
+            <th>Sequence Name</th>
+            <th>Class</th>
+            <th>Subclass</th>
+            <th>Coverage</th>
+            <th>Identity</th>
+            <th>Scope</th>
+        </tr>
+
+        <tr class="mrsa">
+            <td>mecA</td>
+            <td title="PBP2a family beta-lactam-resistant peptidoglycan transpeptidase MecA">PBP2a family beta-lactam-resistant peptidoglycan transpeptidase MecA</td>
+            <td>BETA-LACTAM</td>
+            <td>METHICILLIN</td>
+            <td>100.00%</td>
+            <td>100.00%</td>
+            <td>core</td>
+        </tr>
+
+        <tr class="present">
+            <td>mecR1</td>
+            <td title="beta-lactam sensor/signal transducer MecR1">beta-lactam sensor/signal transducer MecR1</td>
+            <td>BETA-LACTAM</td>
+            <td>METHICILLIN</td>
+            <td>55.56%</td>
+            <td>100.00%</td>
+            <td>core</td>
+        </tr>
+
+        <tr class="present">
+            <td>tet(38)</td>
+            <td title="tetracycline efflux MFS transporter Tet(38)">tetracycline efflux MFS transporter Tet(38)</td>
+            <td>TETRACYCLINE</td>
+            <td>TETRACYCLINE</td>
+            <td>100.00%</td>
+            <td>100.00%</td>
+            <td>core</td>
+        </tr>
+
+        <tr class="present">
+            <td>mepA</td>
+            <td title="multidrug efflux MATE transporter MepA">multidrug efflux MATE transporter MepA</td>
+            <td>TETRACYCLINE</td>
+            <td>TIGECYCLINE</td>
+            <td>100.00%</td>
+            <td>100.00%</td>
+            <td>plus</td>
+        </tr>
+
+        <tr class="present">
+            <td>selX</td>
+            <td title="staphylococcal enterotoxin-like toxin X">staphylococcal enterotoxin-like toxin X</td>
+            <td>NA</td>
+            <td>NA</td>
+            <td>100.00%</td>
+            <td>96.55%</td>
+            <td>plus</td>
+        </tr>
+
+        <tr class="present">
+            <td>sek</td>
+            <td title="staphylococcal enterotoxin type K">staphylococcal enterotoxin type K</td>
+            <td>NA</td>
+            <td>NA</td>
+            <td>100.00%</td>
+            <td>97.11%</td>
+            <td>plus</td>
+        </tr>
+
+        <tr class="present">
+            <td>seq</td>
+            <td title="staphylococcal enterotoxin type Q">staphylococcal enterotoxin type Q</td>
+            <td>NA</td>
+            <td>NA</td>
+            <td>100.00%</td>
+            <td>97.52%</td>
+            <td>plus</td>
+        </tr>
+
+        <tr class="present">
+            <td>lukF-PV</td>
+            <td title="Panton-Valentine bi-component leukocidin subunit F">Panton-Valentine bi-component leukocidin subunit F</td>
+            <td>NA</td>
+            <td>NA</td>
+            <td>100.00%</td>
+            <td>98.77%</td>
+            <td>plus</td>
+        </tr>
+
+        <tr class="present">
+            <td>lukS-PV</td>
+            <td title="Panton-Valentine bi-component leukocidin subunit S">Panton-Valentine bi-component leukocidin subunit S</td>
+            <td>NA</td>
+            <td>NA</td>
+            <td>100.00%</td>
+            <td>99.68%</td>
+            <td>plus</td>
+        </tr>
+
+        <tr class="present">
+            <td>sel26</td>
+            <td title="staphylococcal enterotoxin type 26">staphylococcal enterotoxin type 26</td>
+            <td>NA</td>
+            <td>NA</td>
+            <td>100.00%</td>
+            <td>96.80%</td>
+            <td>plus</td>
+        </tr>
+
+        <tr class="present">
+            <td>splE</td>
+            <td title="serine protease SplE">serine protease SplE</td>
+            <td>NA</td>
+            <td>NA</td>
+            <td>100.00%</td>
+            <td>100.00%</td>
+            <td>plus</td>
+        </tr>
+
+        <tr class="present">
+            <td>splB</td>
+            <td title="serine protease SplB">serine protease SplB</td>
+            <td>NA</td>
+            <td>NA</td>
+            <td>100.00%</td>
+            <td>100.00%</td>
+            <td>plus</td>
+        </tr>
+
+        <tr class="present">
+            <td>splA</td>
+            <td title="serine protease SplA">serine protease SplA</td>
+            <td>NA</td>
+            <td>NA</td>
+            <td>100.00%</td>
+            <td>100.00%</td>
+            <td>plus</td>
+        </tr>
+
+        <tr class="present">
+            <td>lukD</td>
+            <td title="bi-component leukocidin LukED subunit D">bi-component leukocidin LukED subunit D</td>
+            <td>NA</td>
+            <td>NA</td>
+            <td>100.00%</td>
+            <td>94.50%</td>
+            <td>plus</td>
+        </tr>
+
+        <tr class="present">
+            <td>lukE</td>
+            <td title="bi-component leukocidin LukED subunit E">bi-component leukocidin LukED subunit E</td>
+            <td>NA</td>
+            <td>NA</td>
+            <td>100.00%</td>
+            <td>99.68%</td>
+            <td>plus</td>
+        </tr>
+
+        <tr class="present">
+            <td>scn</td>
+            <td title="complement inhibitor SCIN-A">complement inhibitor SCIN-A</td>
+            <td>NA</td>
+            <td>NA</td>
+            <td>100.00%</td>
+            <td>100.00%</td>
+            <td>plus</td>
+        </tr>
+
+        <tr class="present">
+            <td>sak</td>
+            <td title="staphylokinase">staphylokinase</td>
+            <td>NA</td>
+            <td>NA</td>
+            <td>100.00%</td>
+            <td>98.77%</td>
+            <td>plus</td>
+        </tr>
+
+        <tr class="present">
+            <td>hld</td>
+            <td title="delta-hemolysin">delta-hemolysin</td>
+            <td>NA</td>
+            <td>NA</td>
+            <td>100.00%</td>
+            <td>100.00%</td>
+            <td>plus</td>
+        </tr>
+
+        <tr class="present">
+            <td>lmrS</td>
+            <td title="multidrug efflux MFS transporter LmrS">multidrug efflux MFS transporter LmrS</td>
+            <td>MACROLIDE/PHENICOL</td>
+            <td>CHLORAMPHENICOL/ERYTHROMYCIN</td>
+            <td>100.00%</td>
+            <td>99.79%</td>
+            <td>plus</td>
+        </tr>
+
+        <tr class="present">
+            <td>fosB</td>
+            <td title="FosB/FosD family fosfomycin resistance bacillithiol transferase">FosB/FosD family fosfomycin resistance bacillithiol transferase</td>
+            <td>FOSFOMYCIN</td>
+            <td>FOSFOMYCIN</td>
+            <td>100.00%</td>
+            <td>100.00%</td>
+            <td>core</td>
+        </tr>
+
+        <tr class="present">
+            <td>hlgA</td>
+            <td title="bi-component gamma-hemolysin HlgAB subunit A">bi-component gamma-hemolysin HlgAB subunit A</td>
+            <td>NA</td>
+            <td>NA</td>
+            <td>100.00%</td>
+            <td>100.00%</td>
+            <td>plus</td>
+        </tr>
+
+        <tr class="present">
+            <td>hlgC</td>
+            <td title="bi-component gamma-hemolysin HlgCB subunit C">bi-component gamma-hemolysin HlgCB subunit C</td>
+            <td>NA</td>
+            <td>NA</td>
+            <td>100.00%</td>
+            <td>97.14%</td>
+            <td>plus</td>
+        </tr>
+
+        <tr class="present">
+            <td>hlgB</td>
+            <td title="bi-component gamma-hemolysin HlgAB/HlgCB subunit B">bi-component gamma-hemolysin HlgAB/HlgCB subunit B</td>
+            <td>NA</td>
+            <td>NA</td>
+            <td>100.00%</td>
+            <td>97.54%</td>
+            <td>plus</td>
+        </tr>
+
+        <tr class="present">
+            <td>aur</td>
+            <td title="zinc metalloproteinase aureolysin">zinc metalloproteinase aureolysin</td>
+            <td>NA</td>
+            <td>NA</td>
+            <td>100.00%</td>
+            <td>99.21%</td>
+            <td>plus</td>
+        </tr>
+
+        <tr class="present">
+            <td>icaC</td>
+            <td title="polysaccharide intercellular adhesin biosynthesis/export protein IcaC">polysaccharide intercellular adhesin biosynthesis/export protein IcaC</td>
+            <td>NA</td>
+            <td>NA</td>
+            <td>100.00%</td>
+            <td>100.00%</td>
+            <td>plus</td>
+        </tr>
+</table>
+    <h2>
+        <button onclick="toggleFullTable()" style="background: #34495e; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer;">
+            📊 Show Full AMR Data Table
+        </button>
+    </h2>
+    <div id="fullTable" style="display: none;">
+        <table class="gene-table">
+            <tr>
+                <th>Protein ID</th>
+                <th>Contig</th>
+                <th>Start</th>
+                <th>Stop</th>
+                <th>Strand</th>
+                <th>Gene Symbol</th>
+                <th>Sequence Name</th>
+                <th>Scope</th>
+                <th>Element Type</th>
+                <th>Class</th>
+                <th>Subclass</th>
+                <th>Coverage</th>
+                <th>Identity</th>
+                <th>Accession</th>
+            </tr>
+
+            <tr class="present">
+                <td>NA</td>
+                <td>NZ_CP099576.1</td>
+                <td>38587</td>
+                <td>40590</td>
+                <td>-</td>
+                <td>mecA</td>
+                <td title="PBP2a family beta-lactam-resistant peptidoglycan transpeptidase MecA">PBP2a family beta-lactam-resistant peptidoglycan transpeptid...</td>
+                <td>core</td>
+                <td>AMR</td>
+                <td>BETA-LACTAM</td>
+                <td>METHICILLIN</td>
+                <td>100.00%</td>
+                <td>100.00%</td>
+                <td>WP_000721310.1</td>
+            </tr>
+
+            <tr class="present">
+                <td>NA</td>
+                <td>NZ_CP099576.1</td>
+                <td>40690</td>
+                <td>41664</td>
+                <td>+</td>
+                <td>mecR1</td>
+                <td title="beta-lactam sensor/signal transducer MecR1">beta-lactam sensor/signal transducer MecR1</td>
+                <td>core</td>
+                <td>AMR</td>
+                <td>BETA-LACTAM</td>
+                <td>METHICILLIN</td>
+                <td>55.56%</td>
+                <td>100.00%</td>
+                <td>WP_000952923.1</td>
+            </tr>
+
+            <tr class="present">
+                <td>NA</td>
+                <td>NZ_CP099576.1</td>
+                <td>158012</td>
+                <td>159361</td>
+                <td>+</td>
+                <td>tet(38)</td>
+                <td title="tetracycline efflux MFS transporter Tet(38)">tetracycline efflux MFS transporter Tet(38)</td>
+                <td>core</td>
+                <td>AMR</td>
+                <td>TETRACYCLINE</td>
+                <td>TETRACYCLINE</td>
+                <td>100.00%</td>
+                <td>100.00%</td>
+                <td>WP_001100300.1</td>
+            </tr>
+
+            <tr class="present">
+                <td>NA</td>
+                <td>NZ_CP099576.1</td>
+                <td>387674</td>
+                <td>389026</td>
+                <td>+</td>
+                <td>mepA</td>
+                <td title="multidrug efflux MATE transporter MepA">multidrug efflux MATE transporter MepA</td>
+                <td>plus</td>
+                <td>AMR</td>
+                <td>TETRACYCLINE</td>
+                <td>TIGECYCLINE</td>
+                <td>100.00%</td>
+                <td>100.00%</td>
+                <td>AAU95768.1</td>
+            </tr>
+
+            <tr class="present">
+                <td>NA</td>
+                <td>NZ_CP099576.1</td>
+                <td>422258</td>
+                <td>422866</td>
+                <td>+</td>
+                <td>selX</td>
+                <td title="staphylococcal enterotoxin-like toxin X">staphylococcal enterotoxin-like toxin X</td>
+                <td>plus</td>
+                <td>VIRULENCE</td>
+                <td>NA</td>
+                <td>NA</td>
+                <td>100.00%</td>
+                <td>96.55%</td>
+                <td>AEI60187.1</td>
+            </tr>
+
+            <tr class="present">
+                <td>NA</td>
+                <td>NZ_CP099576.1</td>
+                <td>902321</td>
+                <td>903046</td>
+                <td>-</td>
+                <td>sek</td>
+                <td title="staphylococcal enterotoxin type K">staphylococcal enterotoxin type K</td>
+                <td>plus</td>
+                <td>VIRULENCE</td>
+                <td>NA</td>
+                <td>NA</td>
+                <td>100.00%</td>
+                <td>97.11%</td>
+                <td>AAW36439.1</td>
+            </tr>
+
+            <tr class="present">
+                <td>NA</td>
+                <td>NZ_CP099576.1</td>
+                <td>903073</td>
+                <td>903798</td>
+                <td>-</td>
+                <td>seq</td>
+                <td title="staphylococcal enterotoxin type Q">staphylococcal enterotoxin type Q</td>
+                <td>plus</td>
+                <td>VIRULENCE</td>
+                <td>NA</td>
+                <td>NA</td>
+                <td>100.00%</td>
+                <td>97.52%</td>
+                <td>EYN56163.1</td>
+            </tr>
+
+            <tr class="present">
+                <td>NA</td>
+                <td>NZ_CP099576.1</td>
+                <td>1565187</td>
+                <td>1566161</td>
+                <td>-</td>
+                <td>lukF-PV</td>
+                <td title="Panton-Valentine bi-component leukocidin subunit F">Panton-Valentine bi-component leukocidin subunit F</td>
+                <td>plus</td>
+                <td>VIRULENCE</td>
+                <td>NA</td>
+                <td>NA</td>
+                <td>100.00%</td>
+                <td>98.77%</td>
+                <td>BAA24008.1</td>
+            </tr>
+
+            <tr class="present">
+                <td>NA</td>
+                <td>NZ_CP099576.1</td>
+                <td>1566166</td>
+                <td>1567101</td>
+                <td>-</td>
+                <td>lukS-PV</td>
+                <td title="Panton-Valentine bi-component leukocidin subunit S">Panton-Valentine bi-component leukocidin subunit S</td>
+                <td>plus</td>
+                <td>VIRULENCE</td>
+                <td>NA</td>
+                <td>NA</td>
+                <td>100.00%</td>
+                <td>99.68%</td>
+                <td>AGW33874.1</td>
+            </tr>
+
+            <tr class="present">
+                <td>NA</td>
+                <td>NZ_CP099576.1</td>
+                <td>1713826</td>
+                <td>1714575</td>
+                <td>-</td>
+                <td>sel26</td>
+                <td title="staphylococcal enterotoxin type 26">staphylococcal enterotoxin type 26</td>
+                <td>plus</td>
+                <td>VIRULENCE</td>
+                <td>NA</td>
+                <td>NA</td>
+                <td>100.00%</td>
+                <td>96.80%</td>
+                <td>KAG18833.1</td>
+            </tr>
+
+            <tr class="present">
+                <td>NA</td>
+                <td>NZ_CP099576.1</td>
+                <td>1945444</td>
+                <td>1946157</td>
+                <td>-</td>
+                <td>splE</td>
+                <td title="serine protease SplE">serine protease SplE</td>
+                <td>plus</td>
+                <td>VIRULENCE</td>
+                <td>NA</td>
+                <td>NA</td>
+                <td>100.00%</td>
+                <td>100.00%</td>
+                <td>ABD30999.1</td>
+            </tr>
+
+            <tr class="present">
+                <td>NA</td>
+                <td>NZ_CP099576.1</td>
+                <td>1947935</td>
+                <td>1948654</td>
+                <td>-</td>
+                <td>splB</td>
+                <td title="serine protease SplB">serine protease SplB</td>
+                <td>plus</td>
+                <td>VIRULENCE</td>
+                <td>NA</td>
+                <td>NA</td>
+                <td>100.00%</td>
+                <td>100.00%</td>
+                <td>ABD31003.1</td>
+            </tr>
+
+            <tr class="present">
+                <td>NA</td>
+                <td>NZ_CP099576.1</td>
+                <td>1948782</td>
+                <td>1949486</td>
+                <td>-</td>
+                <td>splA</td>
+                <td title="serine protease SplA">serine protease SplA</td>
+                <td>plus</td>
+                <td>VIRULENCE</td>
+                <td>NA</td>
+                <td>NA</td>
+                <td>100.00%</td>
+                <td>100.00%</td>
+                <td>ABD31004.1</td>
+            </tr>
+
+            <tr class="present">
+                <td>NA</td>
+                <td>NZ_CP099576.1</td>
+                <td>1961138</td>
+                <td>1962118</td>
+                <td>-</td>
+                <td>lukD</td>
+                <td title="bi-component leukocidin LukED subunit D">bi-component leukocidin LukED subunit D</td>
+                <td>plus</td>
+                <td>VIRULENCE</td>
+                <td>NA</td>
+                <td>NA</td>
+                <td>100.00%</td>
+                <td>94.50%</td>
+                <td>CAA73668.1</td>
+            </tr>
+
+            <tr class="present">
+                <td>NA</td>
+                <td>NZ_CP099576.1</td>
+                <td>1962123</td>
+                <td>1963055</td>
+                <td>-</td>
+                <td>lukE</td>
+                <td title="bi-component leukocidin LukED subunit E">bi-component leukocidin LukED subunit E</td>
+                <td>plus</td>
+                <td>VIRULENCE</td>
+                <td>NA</td>
+                <td>NA</td>
+                <td>100.00%</td>
+                <td>99.68%</td>
+                <td>RCV70079.1</td>
+            </tr>
+
+            <tr class="present">
+                <td>NA</td>
+                <td>NZ_CP099576.1</td>
+                <td>2091569</td>
+                <td>2091916</td>
+                <td>-</td>
+                <td>scn</td>
+                <td title="complement inhibitor SCIN-A">complement inhibitor SCIN-A</td>
+                <td>plus</td>
+                <td>VIRULENCE</td>
+                <td>NA</td>
+                <td>NA</td>
+                <td>100.00%</td>
+                <td>100.00%</td>
+                <td>ADL23798.1</td>
+            </tr>
+
+            <tr class="present">
+                <td>NA</td>
+                <td>NZ_CP099576.1</td>
+                <td>2094133</td>
+                <td>2094621</td>
+                <td>-</td>
+                <td>sak</td>
+                <td title="staphylokinase">staphylokinase</td>
+                <td>plus</td>
+                <td>VIRULENCE</td>
+                <td>NA</td>
+                <td>NA</td>
+                <td>100.00%</td>
+                <td>98.77%</td>
+                <td>CAA24957.1</td>
+            </tr>
+
+            <tr class="present">
+                <td>NA</td>
+                <td>NZ_CP099576.1</td>
+                <td>2152279</td>
+                <td>2152356</td>
+                <td>-</td>
+                <td>hld</td>
+                <td title="delta-hemolysin">delta-hemolysin</td>
+                <td>plus</td>
+                <td>VIRULENCE</td>
+                <td>NA</td>
+                <td>NA</td>
+                <td>100.00%</td>
+                <td>100.00%</td>
+                <td>AGU62139.1</td>
+            </tr>
+
+            <tr class="present">
+                <td>NA</td>
+                <td>NZ_CP099576.1</td>
+                <td>2304461</td>
+                <td>2305900</td>
+                <td>-</td>
+                <td>lmrS</td>
+                <td title="multidrug efflux MFS transporter LmrS">multidrug efflux MFS transporter LmrS</td>
+                <td>plus</td>
+                <td>STRESS</td>
+                <td>MACROLIDE/PHENICOL</td>
+                <td>CHLORAMPHENICOL/ERYTHROMYCIN</td>
+                <td>100.00%</td>
+                <td>99.79%</td>
+                <td>AAW38464.1</td>
+            </tr>
+
+            <tr class="present">
+                <td>NA</td>
+                <td>NZ_CP099576.1</td>
+                <td>2457648</td>
+                <td>2458064</td>
+                <td>+</td>
+                <td>fosB</td>
+                <td title="FosB/FosD family fosfomycin resistance bacillithiol transferase">FosB/FosD family fosfomycin resistance bacillithiol transfer...</td>
+                <td>core</td>
+                <td>AMR</td>
+                <td>FOSFOMYCIN</td>
+                <td>FOSFOMYCIN</td>
+                <td>100.00%</td>
+                <td>100.00%</td>
+                <td>WP_000920239.1</td>
+            </tr>
+
+            <tr class="present">
+                <td>NA</td>
+                <td>NZ_CP099576.1</td>
+                <td>2547312</td>
+                <td>2548238</td>
+                <td>+</td>
+                <td>hlgA</td>
+                <td title="bi-component gamma-hemolysin HlgAB subunit A">bi-component gamma-hemolysin HlgAB subunit A</td>
+                <td>plus</td>
+                <td>VIRULENCE</td>
+                <td>NA</td>
+                <td>NA</td>
+                <td>100.00%</td>
+                <td>100.00%</td>
+                <td>AUU54669.1</td>
+            </tr>
+
+            <tr class="present">
+                <td>NA</td>
+                <td>NZ_CP099576.1</td>
+                <td>2548808</td>
+                <td>2549752</td>
+                <td>+</td>
+                <td>hlgC</td>
+                <td title="bi-component gamma-hemolysin HlgCB subunit C">bi-component gamma-hemolysin HlgCB subunit C</td>
+                <td>plus</td>
+                <td>VIRULENCE</td>
+                <td>NA</td>
+                <td>NA</td>
+                <td>100.00%</td>
+                <td>97.14%</td>
+                <td>CAA57277.1</td>
+            </tr>
+
+            <tr class="present">
+                <td>NA</td>
+                <td>NZ_CP099576.1</td>
+                <td>2549757</td>
+                <td>2550731</td>
+                <td>+</td>
+                <td>hlgB</td>
+                <td title="bi-component gamma-hemolysin HlgAB/HlgCB subunit B">bi-component gamma-hemolysin HlgAB/HlgCB subunit B</td>
+                <td>plus</td>
+                <td>VIRULENCE</td>
+                <td>NA</td>
+                <td>NA</td>
+                <td>100.00%</td>
+                <td>97.54%</td>
+                <td>CAA57278.1</td>
+            </tr>
+
+            <tr class="present">
+                <td>NA</td>
+                <td>NZ_CP099576.1</td>
+                <td>2789298</td>
+                <td>2790824</td>
+                <td>-</td>
+                <td>aur</td>
+                <td title="zinc metalloproteinase aureolysin">zinc metalloproteinase aureolysin</td>
+                <td>plus</td>
+                <td>VIRULENCE</td>
+                <td>NA</td>
+                <td>NA</td>
+                <td>100.00%</td>
+                <td>99.21%</td>
+                <td>EHO93748.1</td>
+            </tr>
+
+            <tr class="present">
+                <td>NA</td>
+                <td>NZ_CP099576.1</td>
+                <td>2834157</td>
+                <td>2835206</td>
+                <td>+</td>
+                <td>icaC</td>
+                <td title="polysaccharide intercellular adhesin biosynthesis/export protein IcaC">polysaccharide intercellular adhesin biosynthesis/export pro...</td>
+                <td>plus</td>
+                <td>VIRULENCE</td>
+                <td>NA</td>
+                <td>NA</td>
+                <td>100.00%</td>
+                <td>100.00%</td>
+                <td>AUU58561.1</td>
+            </tr>
+
+        </table>
+    </div>
+
+    <script>
+        function toggleFullTable() {
+            var fullTable = document.getElementById("fullTable");
+            var button = document.querySelector("button");
+            if (fullTable.style.display === "none") {
+                fullTable.style.display = "block";
+                button.innerHTML = "📊 Hide Full AMR Data Table";
+            } else {
+                fullTable.style.display = "none";
+                button.innerHTML = "📊 Show Full AMR Data Table";
+            }
+        }
+    </script>
+</body>
+</html>

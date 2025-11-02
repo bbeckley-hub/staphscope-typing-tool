@@ -1,0 +1,17 @@
+#Template	Score	Expected	z	p_value	query coverage [%]	template coverage [%]	depth	Kmers in Template	Description
+SCCmec_type_IV(2B)|SCCmec_type_IVj(2B)|gb|AB425824.1	   44731	   15871	  277.80	3.7e-25	    0.79	   96.75	    1.00	   46234	
+SCCmec_type_IV(2B)|SCCmec_type_IVh(2B)|gb|CP007659.1	   43930	   15170	  283.30	3.7e-25	    0.78	   99.40	    1.03	   44194	
+SCCmec_type_IV(2B)|SCCmec_type_IVd(2B)|gb|NZ_JYBA01000013.1	   35091	   17947	  155.50	3.7e-25	    0.62	   67.12	    0.70	   52283	
+SCCmec_type_IV(2B)|SCCmec_type_IVc(2B)|gb|AB096217.1	   33803	   20416	  113.80	3.7e-25	    0.60	   56.84	    0.60	   59474	
+SCCmec_type_IV(2B)|SCCmec_type_IVc(2B)|gb|AY271717.1	   33793	   16456	  164.30	3.7e-25	    0.60	   70.49	    0.74	   47939	
+SCCmec_type_IV(2B)|SCCmec_type_IVg(2B)|gb|DQ106887.1	   32677	   15770	  163.80	3.7e-25	    0.58	   71.13	    0.74	   45942	
+SCCmec_type_IV(2B)|SCCmec_type_IVi(2B)|gb|AB425823.1	   31983	   15708	  158.00	3.7e-25	    0.56	   69.89	    0.73	   45760	
+SCCmec_type_IV(2B)|SCCmec_type_IVa(2B)|gb|AB063172.2	   31600	   17508	  129.50	3.7e-25	    0.56	   61.96	    0.64	   51003	
+SCCmec_type_IV(2B)|SCCmec_type_IVa(2B)|gb|BA000033.2	   31243	   16342	  141.80	3.7e-25	    0.55	   65.63	    0.68	   47607	
+SCCmec_type_IV(2B&5)|gb|AM292304.1	   30754	   22740	   64.50	3.7e-25	    0.54	   46.42	    0.47	   66245	
+SCCmec_type_IV(2B)|SCCmec_type_IVb(2B)|gb|AB063173.1	   30746	   14811	  159.40	3.7e-25	    0.54	   71.26	    0.74	   43148	
+SCCmec_type_IV(2B)|SCCmec_type_IVc(2B)|gb|EU437549.2	   29658	   19911	   84.00	3.7e-25	    0.52	   51.13	    0.52	   58005	
+SCCmec_type_IV(2B)|SCCmec_type_IVc(2B)|gb|AJ810121.1	   29253	   16066	  126.70	3.7e-25	    0.52	   62.50	    0.65	   46802	
+SCCmec_type_I(1B)|gb|CP000046.1	   24375	   17720	   60.90	3.7e-25	    0.43	   47.22	    0.48	   51622	
+SCCmec_type_VI(4B)|gb|AF411935.3	   23513	   15853	   74.20	3.7e-25	    0.41	   50.91	    0.54	   46183	
+SCCmec_type_IV(2B)|SCCmec_type_IVd(2B)|gb|AB097677.1	   13107	    9753	   41.60	3.7e-25	    0.23	   46.13	    0.47	   28413	

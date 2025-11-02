@@ -1,0 +1,34 @@
+spa Typing Analysis Report
+=======================
+
+Sample: 2236627887.fna
+Analysis Date: 2025-10-31 21:20:12
+
+SUMMARY:
+--------
+Total spa types detected: 1
+Unique spa types: 1
+Most common type: t032
+
+PRIMARY RESULT:
+-------------
+spa Type: t032
+Repeat Structure: 26-23-23-13-23-31-29-17-31-29-17-25-17-25-16-28
+Number of Repeats: 16
+Contig: NZ_CP092475.1
+
+ALL SPA TYPES DETECTED:
+-----------------------
+Type: t032
+  Repeat Structure: 26-23-23-13-23-31-29-17-31-29-17-25-17-25-16-28
+  Repeat Count: 16
+  Frequency: 1
+
+DETAILED RESULTS:
+-----------------
+Sequence: NZ_CP092475.1 Staphylococcus aureus strain P5 chromosome, complete genome
+  spa Type: t032
+  Repeats: 26-23-23-13-23-31-29-17-31-29-17-25-17-25-16-28
+  Repeat Count: 16
+  Contig: NZ_CP092475.1
+

@@ -1,0 +1,7 @@
+The input organism was predicted as a MRSA isolate
+The mecA gene was detected
+
+Prediction based on genes: SCCmec_type_II(2A)
+
+Additional genes found:
+dmecR1

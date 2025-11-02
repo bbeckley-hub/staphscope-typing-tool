@@ -1,0 +1,55 @@
+{
+  "sample": "3004670934.fna",
+  "mrsa_status": {
+    "classification": "CONFIRMED_MRSA",
+    "evidence": [
+      "mecA_detected",
+      "mecR1_detected",
+      "sccmec_II_present"
+    ],
+    "confidence": "VERY_HIGH"
+  },
+  "sccmec_typing": {
+    "primary_type": "SCCmec_type_II(2A)",
+    "all_predicted_types": [
+      "SCCmec_type_II(2A)"
+    ],
+    "confidence": "HIGH",
+    "typing_method": "gene_based"
+  },
+  "gene_detection": {
+    "mec_genes": [
+      {
+        "gene": "dmecR1",
+        "detected": true
+      },
+      {
+        "gene": "mecA",
+        "detected": true
+      },
+      {
+        "gene": "mecI",
+        "detected": true
+      },
+      {
+        "gene": "mecR1",
+        "detected": true
+      }
+    ],
+    "ccr_genes": [
+      {
+        "gene": "ccrA2",
+        "detected": true
+      },
+      {
+        "gene": "ccrB2",
+        "detected": true
+      }
+    ],
+    "regulator_genes": []
+  },
+  "quality_metrics": {
+    "gene_completeness": "complete",
+    "contradictions": false
+  }
+}

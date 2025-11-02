@@ -1,0 +1,2 @@
+Sequence name	Repeats	Type
+NZ_CP099576.1 Staphylococcus aureus strain MRSA1369 chromosome, complete genome	11-19-12-21-17-34-24-34-22-25	t008

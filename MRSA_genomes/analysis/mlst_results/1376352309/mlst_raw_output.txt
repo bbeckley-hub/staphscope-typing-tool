@@ -1,0 +1,19 @@
+STDOUT:
+1376352309.fna,saureus,5,arcC(1),aroE(4),glpF(1),gmk(4),pta(12),tpi(1),yqiL(10)
+
+STDERR:
+[21:18:55] This is mlst 2.23.0 running on linux with Perl 5.032001
+[21:18:55] Checking mlst dependencies:
+[21:18:55] Found 'blastn' => /home/brown-beckley/anaconda3/envs/klebcrispr/bin/blastn
+[21:18:55] Found 'any2fasta' => /home/brown-beckley/anaconda3/envs/klebcrispr/bin/any2fasta
+[21:18:55] Found blastn: 2.16.0+ (002016)
+[21:18:55] Setting --minscore=0 because user chose --scheme
+[21:18:57] Found exact allele match saureus.yqiL-10
+[21:18:57] Found exact allele match saureus.pta-12
+[21:18:57] Found exact allele match saureus.glpF-1
+[21:18:57] Found exact allele match saureus.aroE-4
+[21:18:57] Found exact allele match saureus.arcC-1
+[21:18:57] Found exact allele match saureus.gmk-4
+[21:18:57] Found exact allele match saureus.tpi-1
+[21:18:57] You can use --label XXX to replace an ugly filename in the output.
+[21:18:57] Done.

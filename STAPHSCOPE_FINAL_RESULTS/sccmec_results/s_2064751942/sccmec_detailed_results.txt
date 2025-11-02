@@ -1,0 +1,4 @@
+The input organism was predicted as a MSSA isolate
+The mecA/mecC gene was not detected
+
+No SCCmec element was detected

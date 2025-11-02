@@ -1,0 +1,19 @@
+#Template	Score	Expected	z	p_value	query coverage [%]	template coverage [%]	depth	Kmers in Template	Description
+SCCmec_type_II(2A)|gb|CP000736	   45662	   42665	   17.70	3.7e-25	    0.78	   38.87	    0.44	  117483	
+SCCmec_type_IV(2B)|SCCmec_type_IVa(2B)|gb|AB063172.2	   45421	   18522	  243.60	3.7e-25	    0.78	   89.06	    0.96	   51003	
+SCCmec_type_IV(2B)|SCCmec_type_IVa(2B)|gb|BA000033.2	   44685	   17289	  256.90	3.7e-25	    0.77	   93.86	    1.01	   47607	
+SCCmec_type_IV(2B)|SCCmec_type_IVc(2B)|gb|AY271717.1	   36809	   17409	  181.60	3.7e-25	    0.63	   76.78	    0.84	   47939	
+SCCmec_type_IV(2B)|SCCmec_type_IVi(2B)|gb|AB425823.1	   35583	   16618	  181.80	3.7e-25	    0.61	   77.76	    0.85	   45760	
+SCCmec_type_I(1B)|gb|AB033763.2	   33550	   26919	   49.80	3.7e-25	    0.58	   45.26	    0.48	   74126	
+SCCmec_type_IV(2B)|SCCmec_type_IVj(2B)|gb|AB425824.1	   32928	   16790	  154.00	3.7e-25	    0.57	   71.22	    0.78	   46234	
+SCCmec_type_IV(2B)|SCCmec_type_IVd(2B)|gb|NZ_JYBA01000013.1	   32252	   18987	  118.90	3.7e-25	    0.55	   61.69	    0.68	   52283	
+SCCmec_type_IV(2B)|SCCmec_type_IVg(2B)|gb|DQ106887.1	   32136	   16684	  147.90	3.7e-25	    0.55	   69.95	    0.79	   45942	
+SCCmec_type_IV(2B)|SCCmec_type_IVc(2B)|gb|AB096217.1	   31259	   21598	   81.20	3.7e-25	    0.54	   52.56	    0.56	   59474	
+SCCmec_type_IV(2B)|SCCmec_type_IVh(2B)|gb|CP007659.1	   31221	   16049	  148.20	3.7e-25	    0.54	   70.65	    0.78	   44194	
+SCCmec_type_IV(2B)|SCCmec_type_IVb(2B)|gb|AB063173.1	   30765	   15669	  149.20	3.7e-25	    0.53	   71.30	    0.79	   43148	
+SCCmec_type_IV(2B&5)|gb|AM292304.1	   30355	   24057	   50.10	3.7e-25	    0.52	   45.82	    0.49	   66245	
+SCCmec_type_IV(2B)|SCCmec_type_IVc(2B)|gb|EU437549.2	   30282	   21065	   78.40	3.7e-25	    0.52	   52.21	    0.57	   58005	
+SCCmec_type_IV(2B)|SCCmec_type_IVc(2B)|gb|AJ810121.1	   28662	   16996	  110.70	3.7e-25	    0.49	   61.24	    0.68	   46802	
+SCCmec_type_I(1B)|gb|CP000046.1	   24361	   18747	   50.80	3.7e-25	    0.42	   47.19	    0.51	   51622	
+SCCmec_type_VI(4B)|gb|AF411935.3	   23377	   16772	   63.20	3.7e-25	    0.40	   50.62	    0.57	   46183	
+SCCmec_type_IV(2B)|SCCmec_type_IVd(2B)|gb|AB097677.1	   11816	   10318	   18.40	3.7e-25	    0.20	   41.59	    0.45	   28413	

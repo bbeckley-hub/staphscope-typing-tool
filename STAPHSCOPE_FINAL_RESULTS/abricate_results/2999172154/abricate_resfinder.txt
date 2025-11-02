@@ -1,0 +1,13 @@
+#FILE	SEQUENCE	START	END	STRAND	GENE	COVERAGE	COVERAGE_MAP	GAPS	%COVERAGE	%IDENTITY	DATABASE	ACCESSION	PRODUCT	RESISTANCE
+2999172154.fna	NZ_CP049976.1	3303	4787	+	lsa(E)_1	1-1485/1485	===============	0/0	100.00	100.00	resfinder	JX560992	lsa(E)	Lincomycin;Clindamycin;Dalfopristin;Pristinamycin_IIA;Virginiamycin_M;Tiamulin
+2999172154.fna	NZ_CP049976.1	4841	5644	+	lnu(B)_2	1-804/804	===============	0/0	100.00	100.00	resfinder	JQ861959	lnu(B)	Lincomycin;Clindamycin
+2999172154.fna	NZ_CP049976.1	9030	9800	-	aadD_1	1-771/771	===============	0/0	100.00	99.74	resfinder	AF181950	aadD	Amikacin;Tobramycin
+2999172154.fna	NZ_CP049976.1	35246	36133	+	blaZ_78	1-888/888	===============	0/0	100.00	99.66	resfinder	KU607301	blaZ	Amoxicillin;Ampicillin;Penicillin;Piperacillin
+2999172154.fna	NZ_CP049976.1	38875	39372	-	dfrG_1	1-498/498	===============	0/0	100.00	100.00	resfinder	AB205645	dfrG	Trimethoprim
+2999172154.fna	NZ_CP049976.1	643762	645681	-	tet(M)_13	1-1920/1920	===============	0/0	100.00	100.00	resfinder	AM990992	tet(M)	Doxycycline;Tetracycline;Minocycline
+2999172154.fna	NZ_CP049976.1	1451176	1452603	+	fexA_1	1-1428/1428	===============	0/0	100.00	99.93	resfinder	AJ549214	fexA	Chloramphenicol;Florfenicol
+2999172154.fna	NZ_CP049976.1	2557504	2559510	-	mecA_8	1-2007/2007	===============	0/0	100.00	100.00	resfinder	NC_007168	mecA	Amoxicillin;Amoxicillin+Clavulanic_acid;Ampicillin;Ampicillin+Clavulanic_acid;Cefepime;Cefixime;Cefotaxime;Cefoxitin;Ceftazidime;Ertapenem;Imipenem;Meropenem;Piperacillin;Piperacillin+Tazobactam
+2999172154.fna	NZ_CP049976.1	2877720	2879159	-	aac(6')-aph(2'')_1	1-1440/1440	===============	0/0	100.00	100.00	resfinder	M13771	aac(6')-aph(2'')	Amikacin;Gentamicin;Tobramycin
+2999172154.fna	NZ_CP049976.1	2885827	2887203	+	tet(L)_2	1-1377/1377	===============	0/0	100.00	99.86	resfinder	M29725	tet(L)	Doxycycline;Tetracycline
+2999172154.fna	NZ_CP049976.1	2887847	2888581	-	erm(T)_2	1-735/735	===============	0/0	100.00	100.00	resfinder	AY894138	erm(T)	Erythromycin;Lincomycin;Clindamycin;Quinupristin;Pristinamycin_IA;Virginiamycin_S
+2999172154.fna	NZ_CP049976.1	2894849	2895712	+	ant(6)-Ia_2	1-864/864	===============	0/0	100.00	100.00	resfinder	KF421157	ant(6)-Ia	Streptomycin

@@ -1,0 +1,34 @@
+spa Typing Analysis Report
+=======================
+
+Sample: 2212168474.fna
+Analysis Date: 2025-10-31 21:20:04
+
+SUMMARY:
+--------
+Total spa types detected: 1
+Unique spa types: 1
+Most common type: t002
+
+PRIMARY RESULT:
+-------------
+spa Type: t002
+Repeat Structure: 26-23-17-34-17-20-17-12-17-16
+Number of Repeats: 10
+Contig: NZ_CP092563.1
+
+ALL SPA TYPES DETECTED:
+-----------------------
+Type: t002
+  Repeat Structure: 26-23-17-34-17-20-17-12-17-16
+  Repeat Count: 10
+  Frequency: 1
+
+DETAILED RESULTS:
+-----------------
+Sequence: NZ_CP092563.1 Staphylococcus aureus strain MRSA-WC090 chromosome, complete genome
+  spa Type: t002
+  Repeats: 26-23-17-34-17-20-17-12-17-16
+  Repeat Count: 10
+  Contig: NZ_CP092563.1
+
