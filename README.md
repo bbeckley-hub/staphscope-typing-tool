@@ -1,18 +1,18 @@
-StaphScope: Advanced Staphylococcus aureus Typing & Lineage Analysis Platform
+**StaphScope: Advanced Staphylococcus aureus Typing & Lineage Analysis Platform**
 
 
 
 StaphScope is a comprehensive bioinformatics pipeline specifically designed for Methicillin-Resistant Staphylococcus aureus (MRSA) genomic analysis. This all-in-one tool provides complete characterization of S. aureus isolates through multiple typing methods, antimicrobial resistance profiling, virulence factor detection, and lineage analysis.
 🎯 Purpose
 
-    MRSA Surveillance: Track and characterize MRSA strains in clinical and research settings
+   ** MRSA Surveillance: Track and characterize MRSA strains in clinical and research settings
 
-    Outbreak Investigation: Identify related strains and transmission patterns
-
+   ** Outbreak Investigation: Identify related strains and transmission patterns
+**
     Research Analysis: Comprehensive genomic profiling for academic studies
-
-    Public Health: Support antimicrobial resistance monitoring programs
-
+**
+    Public Health: Support antimicrobial resistance monitoring programs**
+**
 ✨ Features
 🔬 Core Analysis Modules
 Module	Description	Key Outputs
@@ -23,16 +23,17 @@ AMR Profiling	Antimicrobial Resistance genes	Resistance genes, drug classes, mec
 ABRicate	Comprehensive resistance & virulence	Plasmid markers, virulence factors, resistance databases
 Lineage Analysis	Strain lineage reference	HTML report with strain classification
 🛡️ MRSA-Specific Capabilities
-
+**
     SCCmec Typing: Accurate identification of SCCmec types I-XIII
 
-    mecA/mecC Detection: Methicillin resistance determinant detection
-
+   ** mecA/mecC Detection: Methicillin resistance determinant detection
+**
     PVL Toxin Screening: Panton-Valentine Leukocidin gene detection
 
-    AMR Profile: Comprehensive antimicrobial resistance pattern
-
-    Epidemic Clones: Identification of major MRSA clonal complexes (CC5, CC8, CC22, CC30, CC45)
+   ** AMR Profile: Comprehensive antimicrobial resistance pattern**
+**
+    Epidemic Clones: Identification of major MRSA clonal complexes (CC5, CC8, CC22, CC30, CC45)******
+**
 
 🚀 Quick Start
 Installation
@@ -43,9 +44,13 @@ conda install -c bbeckley-hub -c bioconda -c conda-forge staphscope
 Option 2: From Source
 
 git clone https://github.com/bbeckley-hub/staphscope-typing-tool.git
+
 cd staphscope-typing-tool
+
 conda env create -f environment.yml
+
 conda activate staphscope
+
 pip install -e .
 
 Basic Usage
@@ -59,8 +64,8 @@ staphscope -i "*.fna" -o batch_results --threads 8
 # Custom analysis (skip specific modules)
 staphscope -i "MRSA_*.fasta" -o analysis --threads 16 --skip-lineage
 
-📋 Complete Usage
-Command Line Options
+**📋 Complete Usage
+Command Line Options**
 bash
 
 usage: staphscope [-h] -i INPUT -o OUTPUT [-t THREADS] [--skip-amr] [--skip-abricate] [--skip-mlst]
@@ -85,13 +90,13 @@ optional arguments:
 
 Supported Input Formats
 
-    .fna, .fasta, .fa, .fn (standard FASTA formats)
-
+   ** .fna, .fasta, .fa, .fn (standard FASTA formats)
+**
     Single files or batch processing with glob patterns
 
-    Assembled genomes or contigs
+   ** **Assembled genomes or contigs**
 
-🔧 Analysis Modules Details
+**🔧 Analysis Modules Details
 1. MLST Analysis
 
     Tool: MLST (https://github.com/tseemann/mlst)
@@ -146,7 +151,7 @@ Supported Input Formats
 
     Tool: ABRicate v1.0.1
 
-    Databases:
+    Databases**:
 
         CARD: Comprehensive Antibiotic Resistance Database
 
