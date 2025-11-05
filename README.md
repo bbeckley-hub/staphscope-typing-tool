@@ -201,7 +201,7 @@ Major MRSA Clonal Complexes Identified**
     CC5: USA100, NY/Japan clone
 
     CC8: USA300, Brazilian/Hungarian clone
-
+**
     CC22: EMRSA-15, UK hospital clone
 
     CC30: EMRSA-16, Southwest Pacific clone
@@ -335,4 +335,4 @@ bibtex**
 
     NCBI AMRFinderPlus: https://github.com/ncbi/amr
 
-    CARD Database: https://card.mcmaster.ca/
+    CARD Database: https://card.mcmaster.ca/**
