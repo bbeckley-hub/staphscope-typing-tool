@@ -487,7 +487,7 @@ def generate_comprehensive_lineage_html(output_path="staphscope_lineage_referenc
                     <li>Lineage distributions and characteristics can vary geographically and change over time</li>
                     <li>Gene presence varies within lineages - not all strains carry all listed virulence factors</li>
                     <li>Refer to PubMLST for current distributions and additional sequence types</li>
-                    <li>Note that not all references have been attcahed and verify any classifications from literature</li>
+                    <li>Note that not all references have been attached and verify any classifications from literature</li>
                 </ul>
             </div>
         </div>

@@ -41,7 +41,7 @@ LINEAGE_DATABASE = {
         "clinical_significance": "Major healthcare-associated pandemic clone causing bacteremia, pneumonia, surgical site infections",
         "outbreak_potential": "HIGH",
         "risk_level": "HIGH",
-        "key_references": ["PMID: 12821442", "PMID: 15941968", "PMID: 17953524", "PMID: 33441336"]
+        "key_references": ["PMID: 22527128", "PMID: 22617140", "PMID: 19680247", "PMID: 27992523"]
     },
     
     "CC6": {
@@ -69,7 +69,7 @@ LINEAGE_DATABASE = {
         "clinical_significance": "Early hospital-associated clone in UK and Ireland",
         "outbreak_potential": "MEDIUM",
         "risk_level": "MEDIUM",
-        "key_references": ["PMID: 12574265", "PMID: 17953524"]
+        "key_references": ["PMID: 22189119", "PMID: 24395241", "PMID: 27992523"]
     },
     
     "CC7": {
@@ -97,7 +97,7 @@ LINEAGE_DATABASE = {
         "clinical_significance": "Pediatric and neonatal infections, both community and healthcare-associated",
         "outbreak_potential": "MEDIUM",
         "risk_level": "MEDIUM",
-        "key_references": ["PMID: 15941968", "PMID: 20067376"]
+        "key_references": ["PMID: 23055880", "PMID: 23177801", "PMID: 19178545"]
     },
     
     "CC8": {
@@ -126,7 +126,7 @@ LINEAGE_DATABASE = {
         "clinical_significance": "Includes both HA-MRSA and CA-MRSA, USA300 is hypervirulent community clone",
         "outbreak_potential": "VERY HIGH",
         "risk_level": "HIGH",
-        "key_references": ["PMID: 16494745", "PMID: 17065600", "PMID: 20067376", "PMID: 33441336"]
+        "key_references": ["PMID: 26484389", "PMID: 20610826", "PMID: 27992523"]
     },
     
     "CC12": {
@@ -154,14 +154,14 @@ LINEAGE_DATABASE = {
         "clinical_significance": "Healthcare-associated lineage from common MSSA background",
         "outbreak_potential": "MEDIUM",
         "risk_level": "MEDIUM",
-        "key_references": ["PMID: 17953524", "PMID: 23966409"]
+        "key_references": ["PMID: 21521706", "PMID: 17956927"]
     },
     
     "CC15": {
         "primary_name": "European MRSA",
         "type": "Healthcare-associated",
         "subtypes": ["European"],
-        "sequence_types": [15, 508, 582, 583, 1047, 1136],
+        "sequence_types": [15, 22, 508, 582, 583, 1047, 1136],
         "common_spa_types": ["t084", "t085", "t163", "t346", "t586", "t078"],
         "sccmec_types": ["IV"],
         "geographic_distribution": {
@@ -181,7 +181,7 @@ LINEAGE_DATABASE = {
         "clinical_significance": "Healthcare-associated lineage",
         "outbreak_potential": "MEDIUM",
         "risk_level": "MEDIUM",
-        "key_references": ["PMID: 17953524", "PMID: 20067376", "PMID: 23966409"]
+        "key_references": ["PMID: 23675030", "PMID: 35056595", "PMID: 27992523"]
     },
     
     "CC22": {
@@ -209,7 +209,7 @@ LINEAGE_DATABASE = {
         "clinical_significance": "Major epidemic clone in UK and Europe, causes nosocomial infections",
         "outbreak_potential": "HIGH",
         "risk_level": "HIGH",
-        "key_references": ["PMID: 12574265", "PMID: 18560576", "PMID: 23966409", "PMID: 35765215"]
+        "key_references": ["PMID: 35056595", "PMID: 11310446", "PMID: 23675030", "https://doi.org/10.1016/J.JIPH.2010.09.004", "DOI:10.4084/MJHID.2021.050"]
     },
     
     "CC25": {
@@ -236,7 +236,7 @@ LINEAGE_DATABASE = {
         "clinical_significance": "Healthcare-associated lineage",
         "outbreak_potential": "MEDIUM",
         "risk_level": "MEDIUM",
-        "key_references": ["PMID: 23966409"]
+        "key_references": ["", "PMID: 27605711", "PMID: 27992523"]
     },
     
     "CC30": {
@@ -264,7 +264,7 @@ LINEAGE_DATABASE = {
         "clinical_significance": "Major healthcare clone, also community-associated in some regions",
         "outbreak_potential": "HIGH",
         "risk_level": "HIGH",
-        "key_references": ["PMID: 16494745", "PMID: 17953524", "PMID: 20067376", "PMID: 33441336"]
+        "key_references": ["PMID: 22586109", "PMID: 23284024", "PMID: 27992523"]
     },
     
     "CC45": {
@@ -292,7 +292,7 @@ LINEAGE_DATABASE = {
         "clinical_significance": "Healthcare-associated lineage with moderate virulence",
         "outbreak_potential": "MEDIUM",
         "risk_level": "MEDIUM",
-        "key_references": ["PMID: 17953524", "PMID: 19005135", "PMID: 23966409"]
+        "key_references": ["PMID: 27605711", "PMID: 23887918", "PMID: 32822004"]
     },
     
     "CC51": {
@@ -319,7 +319,7 @@ LINEAGE_DATABASE = {
         "clinical_significance": "Healthcare-associated lineage",
         "outbreak_potential": "MEDIUM",
         "risk_level": "MEDIUM",
-        "key_references": ["PMID: 23966409"]
+        "key_references": ["PMID: 19178545"]
     },
     
     "CC239": {
@@ -347,7 +347,7 @@ LINEAGE_DATABASE = {
         "clinical_significance": "Major epidemic healthcare clone, recombinant lineage",
         "outbreak_potential": "HIGH",
         "risk_level": "HIGH",
-        "key_references": ["PMID: 17953524", "PMID: 20067376", "PMID: 33441336, PMID: 36504833"]
+        "key_references": ["https://doi.org/10.1128/jcm.43.10.5069-5073.2005", "PMID: 38990431", "PMID: 36504833", "https://doi.org/10.1089/fpd.2013.171"]
     },
     
     # =========================================================================
@@ -380,7 +380,7 @@ LINEAGE_DATABASE = {
         "clinical_significance": "Early CA-MRSA clone, causes skin infections, necrotizing pneumonia",
         "outbreak_potential": "HIGH",
         "risk_level": "HIGH",
-        "key_references": ["PMID: 10547695", "PMID: 11927031", "PMID: 15941968"]
+        "key_references": ["PMID: 34223815", "https://doi.org/10.1186/s40001-024-02076-z", "https://doi.org/10.3389/fmicb.2019.00139"]
     },
     
     "CC59": {
@@ -408,7 +408,7 @@ LINEAGE_DATABASE = {
         "clinical_significance": "Major CA-MRSA clone in Asia, causes skin infections, necrotizing fasciitis",
         "outbreak_potential": "HIGH",
         "risk_level": "HIGH",
-        "key_references": ["PMID: 15941968", "PMID: 20067376", "PMID: 23966409"]
+        "key_references": ["PMID: 32544568", "PMID: 20211891", "PMID: 23966409", "https://doi.org/10.1371/journal.pone.0070602", " DOI https://doi.org/10.2147/IDR.S284781 "]
     },
     
     "CC80": {
@@ -436,7 +436,7 @@ LINEAGE_DATABASE = {
         "clinical_significance": "Major CA-MRSA clone in Europe and Middle East",
         "outbreak_potential": "HIGH", 
         "risk_level": "HIGH",
-        "key_references": ["PMID: 15941968", "PMID: 17065600", "PMID: 20067376"]
+        "key_references": ["PMID: 25078407", "https://doi.org/10.1016/j.cmi.2017.06.022", "https://doi.org/10.1128/jcm.01381-07"]
     },
     
     "CC88": {
@@ -463,7 +463,7 @@ LINEAGE_DATABASE = {
         "clinical_significance": "Emerging CA-MRSA clone in developing regions",
         "outbreak_potential": "MEDIUM",
         "risk_level": "MEDIUM",
-        "key_references": ["PMID: 23966409", "PMID: 26318136", "PMID: 28514253"]
+        "key_references": ["PMID: 22745670", "https://doi.org/10.3390/microorganisms12010017",  "PMID: 27992523"]
     },
     
     "CC93": {
@@ -490,7 +490,7 @@ LINEAGE_DATABASE = {
         "clinical_significance": "CA-MRSA clone in Australia and New Zealand",
         "outbreak_potential": "MEDIUM",
         "risk_level": "MEDIUM",
-        "key_references": ["PMID: 23966409"]
+        "key_references": [" DOI: 10.1111/apm.12181", "https://doi.org/10.1111/apm.12181", "https://doi.org/10.1016/j.cmi.2016.11.002"]
     },
     
     "CC97": {
@@ -517,7 +517,7 @@ LINEAGE_DATABASE = {
         "clinical_significance": "Originally bovine-associated, now human infections",
         "outbreak_potential": "MEDIUM",
         "risk_level": "MEDIUM",
-        "key_references": ["PMID: 17953524", "PMID: 20067376", "PMID: 23966409"]
+        "key_references": ["https://doi.org/10.1016/j.vetmic.2022.109374", "https://doi.org/10.3390/foods9040439", "PMID: 26590279", "PMID: 27992523"]
     },
     
     "CC121": {
@@ -544,7 +544,7 @@ LINEAGE_DATABASE = {
         "clinical_significance": "Emerging CA-MRSA clone",
         "outbreak_potential": "MEDIUM",
         "risk_level": "MEDIUM",
-        "key_references": ["PMID: 17065600", "PMID: 20067376", "PMID: 23966409"]
+        "key_references": ["https://doi.org/10.4269/ajtmh.16-0746"]
     },
     
     "CC772": {
@@ -571,7 +571,7 @@ LINEAGE_DATABASE = {
         "clinical_significance": "CA-MRSA clone from Indian subcontinent with global travel-associated spread",
         "outbreak_potential": "MEDIUM",
         "risk_level": "MEDIUM",
-        "key_references": ["PMID: 26318136", "PMID: 28514253"]
+        "key_references": ["PMID: 33122734", "PMID: 29238933", " https://doi.org/10.3389/fmicb.2019.02505"]
     },
     
     "CC1153": {
@@ -598,7 +598,7 @@ LINEAGE_DATABASE = {
         "clinical_significance": "Emerging CA-MRSA clone in Arabian Gulf and North Africa",
         "outbreak_potential": "MEDIUM",
         "risk_level": "MEDIUM", 
-        "key_references": ["PMID: 33441336", "PMID: 28514253"]
+        "key_references": ["PMID: 30951513", "PMID: 36671279"]
     },
     
     # =========================================================================
@@ -629,7 +629,7 @@ LINEAGE_DATABASE = {
         "clinical_significance": "Livestock-associated in Asia, emerging human infections",
         "outbreak_potential": "MEDIUM",
         "risk_level": "MEDIUM",
-        "key_references": ["PMID: 23966409", "PMID: 26318136", "PMID: 28514253"]
+        "key_references": ["PMID: 36363707", "https://doi.org/10.3389/fmicb.2012.00103"]
     },
     
     "CC101": {
@@ -656,7 +656,7 @@ LINEAGE_DATABASE = {
         "clinical_significance": "Occasional livestock-associated isolates; low prevalence in surveys",
         "outbreak_potential": "LOW",
         "risk_level": "LOW",
-        "key_references": ["PMID: 31920996"]
+        "key_references": ["PMID: 31920996", "PMID: 19178545"]
     },
     
     "CC130": {
@@ -684,7 +684,7 @@ LINEAGE_DATABASE = {
         "clinical_significance": "mecC-positive MRSA with zoonotic transmission, lower human virulence",
         "outbreak_potential": "LOW",
         "risk_level": "LOW",
-        "key_references": ["PMID: 21765069", "PMID: 23966409", "PMID: 26318136"]
+        "key_references": ["https://doi.org/10.3168/jds.2013-7378", "PMID: 33841383", "PMID: 27992523", " https://doi.org/10.1007/s00248-019-01328-4"]
     },
     
     "CC398": {
@@ -712,7 +712,7 @@ LINEAGE_DATABASE = {
         "clinical_significance": "Dominant livestock-associated clone, occupational infections, can cause human infections",
         "outbreak_potential": "MEDIUM in occupational settings",
         "risk_level": "MEDIUM",
-        "key_references": ["PMID: 17953524", "PMID: 20067376", "PMID: 23966409", "PMID: 26318136"]
+        "key_references": ["PMID: 19701815", "PMID: 27605711", "PMID: 27992523","PMID: 32822004", "https://doi.org/10.1371/journal.pone.0010990"]
     },
     
     "CC425": {
@@ -740,7 +740,7 @@ LINEAGE_DATABASE = {
         "clinical_significance": "mecC-MRSA associated with wildlife, potential zoonotic transmission",
         "outbreak_potential": "LOW",
         "risk_level": "LOW",
-        "key_references": ["PMID: 33441336", "PMID: 35099933"]
+        "key_references": ["PMID: 39650146", "https://doi.org/10.1186/1751-0147-55-6", "https://doi.org/10.1038/s41586-021-04265-w"]
     }
 }
 

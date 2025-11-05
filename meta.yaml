@@ -9,7 +9,7 @@ source:
   path: .
 
 build:
-  number: 0
+  number: 5
   script: 
     - {{ PYTHON }} -m pip install . --no-deps -vv
     - {{ PYTHON }} scripts/post_install.py  

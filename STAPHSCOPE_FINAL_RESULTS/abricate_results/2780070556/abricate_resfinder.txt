@@ -1,4 +1,0 @@
-#FILE	SEQUENCE	START	END	STRAND	GENE	COVERAGE	COVERAGE_MAP	GAPS	%COVERAGE	%IDENTITY	DATABASE	ACCESSION	PRODUCT	RESISTANCE
-2780070556.fna	NZ_CP160634.1	39626	41632	-	mecA_6	1-2007/2007	===============	0/0	100.00	100.00	resfinder	BX571856	mecA	Amoxicillin;Amoxicillin+Clavulanic_acid;Ampicillin;Ampicillin+Clavulanic_acid;Cefepime;Cefixime;Cefotaxime;Cefoxitin;Ceftazidime;Ertapenem;Imipenem;Meropenem;Piperacillin;Piperacillin+Tazobactam
-2780070556.fna	NZ_CP160634.1	1522473	1524392	+	tet(M)_1	1-1920/1920	===============	0/0	100.00	99.53	resfinder	X92947	tet(M)	Doxycycline;Tetracycline;Minocycline
-2780070556.fna	NZ_CP160634.1	1750549	1751976	+	fexA_1	1-1428/1428	===============	0/0	100.00	99.72	resfinder	AJ549214	fexA	Chloramphenicol;Florfenicol

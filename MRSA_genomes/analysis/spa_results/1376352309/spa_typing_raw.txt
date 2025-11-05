@@ -1,2 +1,0 @@
-Sequence name	Repeats	Type
-NZ_CP021105.1 Staphylococcus aureus strain CC5 chromosome, complete genome	26-23-17-34-17-20-17-12-17-16	t002

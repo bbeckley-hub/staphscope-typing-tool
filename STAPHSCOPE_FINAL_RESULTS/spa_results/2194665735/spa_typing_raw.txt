@@ -1,2 +1,0 @@
-Sequence name	Repeats	Type
-NZ_CP080249.1 Staphylococcus aureus strain NV_1 chromosome, complete genome	26-23-17-34-17-02-17-12-17-16-16	t5117

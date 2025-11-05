@@ -1,3 +1,0 @@
-#FILE	SEQUENCE	START	END	STRAND	GENE	COVERAGE	COVERAGE_MAP	GAPS	%COVERAGE	%IDENTITY	DATABASE	ACCESSION	PRODUCT	RESISTANCE
-2236627887.fna	NZ_CP092475.1	806578	807465	-	blaZ_138	1-888/888	===============	0/0	100.00	100.00	resfinder	CP003979	blaZ	Amoxicillin;Ampicillin;Penicillin;Piperacillin
-2236627887.fna	NZ_CP092475.1	2797289	2799295	+	mecA_2	1-2007/2007	===============	0/0	100.00	99.95	resfinder	NC_002951	mecA	Amoxicillin;Amoxicillin+Clavulanic_acid;Ampicillin;Ampicillin+Clavulanic_acid;Cefepime;Cefixime;Cefotaxime;Cefoxitin;Ceftazidime;Ertapenem;Imipenem;Meropenem;Piperacillin;Piperacillin+Tazobactam

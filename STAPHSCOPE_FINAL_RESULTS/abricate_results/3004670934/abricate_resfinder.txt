@@ -1,7 +1,0 @@
-#FILE	SEQUENCE	START	END	STRAND	GENE	COVERAGE	COVERAGE_MAP	GAPS	%COVERAGE	%IDENTITY	DATABASE	ACCESSION	PRODUCT	RESISTANCE
-3004670934.fna	NZ_CP040665.2	40798	41568	-	aadD_1	1-771/771	===============	0/0	100.00	99.87	resfinder	AF181950	aadD	Amikacin;Tobramycin
-3004670934.fna	NZ_CP040665.2	44014	46020	-	mecA_6	1-2007/2007	===============	0/0	100.00	100.00	resfinder	BX571856	mecA	Amoxicillin;Amoxicillin+Clavulanic_acid;Ampicillin;Ampicillin+Clavulanic_acid;Cefepime;Cefixime;Cefotaxime;Cefoxitin;Ceftazidime;Ertapenem;Imipenem;Meropenem;Piperacillin;Piperacillin+Tazobactam
-3004670934.fna	NZ_CP040665.2	54949	55680	+	erm(A)_1	1-732/732	===============	0/0	100.00	100.00	resfinder	X03216	erm(A)	Erythromycin;Lincomycin;Clindamycin;Quinupristin;Pristinamycin_IA;Virginiamycin_S
-3004670934.fna	NZ_CP040665.2	55806	56588	-	ant(9)-Ia_1	1-783/783	===============	0/0	100.00	100.00	resfinder	X02588	ant(9)-Ia	
-3004670934.fna	NZ_CP040665.2	1725918	1726649	+	erm(A)_1	1-732/732	===============	0/0	100.00	100.00	resfinder	X03216	erm(A)	Erythromycin;Lincomycin;Clindamycin;Quinupristin;Pristinamycin_IA;Virginiamycin_S
-3004670934.fna	NZ_CP040665.2	1726775	1727557	-	ant(9)-Ia_1	1-783/783	===============	0/0	100.00	100.00	resfinder	X02588	ant(9)-Ia	

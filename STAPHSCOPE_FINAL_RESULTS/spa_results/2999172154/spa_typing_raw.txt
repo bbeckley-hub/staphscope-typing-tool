@@ -1,2 +1,0 @@
-Sequence name	Repeats	Type
-NZ_CP049976.1 Staphylococcus aureus strain PJFE-503 chromosome, complete genome	08-16-02-25-02-25-34-25-16	t18103
