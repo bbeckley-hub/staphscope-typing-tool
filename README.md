@@ -52,8 +52,8 @@ StaphScope is a comprehensive bioinformatics pipeline specifically designed for 
 ```bash
 conda install -c bbeckley-hub -c bioconda -c conda-forge staphscope
 
-**Option 2: From Source**
-
+Option 2: From Source
+```bash
 git clone https://github.com/bbeckley-hub/staphscope-typing-tool.git
 cd staphscope-typing-tool
 conda env create -f environment.yml
