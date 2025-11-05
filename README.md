@@ -52,8 +52,7 @@ StaphScope is a comprehensive bioinformatics pipeline specifically designed for 
 ```bash
 conda install -c bbeckley-hub -c bioconda -c conda-forge staphscope
 
-Option 2: From Source
-bash
+**Option 2: From Source**
 
 git clone https://github.com/bbeckley-hub/staphscope-typing-tool.git
 cd staphscope-typing-tool
@@ -61,8 +60,7 @@ conda env create -f environment.yml
 conda activate staphscope
 pip install -e .
 
-Basic Usage
-bash
+**Basic Usage**
 
 # Single genome analysis
 staphscope -i genome.fasta -o results/
@@ -73,9 +71,9 @@ staphscope -i "*.fna" -o batch_results --threads 8
 # Custom analysis (skip specific modules)
 staphscope -i "MRSA_*.fasta" -o analysis --threads 16 --skip-lineage
 
-📋 Complete Usage
-Command Line Options
-bash
+## 📋 Complete Usage
+**Command Line Options**
+
 
 usage: staphscope [-h] -i INPUT -o OUTPUT [-t THREADS] [--skip-amr] [--skip-abricate] [--skip-mlst]
                   [--skip-spa] [--skip-sccmec] [--skip-lineage]
@@ -97,7 +95,7 @@ optional arguments:
   --skip-sccmec         Skip SCCmec analysis
   --skip-lineage        Skip lineage reference generation
 
-Supported Input Formats
+**Supported Input Formats**
 
     .fna, .fasta, .fa, .fn (standard FASTA formats)
 
@@ -105,8 +103,9 @@ Supported Input Formats
 
     Assembled genomes or contigs
 
-🔧 Analysis Modules Details
-1. MLST Analysis
+## 🔧 Analysis Modules Details
+
+**1. MLST Analysis**
 
     Tool: MLST
 
@@ -116,8 +115,8 @@ Supported Input Formats
 
     MRSA Relevance: Identifies major MRSA clonal complexes
 
-2. spa Typing
-
+**2. spa Typing
+**
     Tool: spaTyper
 
     Database: Ridom StaphType scheme
@@ -126,7 +125,7 @@ Supported Input Formats
 
     MRSA Relevance: High-resolution strain discrimination
 
-3. SCCmec Analysis
+**3. SCCmec Analysis**
 
     Tool: SCCmecFinder with custom StaphScope enhancements
 
@@ -136,7 +135,7 @@ Supported Input Formats
 
     MRSA Relevance: Core MRSA characterization - identifies resistance cassette
 
-4. AMR Profiling
+**4. AMR Profiling**
 
     Tool: NCBI AMRFinderPlus v3.12.8
 
@@ -146,7 +145,7 @@ Supported Input Formats
 
     MRSA Relevance: Comprehensive resistance profile including β-lactams, aminoglycosides, macrolides, etc.
 
-5. ABRicate Analysis
+**5. ABRicate Analysis**
 
     Tool: ABRicate v1.0.1
 
@@ -154,7 +153,7 @@ Supported Input Formats
 
     Output: Plasmid markers, virulence factors, comprehensive resistance profile
 
-6. Lineage Reference
+**6. Lineage Reference**
 
     Output: Interactive HTML report
 
@@ -162,10 +161,9 @@ Supported Input Formats
 
     MRSA Relevance: Contextualizes isolates within global MRSA populations
 
-📊 Output Structure
-text
+## 📊 Output Structure
 
-output_directory/
+**output_directory/
 ├── mlst_results/
 │   ├── mlst_summary.csv
 │   └── individual_sample_results/
@@ -188,16 +186,17 @@ output_directory/
 │   │   └── plasmidfinder_summary.txt
 │   └── individual_reports/
 └── lineage_results/
-    └── staphscope_lineage_reference.html
+    └── staphscope_lineage_reference.html**
 
-🦠 MRSA-Specific Analysis
+## 🦠 MRSA-Specific Analysis
+**
 Key MRSA Markers Detected
 Category	Markers	Clinical Significance
 Resistance	mecA, mecC, blaZ	β-lactam resistance
 Virulence	PVL (lukS-PV, lukF-PV)	Necrotizing infections
 Toxins	TSST-1, enterotoxins	Toxic shock syndrome
 Adhesion	fnbA, fnbB, clfA, clfB	Biofilm formation
-Major MRSA Clonal Complexes Identified
+Major MRSA Clonal Complexes Identified**
 
     CC5: USA100, NY/Japan clone
 
@@ -209,44 +208,42 @@ Major MRSA Clonal Complexes Identified
 
     CC45: Berlin clone, community-associated MRSA
 
-🔬 Example Use Cases
-Hospital Outbreak Investigation
+## 🔬 Example Use Cases
+**Hospital Outbreak Investigation
 bash
-
-# Analyze outbreak isolates
+**
+**# Analyze outbreak isolates**
 staphscope -i "outbreak_*.fasta" -o outbreak_analysis --threads 16
 
-# Key outputs:
+**# Key outputs:
 # - Relatedness via MLST/spa typing
 # - SCCmec type consistency  
 # - Resistance gene profile comparison
 # - Virulence factor patterns
+**
+**Surveillance Studies**
 
-Surveillance Studies
-bash
-
-# Process surveillance isolates  
+**# Process surveillance isolates  **
 staphscope -i "surveillance_*.fna" -o yearly_surveillance --threads 8
 
-# Surveillance insights:
+**# Surveillance insights:**
 # - Predominant SCCmec types
 # - Emerging resistance patterns
 # - Clonal complex distribution
 # - Temporal trends analysis
 
-Research Characterization
-bash
+**Research Characterization**
 
 # Comprehensive isolate characterization
 staphscope -i research_isolate.fasta -o complete_analysis
 
-# Research outputs:
+**# Research outputs:**
 # - Complete typing profile
 # - Resistance mechanism details
 # - Virulence potential assessment
 # - Epidemiological context
 
-💾 System Requirements
+## 💾 System Requirements
 Minimum
 
     CPU: 4 cores
@@ -257,7 +254,7 @@ Minimum
 
     OS: Linux (Ubuntu/CentOS) or macOS
 
-Recommended
+**Recommended**
 
     CPU: 2+ cores
 
@@ -267,7 +264,7 @@ Recommended
 
     OS: Linux with Conda/mamba
 
-Dependencies (Automatically Installed)
+**Dependencies (Automatically Installed)**
 
     Python: 3.8, 3.9, 3.10, 3.11 or 3.12
 
@@ -277,35 +274,34 @@ Dependencies (Automatically Installed)
 
     Databases: All required databases downloaded automatically
 
-🐛 Troubleshooting
-Common Issues
+## 🐛 Troubleshooting
+**Common Issues
+**
+Database download failures:**
 
-Database download failures:
-bash
 
 # Manual database update
 amrfinder --update
-abricate --setupdb card
-
-Memory issues with large batches:
-bash
+abricate --setupdb 
+**
+Memory issues with large batches:**
 
 # Process in smaller batches
 staphscope -i "batch1_*.fna" -o results_batch1 --threads 4
 staphscope -i "batch2_*.fna" -o results_batch2 --threads 4
 
-Support
+**Support
 
     Issues: https://github.com/bbeckley-hub/staphscope-typing-tool/issues
 
     Email: brownbeckley94@gmail.com
 
-    Documentation: See docs/ directory for detailed documentation
+    Documentation: See docs/ directory for detailed documentation**
 
-📚 Citation
+## 📚 Citation
 
-If you use StaphScope in your research, please cite:
-bibtex
+**If you use StaphScope in your research, please cite:
+bibtex**
 
 @software{staphscope2024,
   title = {StaphScope: Advanced Staphylococcus aureus Typing and Lineage Analysis Platform},
@@ -315,9 +311,9 @@ bibtex
   note = {Comprehensive MRSA genomic analysis tool}
 }
 
-👨‍💻 Author
+## 👨‍💻 Author
 
-Brown Beckley
+**Brown Beckley
 
     University of Ghana Medical School
 
@@ -326,12 +322,13 @@ Brown Beckley
     Email: brownbeckley94@gmail.com
 
     GitHub: bbeckley-hub
+**
 
-📄 License
+## 📄 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+**This project is licensed under the MIT License - see the LICENSE file for details.
 🔗 Related Resources
-
+**
     PubMedST: https://pubmlst.org/organisms/staphylococcus-aureus
 
     SCCmec Database: https://www.sccmec.org/
