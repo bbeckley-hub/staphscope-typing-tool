@@ -1,72 +1,68 @@
-https://anaconda.org/bbeckley-hub/staphscope/badges/version.svg
-badge
-https://anaconda.org/bbeckley-hub/staphscope/badges/latest_release_date.svg
-badge
-https://anaconda.org/bbeckley-hub/staphscope/badges/latest_release_relative_date.svg
-badge
-https://anaconda.org/bbeckley-hub/staphscope/badges/platforms.svg
-badge
-https://anaconda.org/bbeckley-hub/staphscope/badges/license.svg
-badge
-https://anaconda.org/bbeckley-hub/staphscope/badges/downloads.svg
+# StaphScope: Advanced Staphylococcus aureus Typing & Lineage Analysis Platform
 
+<div align="center">
 
-**StaphScope: Advanced Staphylococcus aureus Typing & Lineage Analysis Platform**
+![Version](https://anaconda.org/bbeckley-hub/staphscope/badges/version.svg)
+![Latest Release Date](https://anaconda.org/bbeckley-hub/staphscope/badges/latest_release_date.svg)
+![Platforms](https://anaconda.org/bbeckley-hub/staphscope/badges/platforms.svg)
+![License](https://anaconda.org/bbeckley-hub/staphscope/badges/license.svg)
+![Downloads](https://anaconda.org/bbeckley-hub/staphscope/badges/downloads.svg)
 
+**Comprehensive MRSA genomic analysis pipeline for typing, resistance profiling, and lineage analysis**
 
+[Quick Start](#-quick-start) • [Features](#-features) • [Installation](#-installation) • [Usage](#-usage)
 
-StaphScope is a comprehensive bioinformatics pipeline specifically designed for Methicillin-Resistant Staphylococcus aureus (MRSA) genomic analysis. This all-in-one tool provides complete characterization of S. aureus isolates through multiple typing methods, antimicrobial resistance profiling, virulence factor detection, and lineage analysis.
-🎯 Purpose
+</div>
 
-   ** MRSA Surveillance: Track and characterize MRSA strains in clinical and research settings
+## 🎯 Purpose
 
-   ** Outbreak Investigation: Identify related strains and transmission patterns
-**
-    Research Analysis: Comprehensive genomic profiling for academic studies
-**
-    Public Health: Support antimicrobial resistance monitoring programs**
-**
-✨ Features
-🔬 Core Analysis Modules
-Module	Description	Key Outputs
-MLST	Multi-Locus Sequence Typing	Sequence Type (ST), Clonal Complex (CC)
-spa Typing	Staphylococcal Protein A typing	spa type, repeat sequence
-SCCmec	Staphylococcal Cassette Chromosome mec	SCCmec type, mec gene complex, ccr complex
-AMR Profiling	Antimicrobial Resistance genes	Resistance genes, drug classes, mechanisms
-ABRicate	Comprehensive resistance & virulence	Plasmid markers, virulence factors, resistance databases
-Lineage Analysis	Strain lineage reference	HTML report with strain classification
-🛡️ MRSA-Specific Capabilities
-**
-    SCCmec Typing: Accurate identification of SCCmec types I-XIII
+StaphScope is a comprehensive bioinformatics pipeline specifically designed for **Methicillin-Resistant *Staphylococcus aureus* (MRSA)** genomic analysis. This all-in-one tool provides complete characterization of *S. aureus* isolates through multiple typing methods, antimicrobial resistance profiling, virulence factor detection, and lineage analysis.
 
-   ** mecA/mecC Detection: Methicillin resistance determinant detection
-**
-    PVL Toxin Screening: Panton-Valentine Leukocidin gene detection
+### Key Applications
+- **🏥 MRSA Surveillance**: Track and characterize MRSA strains in clinical and research settings
+- **🔍 Outbreak Investigation**: Identify related strains and transmission patterns
+- **🔬 Research Analysis**: Comprehensive genomic profiling for academic studies
+- **🌍 Public Health**: Support antimicrobial resistance monitoring programs
 
-   ** AMR Profile: Comprehensive antimicrobial resistance pattern**
-**
-    Epidemic Clones: Identification of major MRSA clonal complexes (CC5, CC8, CC22, CC30, CC45)******
-**
+## ✨ Features
 
-🚀 Quick Start
-Installation
-Option 1: Conda Installation (Recommended)
+### 🔬 Core Analysis Modules
 
+| Module | Description | Key Outputs |
+|--------|-------------|-------------|
+| **MLST** | Multi-Locus Sequence Typing | Sequence Type (ST), Clonal Complex (CC) |
+| **spa Typing** | Staphylococcal Protein A typing | spa type, repeat sequence |
+| **SCCmec** | Staphylococcal Cassette Chromosome mec | SCCmec type, mec gene complex, ccr complex |
+| **AMR Profiling** | Antimicrobial Resistance genes | Resistance genes, drug classes, mechanisms |
+| **ABRicate** | Comprehensive resistance & virulence | Plasmid markers, virulence factors, resistance databases |
+| **Lineage Analysis** | Strain lineage reference | HTML report with strain classification |
+
+### 🛡️ MRSA-Specific Capabilities
+- **SCCmec Typing**: Accurate identification of SCCmec types I-XIII
+- **mecA/mecC Detection**: Methicillin resistance determinant detection
+- **PVL Toxin Screening**: Panton-Valentine Leukocidin gene detection
+- **AMR Profile**: Comprehensive antimicrobial resistance pattern
+- **Epidemic Clones**: Identification of major MRSA clonal complexes (CC5, CC8, CC22, CC30, CC45)
+
+## 🚀 Quick Start
+
+### Installation
+
+**Option 1: Conda Installation (Recommended)**
+```bash
 conda install -c bbeckley-hub -c bioconda -c conda-forge staphscope
 
 Option 2: From Source
+bash
 
 git clone https://github.com/bbeckley-hub/staphscope-typing-tool.git
-
 cd staphscope-typing-tool
-
 conda env create -f environment.yml
-
 conda activate staphscope
-
 pip install -e .
 
 Basic Usage
+bash
 
 # Single genome analysis
 staphscope -i genome.fasta -o results/
@@ -77,8 +73,8 @@ staphscope -i "*.fna" -o batch_results --threads 8
 # Custom analysis (skip specific modules)
 staphscope -i "MRSA_*.fasta" -o analysis --threads 16 --skip-lineage
 
-**📋 Complete Usage
-Command Line Options**
+📋 Complete Usage
+Command Line Options
 bash
 
 usage: staphscope [-h] -i INPUT -o OUTPUT [-t THREADS] [--skip-amr] [--skip-abricate] [--skip-mlst]
@@ -103,16 +99,16 @@ optional arguments:
 
 Supported Input Formats
 
-   ** .fna, .fasta, .fa, .fn (standard FASTA formats)
-**
+    .fna, .fasta, .fa, .fn (standard FASTA formats)
+
     Single files or batch processing with glob patterns
 
-   ** **Assembled genomes or contigs**
+    Assembled genomes or contigs
 
-**🔧 Analysis Modules Details
+🔧 Analysis Modules Details
 1. MLST Analysis
 
-    Tool: MLST (https://github.com/tseemann/mlst)
+    Tool: MLST
 
     Database: PubMedST S. aureus scheme
 
@@ -148,37 +144,13 @@ Supported Input Formats
 
     Output: Resistance genes, drug classes, mechanisms, point mutations
 
-    MRSA Relevance: Comprehensive resistance profile including:
-
-        β-lactams (mecA, mecC, blaZ)
-
-        Aminoglycosides
-
-        Macrolides
-
-        Tetracyclines
-
-        Fluoroquinolones
+    MRSA Relevance: Comprehensive resistance profile including β-lactams, aminoglycosides, macrolides, etc.
 
 5. ABRicate Analysis
 
     Tool: ABRicate v1.0.1
 
-    Databases**:
-
-        CARD: Comprehensive Antibiotic Resistance Database
-
-        ResFinder: Acquired resistance genes
-
-        NCBI: National Center for Biotechnology Information
-
-        VFDB: Virulence Factors Database
-
-        PlasmidFinder: Plasmid replicon types
-
-        ARG-ANNOT: Antibiotic Resistance Gene Annotation
-
-        MEGARES: Comprehensive resistance database
+    Databases: CARD, ResFinder, NCBI, VFDB, PlasmidFinder, ARG-ANNOT, MEGARES
 
     Output: Plasmid markers, virulence factors, comprehensive resistance profile
 
@@ -246,14 +218,14 @@ staphscope -i "outbreak_*.fasta" -o outbreak_analysis --threads 16
 
 # Key outputs:
 # - Relatedness via MLST/spa typing
-# - SCCmec type consistency
+# - SCCmec type consistency  
 # - Resistance gene profile comparison
 # - Virulence factor patterns
 
 Surveillance Studies
 bash
 
-# Process surveillance isolates
+# Process surveillance isolates  
 staphscope -i "surveillance_*.fna" -o yearly_surveillance --threads 8
 
 # Surveillance insights:
@@ -291,7 +263,7 @@ Recommended
 
     RAM: 4+ GB
 
-    Storage: 10GB+ free space(NOT REQUIRED)- GOOD SPACE IS ENOUGH!!
+    Storage: 10GB+ free space
 
     OS: Linux with Conda/mamba
 
@@ -367,5 +339,3 @@ This project is licensed under the MIT License - see the LICENSE file for detail
     NCBI AMRFinderPlus: https://github.com/ncbi/amr
 
     CARD Database: https://card.mcmaster.ca/
-
-StaphScope: Empowering MRSA research through comprehensive genomic analysis 🧫🔬
