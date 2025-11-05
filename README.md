@@ -261,9 +261,9 @@ Minimum
 
     CPU: 4 cores
 
-    RAM: 8 GB
+    RAM: 4 GB
 
-    Storage: 10 GB free space
+    Storage: 4 GB free space
 
     OS: Linux (Ubuntu/CentOS) or macOS
 
@@ -279,7 +279,7 @@ Recommended
 
 Dependencies (Automatically Installed)
 
-    Python: 3.8, 3.9, 3.10, or 3.11
+    Python: 3.8, 3.9, 3.10, 3.11 or 3.12
 
     Bioinformatics Tools: ABRicate, AMRFinderPlus, MLST, BLAST+
 
