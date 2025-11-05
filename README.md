@@ -1,3 +1,16 @@
+https://anaconda.org/bbeckley-hub/staphscope/badges/version.svg
+badge
+https://anaconda.org/bbeckley-hub/staphscope/badges/latest_release_date.svg
+badge
+https://anaconda.org/bbeckley-hub/staphscope/badges/latest_release_relative_date.svg
+badge
+https://anaconda.org/bbeckley-hub/staphscope/badges/platforms.svg
+badge
+https://anaconda.org/bbeckley-hub/staphscope/badges/license.svg
+badge
+https://anaconda.org/bbeckley-hub/staphscope/badges/downloads.svg
+
+
 **StaphScope: Advanced Staphylococcus aureus Typing & Lineage Analysis Platform**
 
 
