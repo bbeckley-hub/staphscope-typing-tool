@@ -1,7 +1,6 @@
 StaphScope: Advanced Staphylococcus aureus Typing & Lineage Analysis Platform
+staphscope_lineage_reference.html
 
-https://docs/banner.png
-🧫 Overview
 
 StaphScope is a comprehensive bioinformatics pipeline specifically designed for Methicillin-Resistant Staphylococcus aureus (MRSA) genomic analysis. This all-in-one tool provides complete characterization of S. aureus isolates through multiple typing methods, antimicrobial resistance profiling, virulence factor detection, and lineage analysis.
 🎯 Purpose
