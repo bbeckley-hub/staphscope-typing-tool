@@ -1,4 +1,6 @@
-# StaphScope: Advanced Staphylococcus aureus Typing & Lineage Analysis Platform
+````markdown
+<details>
+<summary><h2>📦 StaphScope: Advanced Staphylococcus aureus Typing & Lineage Analysis Platform</h2></summary>
 
 <div align="center">
 
@@ -8,301 +10,233 @@
 ![License](https://anaconda.org/bbeckley-hub/staphscope/badges/license.svg)
 ![Downloads](https://anaconda.org/bbeckley-hub/staphscope/badges/downloads.svg)
 
-**Comprehensive MRSA genomic analysis pipeline for typing, resistance profiling, and lineage analysis**
+**Comprehensive MRSA genomic analysis pipeline for typing, resistance profiling, and lineage analysis**  
+**Supports Python 3.8 → 3.12**
 
 [Quick Start](#-quick-start) • [Features](#-features) • [Installation](#-installation) • [Usage](#-usage)
 
 </div>
 
-## 🎯 Purpose
+---
 
-StaphScope is a comprehensive bioinformatics pipeline specifically designed for **Methicillin-Resistant *Staphylococcus aureus* (MRSA)** genomic analysis. This all-in-one tool provides complete characterization of *S. aureus* isolates through multiple typing methods, antimicrobial resistance profiling, virulence factor detection, and lineage analysis.
+## 🎯 **Purpose**
+StaphScope is a unified bioinformatics workflow for **Methicillin-Resistant *Staphylococcus aureus* (MRSA)** analysis.  
+It performs complete genomics-based characterization: typing, resistance profiling, virulence detection, and lineage assignment.
 
-### Key Applications
-- **🏥 MRSA Surveillance**: Track and characterize MRSA strains in clinical and research settings
-- **🔍 Outbreak Investigation**: Identify related strains and transmission patterns
-- **🔬 Research Analysis**: Comprehensive genomic profiling for academic studies
-- **🌍 Public Health**: Support antimicrobial resistance monitoring programs
+### **Key Applications**
+- 🏥 **MRSA Surveillance**  
+- 🔍 **Outbreak Investigation**  
+- 🔬 **Research Genomics**  
+- 🌍 **Public Health AMR Monitoring**
 
-## ✨ Features
+---
 
-### 🔬 Core Analysis Modules
+## ✨ **Features**
 
-| Module | Description | Key Outputs |
-|--------|-------------|-------------|
-| **MLST** | Multi-Locus Sequence Typing | Sequence Type (ST), Clonal Complex (CC) |
-| **spa Typing** | Staphylococcal Protein A typing | spa type, repeat sequence |
-| **SCCmec** | Staphylococcal Cassette Chromosome mec | SCCmec type, mec gene complex, ccr complex |
-| **AMR Profiling** | Antimicrobial Resistance genes | Resistance genes, drug classes, mechanisms |
-| **ABRicate** | Comprehensive resistance & virulence | Plasmid markers, virulence factors, resistance databases |
-| **Lineage Analysis** | Strain lineage reference | HTML report with strain classification |
+### 🔬 **Core Analysis Modules**
+| Module | Description | Output |
+|--------|-------------|--------|
+| **MLST** | Sequence typing | ST, CC |
+| **spa Typing** | Protein A typing | spa type, repeats |
+| **SCCmec** | MRSA cassette typing | SCCmec type, mec/ccr complexes |
+| **AMR Profiling** | AMRFinderPlus | AMR genes, mechanisms |
+| **ABRicate** | Comprehensive screening | Resistance, virulence, plasmids |
+| **Lineage Analysis** | Phylo-reference | Interactive HTML report |
 
-### 🛡️ MRSA-Specific Capabilities
-- **SCCmec Typing**: Accurate identification of SCCmec types I-XIII
-- **mecA/mecC Detection**: Methicillin resistance determinant detection
-- **PVL Toxin Screening**: Panton-Valentine Leukocidin gene detection
-- **AMR Profile**: Comprehensive antimicrobial resistance pattern
-- **Epidemic Clones**: Identification of major MRSA clonal complexes (CC5, CC8, CC22, CC30, CC45)
+### 🛡️ **MRSA-Specific Capabilities**
+- SCCmec I–XIII detection  
+- mecA/mecC detection  
+- PVL toxin screening  
+- Epidemic clone identification  
+- Complete AMR pattern prediction  
 
-## 🚀 Quick Start
+---
 
-### Installation
+## 🚀 **Quick Start**
 
-**Option 1: Conda Installation (Recommended)**
+### **Installation**
+
+#### **Option 1 — Conda (Recommended)**
 ```bash
 conda install -c bbeckley-hub -c bioconda -c conda-forge staphscope
+````
 
-Option 2: From Source
+#### **Option 2 — From Source**
+
 ```bash
 git clone https://github.com/bbeckley-hub/staphscope-typing-tool.git
 cd staphscope-typing-tool
 conda env create -f environment.yml
 conda activate staphscope
 pip install -e .
+```
 
-**Basic Usage**
+---
 
-# Single genome analysis
+## 📌 **Basic Usage**
+
+```bash
+# Single genome
 staphscope -i genome.fasta -o results/
 
-# Batch analysis of multiple genomes
+# Batch analysis
 staphscope -i "*.fna" -o batch_results --threads 8
 
-# Custom analysis (skip specific modules)
+# Skip modules
 staphscope -i "MRSA_*.fasta" -o analysis --threads 16 --skip-lineage
+```
 
-## 📋 Complete Usage
-**Command Line Options**
+---
 
+## 📋 **Complete Usage**
 
-usage: staphscope [-h] -i INPUT -o OUTPUT [-t THREADS] [--skip-amr] [--skip-abricate] [--skip-mlst]
-                  [--skip-spa] [--skip-sccmec] [--skip-lineage]
+```
+usage: staphscope [-h] -i INPUT -o OUTPUT [-t THREADS] [--skip-amr] [--skip-abricate] 
+                  [--skip-mlst] [--skip-spa] [--skip-sccmec] [--skip-lineage]
+```
 
-StaphScope: Complete S. aureus Typing Pipeline
+### **Input Formats**
 
-optional arguments:
-  -h, --help            show this help message and exit
-  -i INPUT, --input INPUT
-                        Input FASTA file(s) - can use glob patterns like "*.fna" or "*.fasta"
-  -o OUTPUT, --output OUTPUT
-                        Output directory for all results
-  -t THREADS, --threads THREADS
-                        Number of threads (default: 2)
-  --skip-amr            Skip AMR analysis (AMRfinderPlus)
-  --skip-abricate       Skip ABRicate analysis
-  --skip-mlst           Skip MLST analysis
-  --skip-spa            Skip spa typing analysis
-  --skip-sccmec         Skip SCCmec analysis
-  --skip-lineage        Skip lineage reference generation
+* `.fna`, `.fasta`, `.fa`, `.fn`
+* Single genomes or glob patterns
+* Contigs or complete assemblies
 
-**Supported Input Formats**
+---
 
-    .fna, .fasta, .fa, .fn (standard FASTA formats)
+## 🔧 **Analysis Modules**
 
-    Single files or batch processing with glob patterns
+### **1. MLST**
 
-    Assembled genomes or contigs
+* Database: PubMLST
+* Outputs: ST, CC, allele profiles
 
-## 🔧 Analysis Modules Details
+### **2. spa Typing**
 
-**1. MLST Analysis**
+* Tool: spaTyper
+* Outputs: spa type, repeats
 
-    Tool: MLST
+### **3. SCCmec Finder**
 
-    Database: PubMedST S. aureus scheme
+* Types I–XI + subtypes
+* Determines mec & ccr complexes
 
-    Output: Sequence Type (ST), Clonal Complex (CC), allele profiles
+### **4. AMR Profiling**
 
-    MRSA Relevance: Identifies major MRSA clonal complexes
+* Tool: AMRFinderPlus
+* 5,000+ resistance genes
 
-**2. spa Typing
-**
-    Tool: spaTyper
+### **5. ABRicate**
 
-    Database: Ridom StaphType scheme
+* Databases: CARD, ResFinder, NCBI, VFDB, MEGARES, PlasmidFinder
 
-    Output: spa type, repeat sequence, Ridom classification
+### **6. Lineage Reference**
 
-    MRSA Relevance: High-resolution strain discrimination
+* Interactive HTML report
+* Global MRSA context
 
-**3. SCCmec Analysis**
+---
 
-    Tool: SCCmecFinder with custom StaphScope enhancements
+## 📊 **Output Structure**
 
-    Coverage: Types I-XI and subtypes
-
-    Output: SCCmec type, mec complex, ccr complex, subtypes
-
-    MRSA Relevance: Core MRSA characterization - identifies resistance cassette
-
-**4. AMR Profiling**
-
-    Tool: NCBI AMRFinderPlus v3.12.8
-
-    Coverage: 5,000+ resistance genes across all drug classes
-
-    Output: Resistance genes, drug classes, mechanisms, point mutations
-
-    MRSA Relevance: Comprehensive resistance profile including β-lactams, aminoglycosides, macrolides, etc.
-
-**5. ABRicate Analysis**
-
-    Tool: ABRicate v1.0.1
-
-    Databases: CARD, ResFinder, NCBI, VFDB, PlasmidFinder, ARG-ANNOT, MEGARES
-
-    Output: Plasmid markers, virulence factors, comprehensive resistance profile
-
-**6. Lineage Reference**
-
-    Output: Interactive HTML report
-
-    Content: Strain classification, typing results summary, epidemiological data
-
-    MRSA Relevance: Contextualizes isolates within global MRSA populations
-
-## 📊 Output Structure
-
-**output_directory/
+```
+output/
 ├── mlst_results/
-│   ├── mlst_summary.csv
-│   └── individual_sample_results/
 ├── spa_results/
-│   ├── spa_typing_summary.csv
-│   └── detailed_reports/
 ├── sccmec_results/
-│   ├── sccmec_summary.csv
-│   ├── sccmec_detailed.csv
-│   └── sample_directories/
 ├── amr_results/
-│   ├── amr_summary.csv
-│   └── amr_detailed_results/
 ├── abricate_results/
-│   ├── summary/
-│   │   ├── card_summary.txt
-│   │   ├── resfinder_summary.txt
-│   │   ├── ncbi_summary.txt
-│   │   ├── vfdb_summary.txt
-│   │   └── plasmidfinder_summary.txt
-│   └── individual_reports/
 └── lineage_results/
-    └── staphscope_lineage_reference.html**
+```
 
-## 🦠 MRSA-Specific Analysis
-**
-Key MRSA Markers Detected
-Category	Markers	Clinical Significance
-Resistance	mecA, mecC, blaZ	β-lactam resistance
-Virulence	PVL (lukS-PV, lukF-PV)	Necrotizing infections
-Toxins	TSST-1, enterotoxins	Toxic shock syndrome
-Adhesion	fnbA, fnbB, clfA, clfB	Biofilm formation
-Major MRSA Clonal Complexes Identified**
+---
 
-    CC5: USA100, NY/Japan clone
+## 🦠 **Key MRSA Markers**
 
-    CC8: USA300, Brazilian/Hungarian clone
-**
-    CC22: EMRSA-15, UK hospital clone
+| Category       | Markers              | Significance        |
+| -------------- | -------------------- | ------------------- |
+| **Resistance** | mecA, mecC, blaZ     | β-lactam resistance |
+| **Virulence**  | PVL                  | Severe infections   |
+| **Toxins**     | TSST-1, enterotoxins | Toxic shock         |
+| **Adhesion**   | fnbA/B, clfA/B       | Biofilms            |
 
-    CC30: EMRSA-16, Southwest Pacific clone
+Major clones identified: **CC5, CC8, CC22, CC30, CC45**
 
-    CC45: Berlin clone, community-associated MRSA
+---
 
-## 🔬 Example Use Cases
-**Hospital Outbreak Investigation
-bash
-**
-**# Analyze outbreak isolates**
+## 🔬 **Use Cases**
+
+### **Hospital Outbreak**
+
+```bash
 staphscope -i "outbreak_*.fasta" -o outbreak_analysis --threads 16
+```
 
-**# Key outputs:
-# - Relatedness via MLST/spa typing
-# - SCCmec type consistency  
-# - Resistance gene profile comparison
-# - Virulence factor patterns
-**
-**Surveillance Studies**
+### **Surveillance**
 
-**# Process surveillance isolates  **
-staphscope -i "surveillance_*.fna" -o yearly_surveillance --threads 8
+```bash
+staphscope -i "surveillance_*.fna" -o yearly_surveillance
+```
 
-**# Surveillance insights:**
-# - Predominant SCCmec types
-# - Emerging resistance patterns
-# - Clonal complex distribution
-# - Temporal trends analysis
+### **Research**
 
-**Research Characterization**
+```bash
+staphscope -i isolate.fasta -o complete_analysis
+```
 
-# Comprehensive isolate characterization
-staphscope -i research_isolate.fasta -o complete_analysis
+---
 
-**# Research outputs:**
-# - Complete typing profile
-# - Resistance mechanism details
-# - Virulence potential assessment
-# - Epidemiological context
+## 💾 **System Requirements**
 
-## 💾 System Requirements
-Minimum
+### Minimum
 
-    CPU: 4 cores
+* 4 cores
+* 4 GB RAM
+* 4 GB disk
 
-    RAM: 4 GB
+### Recommended
 
-    Storage: 4 GB free space
+* 8+ cores
+* 8+ GB RAM
+* 10+ GB disk
 
-    OS: Linux (Ubuntu/CentOS) or macOS
+### Dependencies (Auto-Installed)
 
-**Recommended**
+* **Python 3.8 → 3.12**
+* AMRFinderPlus
+* ABRicate
+* MLST
+* BLAST+
 
-    CPU: 2+ cores
+---
 
-    RAM: 4+ GB
+## 🐛 **Troubleshooting**
 
-    Storage: 10GB+ free space
+### Database Fix
 
-    OS: Linux with Conda/mamba
-
-**Dependencies (Automatically Installed)**
-
-    Python: 3.8, 3.9, 3.10, 3.11 or 3.12
-
-    Bioinformatics Tools: ABRicate, AMRFinderPlus, MLST, BLAST+
-
-    Perl: Required for several analysis tools
-
-    Databases: All required databases downloaded automatically
-
-## 🐛 Troubleshooting
-**Common Issues
-**
-Database download failures:**
-
-
-# Manual database update
+```bash
 amrfinder --update
-abricate --setupdb 
-**
-Memory issues with large batches:**
+abricate --setupdb
+```
 
-# Process in smaller batches
-staphscope -i "batch1_*.fna" -o results_batch1 --threads 4
-staphscope -i "batch2_*.fna" -o results_batch2 --threads 4
+### Memory Issues
 
-**Support
+```bash
+staphscope -i "batch1_*.fna" -o results1 --threads 4
+```
 
-    Issues: https://github.com/bbeckley-hub/staphscope-typing-tool/issues
+---
 
-    Email: brownbeckley94@gmail.com
+## 🧩 **Support**
 
-    Documentation: See docs/ directory for detailed documentation**
+* Issues: [https://github.com/bbeckley-hub/staphscope-typing-tool/issues](https://github.com/bbeckley-hub/staphscope-typing-tool/issues)
+* Email: [brownbeckley94@gmail.com](mailto:brownbeckley94@gmail.com)
+* Docs: `docs/` directory
 
-## 📚 Citation
+---
 
-**If you use StaphScope in your research, please cite:
-bibtex**
+## 📚 **Citation**
 
+```bibtex
 @software{staphscope2024,
   title = {StaphScope: Advanced Staphylococcus aureus Typing and Lineage Analysis Platform},
   author = {Brown Beckley},
@@ -310,29 +244,28 @@ bibtex**
   url = {https://github.com/bbeckley-hub/staphscope-typing-tool},
   note = {Comprehensive MRSA genomic analysis tool}
 }
+```
 
-## 👨‍💻 Author
+---
 
-**Brown Beckley
+## 👨‍💻 **Author**
 
-    University of Ghana Medical School
+**Brown Beckley**
+University of Ghana Medical School
+Department of Medical Biochemistry
+Email: [brownbeckley94@gmail.com](mailto:brownbeckley94@gmail.com)
+GitHub: [https://github.com/bbeckley-hub](https://github.com/bbeckley-hub)
 
-    Department of Medical Biochemistry
+---
 
-    Email: brownbeckley94@gmail.com
+## 📄 **License**
 
-    GitHub: bbeckley-hub
-**
+MIT License – see `LICENSE` file.
 
-## 📄 License
+---
 
-**This project is licensed under the MIT License - see the LICENSE file for details.
-🔗 Related Resources
-**
-    PubMedST: https://pubmlst.org/organisms/staphylococcus-aureus
+</details>
+```
 
-    SCCmec Database: https://www.sccmec.org/
+---
 
-    NCBI AMRFinderPlus: https://github.com/ncbi/amr
-
-    CARD Database: https://card.mcmaster.ca/**
