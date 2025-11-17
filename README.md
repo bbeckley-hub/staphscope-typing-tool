@@ -1,6 +1,6 @@
 <div align="center"> 
   
-  ![Version](https://anaconda.org/bbeckley-hub/staphscope/badges/version.svg)![Latest Release Date](https://anaconda.org/bbeckley-hub/staphscope/badges/latest_release_date.svg)[Platforms](https://anaconda.org/bbeckley-hub/staphscope/badges/platforms.svg)]![License](https://anaconda.org/bbeckley-hub/staphscope/badges/license.svg)][Downloads](https://anaconda.org/bbeckley-hub/staphscope/badges/downloads.svg)]
+  ![Version](https://anaconda.org/bbeckley-hub/staphscope/badges/version.svg)![Latest Release Date](https://anaconda.org/bbeckley-hub/staphscope/badges/latest_release_date.svg)![Platforms](https://anaconda.org/bbeckley-hub/staphscope/badges/platforms.svg)]![License](https://anaconda.org/bbeckley-hub/staphscope/badges/license.svg)]![Downloads](https://anaconda.org/bbeckley-hub/staphscope/badges/downloads.svg)]
   
   **Comprehensive MRSA genomic analysis pipeline for typing, resistance profiling, and lineage analysis** 
   
