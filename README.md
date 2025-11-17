@@ -264,9 +264,41 @@ MIT License – see `LICENSE` file.
 
 ---
 ## 📄 **OTHER CITATIONS**
+
 Please cite the following integrated tools:
+>Joensen, K. G., A. M. Tetzschner, A. Iguchi, F. M. Aarestrup, and F. Scheutz. 2015. Rapid and easy in silico serotyping of Escherichia coli using whole genome sequencing (WGS) data. J.Clin.Microbiol. 53(8):2410-2426. doi:JCM.00008-15 [pii];10.1128/JCM.00008-15 [doi]
 
+>Larsen, M., Cosentino, S., Rasmussen, S., Rundsten, C., Hasman, H., Marvig, R., Jelsbak, L., Sicheritz-PontÃ©n, T., Ussery, D., Aarestrup, F., & Lund, O. (2012). Multilocus Sequence Typing of Total Genome Sequenced Bacteria.
+Journal of Clinical Microbiology, 50(4), 1355-1361. doi: 10.12.0/JCM.06094-11
 
+>Clausen, P., Aarestrup, F., & Lund, O. (2018). Rapid and precise alignment of raw reads against redundant databases with KMA.
+Bmc Bioinformatics,19(1), 307
+
+> Development of a web tool for Escherichia coli subtyping based on fimh alleles.
+Roer L, Tchesnokova V, Allesoe R, Muradova M, Chattopadhyay S, Ahrenfeldt J, Thomsen MCF, Lund O, Hansen F, Hammerum AM, Sokurenko E, and Hasman H.
+J Clin Microbiol. 2017. 55(8): 2538-2543.
+
+>CHTyper, a Web Tool for Subtyping of Extraintestinal Pathogenic Escherichia coli Based on the fumC and fimH Alleles.
+Roer L, Johannesen TB, Hansen F, Stegger M, Tchesnokova V, Sokurenko E, et al.
+J. Clin. Microbiol. 2018;56:e00063-18.
+https://doi.org/10.1128/JCM.00063-18
+
+> Easily phylotyping E. coli via the EzClermont web app and command-line tool
+Nicholas R. Waters, Florence Abram, Fiona Brennan, Ashleigh Holmes, Leighton Pritchard
+bioRxiv 317610; doi: https://doi.org/10.1101/317610
+
+> 
+    Seemann T, Abricate, Github https://github.com/tseemann/abricate
+    NCBI AMRFinderPlus - doi: 10.1128/AAC.00483-19
+    CARD - doi:10.1093/nar/gkw1004
+    Resfinder - doi:10.1093/jac/dks261
+    ARG-ANNOT - doi:10.1128/AAC.01310-13
+    VFDB - doi:10.1093/nar/gkv1239
+    PlasmidFinder - doi:10.1128/AAC.02412-14
+    EcOH - doi:10.1099/mgen.0.000064
+    MEGARES 2.00 - doi:10.1093/nar/gkz1010
+
+> Feldgarden M, Brover V, Gonzalez-Escalona N, Frye JG, Haendiges J, Haft DH, Hoffmann M, Pettengill JB, Prasad AB, Tillman GE, Tyson GH, Klimke W. AMRFinderPlus and the Reference Gene Catalog facilitate examination of the genomic links among antimicrobial resistance, stress response, and virulence. Sci Rep. 2021 Jun 16;11(1):12728. doi: 10.1038/s41598-021-91456-0. PMID: 34135355; PMCID: PMC8208984.
 
 ---
 
