@@ -22,7 +22,8 @@
   - **🌍 Public Health**: Support antimicrobial resistance monitoring programs
 ---
 
-## ✨ Features ### 🔬 Core Analysis Modules 
+## ✨ Features 
+### 🔬 Core Analysis Modules 
 
 | Module | Description | Key Outputs |  
 | **MLST** | Multi-Locus Sequence Typing | Sequence Type (ST), Clonal Complex (CC) | 
@@ -185,7 +186,7 @@ staphscope -i isolate.fasta -o complete_analysis
 
 ### Minimum
 
-* 4 cores
+* 2 cores
 * 4 GB RAM
 * 4 GB disk
 
