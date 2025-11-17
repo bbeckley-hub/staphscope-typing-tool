@@ -12,6 +12,8 @@
   
   ## 🎯 Purpose 
   StaphScope is a comprehensive bioinformatics pipeline specifically designed for Methicillin-Resistant Staphylococcus aureus (MRSA)  genomic analysis. This all-in-one tool provides complete characterization of S. aureus isolates through multiple typing methods, antimicrobial resistance profiling, virulence factor detection, and lineage analysis.
+
+---
   
   ### Key Applications 
   - **🏥 MRSA Surveillance**: Track and characterize MRSA strains in clinical and research settings
@@ -260,6 +262,8 @@ GitHub: [https://github.com/bbeckley-hub](https://github.com/bbeckley-hub)
 MIT License – see `LICENSE` file.
 
 ---
+## 📄 **OTHER CITATIONS**
+Please cite the following integrated tools:
 
 
 
