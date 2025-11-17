@@ -8,6 +8,8 @@
   
   </div> 
   
+---
+  
   ## 🎯 Purpose 
   StaphScope is a comprehensive bioinformatics pipeline specifically designed for Methicillin-Resistant Staphylococcus aureus (MRSA)  genomic analysis. This all-in-one tool provides complete characterization of S. aureus isolates through multiple typing methods, antimicrobial resistance profiling, virulence factor detection, and lineage analysis.
   
@@ -16,16 +18,24 @@
   - **🔍 Outbreak Investigation**: Identify related strains and transmission patterns
   - **🔬 Research Analysis**: Comprehensive genomic profiling for academic studies
   - **🌍 Public Health**: Support antimicrobial resistance monitoring programs
+---
 
 ## ✨ Features ### 🔬 Core Analysis Modules 
 
 | Module | Description | Key Outputs |  
 | **MLST** | Multi-Locus Sequence Typing | Sequence Type (ST), Clonal Complex (CC) | 
+
 | **spa Typing** | Staphylococcal Protein A typing | spa type, repeat sequence | 
+
 | **SCCmec** | Staphylococcal Cassette Chromosome mec | SCCmec type, mec gene complex, ccr complex | 
+
 | **AMR Profiling** | Antimicrobial Resistance genes | Resistance genes, drug classes, mechanisms | 
+
 | **ABRicate** | Comprehensive resistance & virulence | Plasmid markers, virulence factors, resistance databases | 
+
 | **Lineage Analysis** | Strain lineage reference | HTML report with strain classification | 
+
+---
 
 ### 🛡️ MRSA-Specific Capabilities 
 
@@ -35,10 +45,14 @@
 - **AMR Profile**: Comprehensive antimicrobial resistance pattern 
 - **Epidemic Clones**: Identification of major MRSA clonal complexes (CC5, CC8, CC22, CC30, CC45)
 
-## 🚀 Quick Start ### Installation **Option 1: Conda Installation (Recommended)**
+---
 
+## 🚀 Quick Start 
+### Installation 
+**Option 1: Conda Installation (Recommended)**
+```bash
 conda install -c bbeckley-hub -c bioconda -c conda-forge staphscope
-
+```
 Option 2: From Source
 
 #### **Option 2 — From Source**
@@ -186,6 +200,9 @@ staphscope -i isolate.fasta -o complete_analysis
 * ABRicate
 * MLST
 * BLAST+
+* CGECORE
+* KMA
+  
 
 ---
 
@@ -244,8 +261,7 @@ MIT License – see `LICENSE` file.
 
 ---
 
-</details>
-```
+
 
 ---
 
