@@ -1,15 +1,14 @@
 <div align="center"> 
-  ![Version](https://anaconda.org/bbeckley-hub/staphscope/badges/version.svg) 
-  ![Latest Release Date](https://anaconda.org/bbeckley-hub/staphscope/badges/latest_release_date.svg) 
-  ![Platforms](https://anaconda.org/bbeckley-hub/staphscope/badges/platforms.svg) 
-  ![License](https://anaconda.org/bbeckley-hub/staphscope/badges/license.svg) 
-  ![Downloads](https://anaconda.org/bbeckley-hub/staphscope/badges/downloads.svg) 
+  
+  ![Version](https://anaconda.org/bbeckley-hub/staphscope/badges/version.svg)![Latest Release Date](https://anaconda.org/bbeckley-hub/staphscope/badges/latest_release_date.svg)Platforms](https://anaconda.org/bbeckley-hub/staphscope/badges/platforms.svg)![License](https://anaconda.org/bbeckley-hub/staphscope/badges/license.svg) [Downloads](https://anaconda.org/bbeckley-hub/staphscope/badges/downloads.svg) 
   
   **Comprehensive MRSA genomic analysis pipeline for typing, resistance profiling, and lineage analysis** 
   
   [Quick Start](#-quick-start) • [Features](#-features) • [Installation](#-installation) • [Usage](#-usage) 
   
-  </div> ## 🎯 Purpose StaphScope is a comprehensive bioinformatics pipeline specifically designed for **Methicillin-Resistant *Staphylococcus aureus* (MRSA)** genomic analysis. This all-in-one tool provides complete characterization of *S. aureus* isolates through multiple typing methods, antimicrobial resistance profiling, virulence factor detection, and lineage analysis.
+  </div> 
+  
+  ## 🎯 Purpose StaphScope is a comprehensive bioinformatics pipeline specifically designed for Methicillin-Resistant Staphylococcus aureus (MRSA)  genomic analysis. This all-in-one tool provides complete characterization of S. aureus isolates through multiple typing methods, antimicrobial resistance profiling, virulence factor detection, and lineage analysis.
   
   ### Key Applications 
   - **🏥 MRSA Surveillance**: Track and characterize MRSA strains in clinical and research settings
@@ -18,7 +17,8 @@
   - **🌍 Public Health**: Support antimicrobial resistance monitoring programs
 
 ## ✨ Features ### 🔬 Core Analysis Modules 
-| Module | Description | Key Outputs | |--------|-------------|-------------| 
+
+| Module | Description | Key Outputs |  
 | **MLST** | Multi-Locus Sequence Typing | Sequence Type (ST), Clonal Complex (CC) | 
 | **spa Typing** | Staphylococcal Protein A typing | spa type, repeat sequence | 
 | **SCCmec** | Staphylococcal Cassette Chromosome mec | SCCmec type, mec gene complex, ccr complex | 
