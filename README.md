@@ -1,65 +1,44 @@
-````markdown
-<details>
-<summary><h2>📦 StaphScope: Advanced Staphylococcus aureus Typing & Lineage Analysis Platform</h2></summary>
+<div align="center"> 
+  ![Version](https://anaconda.org/bbeckley-hub/staphscope/badges/version.svg) 
+  ![Latest Release Date](https://anaconda.org/bbeckley-hub/staphscope/badges/latest_release_date.svg) 
+  ![Platforms](https://anaconda.org/bbeckley-hub/staphscope/badges/platforms.svg) 
+  ![License](https://anaconda.org/bbeckley-hub/staphscope/badges/license.svg) 
+  ![Downloads](https://anaconda.org/bbeckley-hub/staphscope/badges/downloads.svg) 
+  
+  **Comprehensive MRSA genomic analysis pipeline for typing, resistance profiling, and lineage analysis** 
+  
+  [Quick Start](#-quick-start) • [Features](#-features) • [Installation](#-installation) • [Usage](#-usage) 
+  
+  </div> ## 🎯 Purpose StaphScope is a comprehensive bioinformatics pipeline specifically designed for **Methicillin-Resistant *Staphylococcus aureus* (MRSA)** genomic analysis. This all-in-one tool provides complete characterization of *S. aureus* isolates through multiple typing methods, antimicrobial resistance profiling, virulence factor detection, and lineage analysis.
+  
+  ### Key Applications 
+  - **🏥 MRSA Surveillance**: Track and characterize MRSA strains in clinical and research settings
+  - **🔍 Outbreak Investigation**: Identify related strains and transmission patterns
+  - **🔬 Research Analysis**: Comprehensive genomic profiling for academic studies
+  - **🌍 Public Health**: Support antimicrobial resistance monitoring programs
 
-<div align="center">
+## ✨ Features ### 🔬 Core Analysis Modules 
+| Module | Description | Key Outputs | |--------|-------------|-------------| 
+| **MLST** | Multi-Locus Sequence Typing | Sequence Type (ST), Clonal Complex (CC) | 
+| **spa Typing** | Staphylococcal Protein A typing | spa type, repeat sequence | 
+| **SCCmec** | Staphylococcal Cassette Chromosome mec | SCCmec type, mec gene complex, ccr complex | 
+| **AMR Profiling** | Antimicrobial Resistance genes | Resistance genes, drug classes, mechanisms | 
+| **ABRicate** | Comprehensive resistance & virulence | Plasmid markers, virulence factors, resistance databases | 
+| **Lineage Analysis** | Strain lineage reference | HTML report with strain classification | 
 
-![Version](https://anaconda.org/bbeckley-hub/staphscope/badges/version.svg)
-![Latest Release Date](https://anaconda.org/bbeckley-hub/staphscope/badges/latest_release_date.svg)
-![Platforms](https://anaconda.org/bbeckley-hub/staphscope/badges/platforms.svg)
-![License](https://anaconda.org/bbeckley-hub/staphscope/badges/license.svg)
-![Downloads](https://anaconda.org/bbeckley-hub/staphscope/badges/downloads.svg)
+### 🛡️ MRSA-Specific Capabilities 
 
-**Comprehensive MRSA genomic analysis pipeline for typing, resistance profiling, and lineage analysis**  
-**Supports Python 3.8 → 3.12**
+- **SCCmec Typing**: Accurate identification of SCCmec types I-XIII
+- **mecA/mecC Detection**: Methicillin resistance determinant detection 
+- **PVL Toxin Screening**: Panton-Valentine Leukocidin gene detection 
+- **AMR Profile**: Comprehensive antimicrobial resistance pattern 
+- **Epidemic Clones**: Identification of major MRSA clonal complexes (CC5, CC8, CC22, CC30, CC45)
 
-[Quick Start](#-quick-start) • [Features](#-features) • [Installation](#-installation) • [Usage](#-usage)
+## 🚀 Quick Start ### Installation **Option 1: Conda Installation (Recommended)**
 
-</div>
-
----
-
-## 🎯 **Purpose**
-StaphScope is a unified bioinformatics workflow for **Methicillin-Resistant *Staphylococcus aureus* (MRSA)** analysis.  
-It performs complete genomics-based characterization: typing, resistance profiling, virulence detection, and lineage assignment.
-
-### **Key Applications**
-- 🏥 **MRSA Surveillance**  
-- 🔍 **Outbreak Investigation**  
-- 🔬 **Research Genomics**  
-- 🌍 **Public Health AMR Monitoring**
-
----
-
-## ✨ **Features**
-
-### 🔬 **Core Analysis Modules**
-| Module | Description | Output |
-|--------|-------------|--------|
-| **MLST** | Sequence typing | ST, CC |
-| **spa Typing** | Protein A typing | spa type, repeats |
-| **SCCmec** | MRSA cassette typing | SCCmec type, mec/ccr complexes |
-| **AMR Profiling** | AMRFinderPlus | AMR genes, mechanisms |
-| **ABRicate** | Comprehensive screening | Resistance, virulence, plasmids |
-| **Lineage Analysis** | Phylo-reference | Interactive HTML report |
-
-### 🛡️ **MRSA-Specific Capabilities**
-- SCCmec I–XIII detection  
-- mecA/mecC detection  
-- PVL toxin screening  
-- Epidemic clone identification  
-- Complete AMR pattern prediction  
-
----
-
-## 🚀 **Quick Start**
-
-### **Installation**
-
-#### **Option 1 — Conda (Recommended)**
-```bash
 conda install -c bbeckley-hub -c bioconda -c conda-forge staphscope
-````
+
+Option 2: From Source
 
 #### **Option 2 — From Source**
 
