@@ -251,7 +251,7 @@ staphscope -i "batch1_*.fna" -o results1 --threads 4
 ## 👨‍💻 **Author**
 
 **Brown Beckley**
-University of Ghana Medical School
+University of Ghana Medical School-
 Department of Medical Biochemistry
 Email: [brownbeckley94@gmail.com](mailto:brownbeckley94@gmail.com)
 GitHub: [https://github.com/bbeckley-hub](https://github.com/bbeckley-hub)
