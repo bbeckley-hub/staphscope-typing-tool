@@ -245,6 +245,11 @@ staphscope -i "batch1_*.fna" -o results1 --threads 4
   note = {Comprehensive MRSA genomic analysis tool}
 }
 ```
+Acknowledgements
+
+Staphscope is truly what it is today by the work of other authors. Staphscope integrates tools that was created by others and made freely available to the public.
+
+I would like to personally extend my many thanks and gratitude to the authors of these software packages and public datasets. If you've made it this far, I owe you a beer 🍻 (or coffee ☕!) if we ever encounter one another in person. Really, thank you very much!
 
 ---
 
