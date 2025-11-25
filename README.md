@@ -296,4 +296,12 @@ Bmc Bioinformatics,19(1), 307
 > Feldgarden M, Brover V, Gonzalez-Escalona N, Frye JG, Haendiges J, Haft DH, Hoffmann M, Pettengill JB, Prasad AB, Tillman GE, Tyson GH, Klimke W. AMRFinderPlus and the Reference Gene Catalog facilitate examination of the genomic links among antimicrobial resistance, stress response, and virulence. Sci Rep. 2021 Jun 16;11(1):12728. doi: 10.1038/s41598-021-91456-0. PMID: 34135355; PMCID: PMC8208984.
 
 ---
-
+UPCOMING FEATURES
+---
+Cross Genome Pattern Discovery
+High risk AMR gene flagging
+Machine Learning analysis pattern discovery
+Regular database updates to strength MRSA surveillance
+---
+FOR COLLABORATION AND FEATURE SUGGESTIONS, DO NOT HESISTATE TO REACH OUT BY MAIL.
+---
