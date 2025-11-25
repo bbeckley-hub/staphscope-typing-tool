@@ -298,10 +298,11 @@ Bmc Bioinformatics,19(1), 307
 ---
 UPCOMING FEATURES
 ---
-Cross Genome Pattern Discovery
-High risk AMR gene flagging
-Machine Learning analysis pattern discovery
+Cross Genome Pattern Discovery,
+High risk AMR gene flagging,
+Machine Learning analysis pattern discovery,
 Regular database updates to strength MRSA surveillance
+
 ---
 FOR COLLABORATION AND FEATURE SUGGESTIONS, DO NOT HESISTATE TO REACH OUT BY MAIL.
 ---
