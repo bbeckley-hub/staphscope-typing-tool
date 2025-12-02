@@ -3,6 +3,9 @@
 StaphScope ABRicate Standalone Module
 Comprehensive ABRicate analysis with HTML and summary.tsv reporting only - MAXIMUM SPEED VERSION
 Author: Beckley Brown <brownbeckley94@gmail.com>
+Affiliation: University of Ghana Medical School-Department of Medical Biochemistry
+Date: 2025
+Send a quick mail for any issues or further explanations.
 """
 
 import subprocess
@@ -18,6 +21,8 @@ import re
 from datetime import datetime
 import psutil
 import math
+import json
+from collections import defaultdict, Counter
 
 class AbricateExecutor:
     """ABRicate executor with comprehensive HTML reporting - MAXIMUM SPEED"""
@@ -43,6 +48,36 @@ class AbricateExecutor:
                         'sea', 'seb', 'sec', 'sed', 'see', 'hlg', 'hla', 'hlb', 'hld',
                         'clf', 'fnb', 'spa', 'sdr', 'isd', 'cap', 'geh', 'aur', 'ssp', 
                         'map', 'vWbp', 'sak', 'scn', 'chp', 'adsA', 'esx', 'ess', 'esa']
+
+        # Enhanced risk categories for S. aureus
+        self.critical_resistance_genes = {
+            'mecA', 'mecC', 'vanA', 'vanB', 'vanC', 'vanD', 'vanE', 'vanG',
+            'cfr', 'optrA', 'poxtA',
+        }
+        
+        self.high_risk_virulence_genes = {
+            'lukS-PV', 'lukF-PV', 'tst', 'eta', 'etb', 'etd', 'sea', 'seb', 'sec', 
+            'sed', 'see', 'pvl', 'hlg', 'hla', 'hlb', 'hld', 
+        }
+        
+        self.metadata = {
+            "tool_name": "StaphScope ABRicate",
+            "version": "1.0.0", 
+            "authors": ["Brown Beckley"],
+            "email": "brownbeckley94@gmail.com",
+            "github": "https://github.com/bbeckley-hub",
+            "affiliation": "University of Ghana Medical School",
+            "analysis_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        }
+        
+        self.science_quotes = [
+            "“The important thing is not to stop questioning. Curiosity has its own reason for existence.” - Albert Einstein",
+            "“Nothing in life is to be feared, it is only to be understood.” - Marie Curie", 
+            "“The microscope opens a new world to the investigator.” - Robert Koch",
+            "“In science, the credit goes to the man who convinces the world, not to the man to whom the idea first occurs.” - Francis Darwin",
+            "“The good thing about science is that it's true whether or not you believe in it.” - Neil deGrasse Tyson",
+            "“Science knows no country, because knowledge belongs to humanity.” - Louis Pasteur"
+        ]
     
     def _setup_logging(self):
         """Setup logging - must be called first in __init__"""
@@ -304,74 +339,225 @@ class AbricateExecutor:
         return hits
     
     def _create_database_html_report(self, genome_name: str, database: str, hits: List[Dict], output_dir: str):
-        """Create individual HTML report for each database"""
+        """Create individual HTML report for each database with beautiful styling"""
+        
+        # JavaScript for rotating quotes
+        quotes_js = f"""
+        <script>
+            let quotes = {json.dumps(self.science_quotes)};
+            let currentQuote = 0;
+            
+            function rotateQuote() {{
+                document.getElementById('science-quote').innerHTML = quotes[currentQuote];
+                currentQuote = (currentQuote + 1) % quotes.length;
+            }}
+            
+            // Rotate every 10 seconds
+            setInterval(rotateQuote, 10000);
+            
+            // Initial display
+            document.addEventListener('DOMContentLoaded', function() {{
+                rotateQuote();
+            }});
+        </script>
+        """
+        
         html_content = f"""
 <!DOCTYPE html>
 <html>
 <head>
-    <title>StaphScope ABRicate Report - {database.upper()}</title>
+    <title>StaphScope ABRicate - {database.upper()} Database</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        body {{ font-family: Arial, sans-serif; margin: 20px; }}
-        .header {{ background: #2c3e50; color: white; padding: 20px; border-radius: 5px; }}
-        .summary {{ background: #ecf0f1; padding: 15px; border-radius: 5px; margin: 10px 0; }}
-        .gene-table {{ width: 100%; border-collapse: collapse; margin: 10px 0; }}
-        .gene-table th, .gene-table td {{ border: 1px solid #ddd; padding: 8px; text-align: left; }}
-        .gene-table th {{ background-color: #34495e; color: white; }}
+        body {{ 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            margin: 0; 
+            padding: 0; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }}
+        .container {{ 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            padding: 20px; 
+        }}
+        .header {{ 
+            background: rgba(255, 255, 255, 0.95); 
+            padding: 30px; 
+            border-radius: 15px; 
+            margin-bottom: 30px; 
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+        }}
+        .card {{ 
+            background: rgba(255, 255, 255, 0.95); 
+            padding: 25px; 
+            margin: 20px 0; 
+            border-radius: 12px; 
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+        }}
+        .gene-table {{ 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin: 20px 0; 
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }}
+        .gene-table th, .gene-table td {{ 
+            padding: 15px; 
+            text-align: left; 
+            border-bottom: 1px solid #e0e0e0; 
+        }}
+        .gene-table th {{ 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: 600;
+        }}
+        tr:hover {{ background-color: #f8f9fa; }}
+        .summary-stats {{ 
+            display: flex; 
+            justify-content: space-around; 
+            margin: 20px 0; 
+            flex-wrap: wrap;
+        }}
+        .stat-card {{ 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px; 
+            border-radius: 12px; 
+            text-align: center; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            margin: 10px;
+            flex: 1;
+            min-width: 200px;
+        }}
+        .quote-container {{
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+            text-align: center;
+            font-style: italic;
+            border-left: 4px solid #fff;
+        }}
+        .footer {{
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 30px;
+            border-radius: 12px;
+            margin-top: 40px;
+        }}
+        .footer a {{
+            color: #667eea;
+            text-decoration: none;
+        }}
+        .footer a:hover {{
+            text-decoration: underline;
+        }}
         .present {{ background-color: #d4edda; }}
+        .high-risk {{ background-color: #fff3cd; }}
+        .critical {{ background-color: #f8d7da; font-weight: bold; }}
     </style>
+    {quotes_js}
 </head>
 <body>
-    <div class="header">
-        <h1>StaphScope ABRicate Analysis Report</h1>
-        <p>Genome: {genome_name} | Database: {database.upper()} | Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M')}</p>
-    </div>
-    
-    <div class="summary">
-        <h2>Database Summary</h2>
-        <p><strong>Total genes detected:</strong> {len(hits)}</p>
-        <p><strong>Database:</strong> {database.upper()}</p>
-    </div>
+    <div class="container">
+        <div class="header">
+            <h1 style="color: #333; margin: 0; font-size: 2.5em;">🧫 StaphScope ABRicate - {database.upper()} Database</h1>
+            <p style="color: #666; font-size: 1.2em;">Genome: {genome_name} | Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M')}</p>
+        </div>
+        
+        <div class="quote-container">
+            <div id="science-quote" style="font-size: 1.1em;"></div>
+        </div>
+        
+        <div class="card">
+            <h2 style="color: #333; border-bottom: 2px solid #667eea; padding-bottom: 10px;">📊 Database Summary</h2>
+            <div class="summary-stats">
+                <div class="stat-card">
+                    <h3>Total Genes</h3>
+                    <p style="font-size: 2em; margin: 0;">{len(hits)}</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Database</h3>
+                    <p style="font-size: 1.5em; margin: 0;">{database.upper()}</p>
+                </div>
+            </div>
+        </div>
 """
         
         if hits:
             html_content += """
-    <h2>Genes Detected</h2>
-    <table class="gene-table">
-        <tr>
-            <th>Gene</th>
-            <th>Product</th>
-            <th>Coverage</th>
-            <th>Identity</th>
-            <th>Accession</th>
-        </tr>
+        <div class="card">
+            <h2 style="color: #333; border-bottom: 2px solid #667eea; padding-bottom: 10px;">🔍 Genes Detected</h2>
+            <table class="gene-table">
+                <thead>
+                    <tr>
+                        <th>Gene</th>
+                        <th>Product</th>
+                        <th>Coverage</th>
+                        <th>Identity</th>
+                        <th>Accession</th>
+                    </tr>
+                </thead>
+                <tbody>
 """
             
             for hit in hits:
+                # Determine row class based on gene risk
+                row_class = "present"
+                gene_base = hit['gene'].split('-')[0]  # Get base gene name
+                
+                if any(hr_gene in gene_base for hr_gene in self.critical_resistance_genes):
+                    row_class = "critical"
+                elif any(vf_gene in gene_base for vf_gene in self.high_risk_virulence_genes):
+                    row_class = "high-risk"
+                
                 # Truncate very long product descriptions for display
                 product_display = hit['product']
                 if len(product_display) > 150:
                     product_display = product_display[:147] + "..."
                 
                 html_content += f"""
-        <tr class="present">
-            <td>{hit['gene']}</td>
-            <td title="{hit['product']}">{product_display}</td>
-            <td>{hit['coverage_percent']}%</td>
-            <td>{hit['identity_percent']}%</td>
-            <td>{hit['accession']}</td>
-        </tr>
+                    <tr class="{row_class}">
+                        <td><strong>{hit['gene']}</strong></td>
+                        <td title="{hit['product']}">{product_display}</td>
+                        <td>{hit['coverage_percent']}%</td>
+                        <td>{hit['identity_percent']}%</td>
+                        <td>{hit['accession']}</td>
+                    </tr>
 """
             
-            html_content += "</table>"
+            html_content += """
+                </tbody>
+            </table>
+        </div>
+"""
         else:
             html_content += """
-    <div class="summary">
-        <h2>No Genes Detected</h2>
-        <p>No significant hits found in this database.</p>
-    </div>
+        <div class="card">
+            <h2 style="color: #333; border-bottom: 2px solid #667eea; padding-bottom: 10px;">✅ No Genes Detected</h2>
+            <p>No significant hits found in the {database.upper()} database.</p>
+        </div>
 """
         
-        html_content += """
+        html_content += f"""
+        <div class="footer">
+            <h3 style="color: #fff; border-bottom: 2px solid #667eea; padding-bottom: 10px;">👥 Contact Information</h3>
+            <p><strong>Author:</strong> Brown Beckley</p>
+            <p><strong>Email:</strong> brownbeckley94@gmail.com</p>
+            <p><strong>GitHub:</strong> <a href="https://github.com/bbeckley-hub" target="_blank">https://github.com/bbeckley-hub</a></p>
+            <p><strong>Affiliation:</strong> University of Ghana Medical School</p>
+            <p style="margin-top: 20px; font-size: 0.9em; color: #ccc;">
+                Analysis performed using StaphScope ABRicate v1.0.1
+            </p>
+        </div>
+    </div>
 </body>
 </html>
 """
@@ -382,10 +568,573 @@ class AbricateExecutor:
             f.write(html_content)
         
         self.logger.info("Individual database report: %s", html_file)
+        
+    def analyze_saureus_genes(self, all_hits: List[Dict]) -> Dict[str, Any]:
+        """Enhanced S. aureus gene analysis with comprehensive risk assessment"""
+        analysis = {
+            'mrsa_status': 'negative',
+            'pvl_status': 'negative',  # negative, partial, or positive
+            'vancomycin_resistance': 'negative',
+            'critical_resistance_genes': [],
+            'pvl_genes_found': [],
+            'high_risk_virulence_genes': [],
+            'other_sa_genes': [],
+            'resistance_classes': {},
+            'total_critical_resistance': 0,
+            'total_high_risk_virulence': 0,
+            'total_sa_genes': 0,
+            'total_hits': len(all_hits)
+        }
+        
+        pvl_genes_found = []
+        
+        for hit in all_hits:
+            gene = hit['gene']
+            
+            # Check for CRITICAL resistance patterns (check both full gene name and base)
+            is_critical_resistance = False
+            for crit_gene in self.critical_resistance_genes:
+                if crit_gene in gene:  # Check if critical gene pattern is in the full gene name
+                    is_critical_resistance = True
+                    if any(mec in gene for mec in ['mecA', 'mecC']):
+                        analysis['mrsa_status'] = 'positive'
+                        risk_level = 'MRSA'
+                    elif any(van in gene for van in ['vanA', 'vanB', 'vanC', 'vanD', 'vanE', 'vanG']):
+                        analysis['vancomycin_resistance'] = 'positive'
+                        risk_level = 'VANCOMYCIN-RES'
+                    else:
+                        risk_level = 'CRITICAL-RES'
+                    
+                    analysis['critical_resistance_genes'].append({
+                        'gene': gene,
+                        'product': hit['product'],
+                        'database': hit['database'],
+                        'coverage': hit['coverage_percent'],
+                        'identity': hit['identity_percent'],
+                        'risk_level': risk_level
+                    })
+                    break
+            
+            # Check for HIGH RISK virulence genes (including PVL genes)
+            is_high_risk_virulence = False
+            if not is_critical_resistance:
+                for vf_gene in self.high_risk_virulence_genes:
+                    if vf_gene in gene:  # Check if virulence gene pattern is in the full gene name
+                        is_high_risk_virulence = True
+                        # PVL detection - track both lukS-PV and lukF-PV
+                        if gene in ['lukS-PV', 'lukF-PV']:
+                            pvl_genes_found.append(gene)
+                            analysis['pvl_genes_found'].append(gene)
+                            risk_level = 'PVL'
+                        elif 'tst' in gene:
+                            risk_level = 'TSST-1'
+                        elif any(et in gene for et in ['eta', 'etb', 'etd']):
+                            risk_level = 'EXFOLIATIN'
+                        elif any(se in gene for se in ['sea', 'seb', 'sec', 'sed', 'see']):
+                            risk_level = 'ENTEROTOXIN'
+                        else:
+                            risk_level = 'HIGH-VIRULENCE'
+                        
+                        analysis['high_risk_virulence_genes'].append({
+                            'gene': gene,
+                            'product': hit['product'],
+                            'database': hit['database'],
+                            'coverage': hit['coverage_percent'],
+                            'identity': hit['identity_percent'],
+                            'risk_level': risk_level
+                        })
+                        break
+            
+            # Check for other S. aureus genes (only if not already classified above)
+            if not is_critical_resistance and not is_high_risk_virulence:
+                for sa_gene in self.sa_genes:
+                    if sa_gene in gene:  # Check if S. aureus gene pattern is in the full gene name
+                        analysis['other_sa_genes'].append({
+                            'gene': gene,
+                            'product': hit['product'],
+                            'database': hit['database'],
+                            'coverage': hit['coverage_percent'],
+                            'identity': hit['identity_percent'],
+                            'risk_level': 'S.AUREUS'
+                        })
+                        break
+            
+            # Track resistance classes
+            resistance_class = self._classify_resistance(hit['product'])
+            if resistance_class:
+                if resistance_class not in analysis['resistance_classes']:
+                    analysis['resistance_classes'][resistance_class] = []
+                if gene not in [g['gene'] for g in analysis['resistance_classes'][resistance_class]]:
+                    analysis['resistance_classes'][resistance_class].append({
+                        'gene': gene,
+                        'product': hit['product']
+                    })
+        
+        # Set PVL status with partial detection
+        unique_pvl_genes = set(pvl_genes_found)
+        if len(unique_pvl_genes) == 2:  # Both lukS-PV and lukF-PV present
+            analysis['pvl_status'] = 'positive'
+        elif len(unique_pvl_genes) == 1:  # Only one PVL gene present
+            analysis['pvl_status'] = 'partial'
+        else:  # No PVL genes
+            analysis['pvl_status'] = 'negative'
+        
+        # Calculate totals
+        analysis['total_critical_resistance'] = len(analysis['critical_resistance_genes'])
+        analysis['total_high_risk_virulence'] = len(analysis['high_risk_virulence_genes'])
+        analysis['total_sa_genes'] = len(analysis['critical_resistance_genes']) + len(analysis['high_risk_virulence_genes']) + len(analysis['other_sa_genes'])
+        
+        return analysis  
+
+    def _classify_resistance(self, product: str) -> str:
+        """Enhanced resistance classification for S. aureus"""
+        product_lower = product.lower()
+        
+        if any(term in product_lower for term in ['methicillin', 'mecA', 'mecC', 'penicillin']):
+            return 'Beta-lactam resistance'
+        elif any(term in product_lower for term in ['vancomycin', 'vanA', 'vanB']):
+            return 'Glycopeptide resistance'
+        elif any(term in product_lower for term in ['macrolide', 'erythromycin', 'mph']):
+            return 'Macrolide resistance'
+        elif any(term in product_lower for term in ['tetracycline', 'tet']):
+            return 'Tetracycline resistance'
+        elif any(term in product_lower for term in ['aminoglycoside', 'aac', 'aad', 'aph']):
+            return 'Aminoglycoside resistance'
+        elif any(term in product_lower for term in ['fluoroquinolone', 'quinolone']):
+            return 'Fluoroquinolone resistance'
+        elif any(term in product_lower for term in ['efflux', 'multidrug']):
+            return 'Efflux pumps'
+        else:
+            return 'Other resistance'
+    
+    def create_comprehensive_html_report(self, genome_name: str, results: Dict, output_dir: str):
+        """Create comprehensive HTML report for S. aureus with beautiful styling"""
+        
+        # Collect all hits
+        all_hits = []
+        for db_result in results.values():
+            all_hits.extend(db_result['hits'])
+        
+        # Analyze S. aureus genes
+        analysis = self.analyze_saureus_genes(all_hits)
+        
+        # JavaScript for rotating quotes
+        quotes_js = f"""
+        <script>
+            let quotes = {json.dumps(self.science_quotes)};
+            let currentQuote = 0;
+            
+            function rotateQuote() {{
+                document.getElementById('science-quote').innerHTML = quotes[currentQuote];
+                currentQuote = (currentQuote + 1) % quotes.length;
+            }}
+            
+            // Rotate every 10 seconds
+            setInterval(rotateQuote, 10000);
+            
+            // Initial display
+            document.addEventListener('DOMContentLoaded', function() {{
+                rotateQuote();
+            }});
+        </script>
+        """
+        
+        html_content = f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <title>StaphScope ABRicate Analysis Report</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {{ 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            margin: 0; 
+            padding: 0; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }}
+        .container {{ 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            padding: 20px; 
+        }}
+        .header {{ 
+            background: rgba(255, 255, 255, 0.95); 
+            padding: 30px; 
+            border-radius: 15px; 
+            margin-bottom: 30px; 
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+        }}
+        .card {{ 
+            background: rgba(255, 255, 255, 0.95); 
+            padding: 25px; 
+            margin: 20px 0; 
+            border-radius: 12px; 
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+        }}
+        .gene-table {{ 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin: 20px 0; 
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }}
+        .gene-table th, .gene-table td {{ 
+            padding: 15px; 
+            text-align: left; 
+            border-bottom: 1px solid #e0e0e0; 
+        }}
+        .gene-table th {{ 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: 600;
+        }}
+        tr:hover {{ background-color: #f8f9fa; }}
+        .success {{ color: #28a745; font-weight: 600; }}
+        .warning {{ color: #ffc107; font-weight: 600; }}
+        .error {{ color: #dc3545; font-weight: 600; }}
+        .critical {{ background-color: #f8d7da; font-weight: bold; }}
+        .high-risk {{ background-color: #fff3cd; }}
+        .summary-stats {{ 
+            display: flex; 
+            justify-content: space-around; 
+            margin: 20px 0; 
+            flex-wrap: wrap;
+        }}
+        .stat-card {{ 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px; 
+            border-radius: 12px; 
+            text-align: center; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            margin: 10px;
+            flex: 1;
+            min-width: 200px;
+        }}
+        .quote-container {{
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+            text-align: center;
+            font-style: italic;
+            border-left: 4px solid #fff;
+        }}
+        .footer {{
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 30px;
+            border-radius: 12px;
+            margin-top: 40px;
+        }}
+        .footer a {{
+            color: #667eea;
+            text-decoration: none;
+        }}
+        .footer a:hover {{
+            text-decoration: underline;
+        }}
+        .risk-badge {{
+            display: inline-block;
+            background: #dc3545;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            margin: 2px;
+            font-size: 0.9em;
+        }}
+        .warning-badge {{
+            display: inline-block;
+            background: #ffc107;
+            color: black;
+            padding: 5px 10px;
+            border-radius: 15px;
+            margin: 2px;
+            font-size: 0.9em;
+        }}
+        .safe-badge {{
+            display: inline-block;
+            background: #28a745;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            margin: 2px;
+            font-size: 0.9em;
+        }}
+    </style>
+    {quotes_js}
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 style="color: #333; margin: 0; font-size: 2.5em;">🧫 StaphScope ABRicate Analysis Report</h1>
+            <p style="color: #666; font-size: 1.2em;">Comprehensive S. aureus Antimicrobial Resistance & Virulence Analysis</p>
+        </div>
+        
+        <div class="quote-container">
+            <div id="science-quote" style="font-size: 1.1em;"></div>
+        </div>
+        
+        <div class="card">
+            <h2 style="color: #333; border-bottom: 2px solid #667eea; padding-bottom: 10px;">📊 S. aureus AMR Summary</h2>
+            <div class="summary-stats">
+                <div class="stat-card">
+                    <h3>Total Genes</h3>
+                    <p style="font-size: 2em; margin: 0;">{analysis['total_hits']}</p>
+                </div>
+                <div class="stat-card">
+                    <h3>S. aureus Genes</h3>
+                    <p style="font-size: 2em; margin: 0;">{analysis['total_sa_genes']}</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Critical Resistance</h3>
+                    <p style="font-size: 2em; margin: 0;">{analysis['total_critical_resistance']}</p>
+                </div>
+            </div>
+            <p><strong>Genome:</strong> {genome_name}</p>
+            <p><strong>Date:</strong> {self.metadata['analysis_date']}</p>
+            <p><strong>Tool Version:</strong> {self.metadata['version']}</p>
+        </div>
+"""
+        
+        # Critical resistance alerts
+        critical_alerts = []
+        if analysis['mrsa_status'] == 'positive':
+            critical_alerts.append("🔴 MRSA DETECTED")
+        if analysis['vancomycin_resistance'] == 'positive':
+            critical_alerts.append("🔴 VANCOMYCIN RESISTANCE DETECTED")
+        
+        if critical_alerts:
+            html_content += f"""
+        <div class="card" style="border-left: 4px solid #dc3545;">
+            <h2 style="color: #dc3545;">⚠️ CRITICAL RESISTANCE ALERTS</h2>
+            <div style="margin: 10px 0;">
+"""
+            for alert in critical_alerts:
+                html_content += f'<span class="risk-badge">{alert}</span>'
+            html_content += """
+            </div>
+        </div>
+"""
+        
+        # PVL status
+        if analysis['pvl_status'] == 'positive':
+            html_content += f"""
+        <div class="card" style="border-left: 4px solid #ffc107;">
+            <h2 style="color: #ffc107;">🦠 PVL POSITIVE</h2>
+            <p>Panton-Valentine Leukocidin genes detected - High virulence potential</p>
+        </div>
+"""
+        elif analysis['pvl_status'] == 'partial':
+            html_content += f"""
+        <div class="card" style="border-left: 4px solid #ffc107;">
+            <h2 style="color: #ffc107;">🟡 PARTIAL PVL DETECTED</h2>
+            <p>Only one PVL gene detected - Complete PVL requires both lukS-PV and lukF-PV</p>
+        </div>
+"""
+        
+        # Resistance classes summary
+        if analysis['resistance_classes']:
+            html_content += """
+        <div class="card">
+            <h2 style="color: #333; border-bottom: 2px solid #667eea; padding-bottom: 10px;">🧪 Resistance Classes Detected</h2>
+            <div style="margin: 20px 0;">
+"""
+            
+            for class_name, genes in analysis['resistance_classes'].items():
+                gene_list = ", ".join([g['gene'] for g in genes])
+                html_content += f"""
+                <div style="margin: 10px 0; padding: 10px; background: #f8f9fa; border-radius: 8px;">
+                    <strong style="color: #667eea;">{class_name}</strong> ({len(genes)} genes)
+                    <br><span style="color: #666; font-size: 0.9em;">{gene_list}</span>
+                </div>
+"""
+            
+            html_content += "</div></div>"
+        
+        # Critical resistance genes table
+        if analysis['critical_resistance_genes']:
+            html_content += """
+        <div class="card">
+            <h2 style="color: #333; border-bottom: 2px solid #667eea; padding-bottom: 10px;">🔴 CRITICAL Resistance Genes</h2>
+            <table class="gene-table">
+                <thead>
+                    <tr>
+                        <th>Gene</th>
+                        <th>Product</th>
+                        <th>Database</th>
+                        <th>Coverage</th>
+                        <th>Identity</th>
+                        <th>Risk Level</th>
+                    </tr>
+                </thead>
+                <tbody>
+"""
+            
+            for gene_info in analysis['critical_resistance_genes']:
+                product_display = gene_info['product']
+                if len(product_display) > 100:
+                    product_display = gene_info['product'][:97] + "..."
+                
+                html_content += f"""
+                    <tr class="critical">
+                        <td><strong>{gene_info['gene']}</strong></td>
+                        <td title="{gene_info['product']}">{product_display}</td>
+                        <td>{gene_info['database']}</td>
+                        <td>{gene_info['coverage']}%</td>
+                        <td>{gene_info['identity']}%</td>
+                        <td><span class="risk-badge">{gene_info['risk_level']}</span></td>
+                    </tr>
+"""
+            
+            html_content += """
+                </tbody>
+            </table>
+        </div>
+"""
+        
+        # High-risk virulence genes table
+        if analysis['high_risk_virulence_genes']:
+            html_content += """
+        <div class="card">
+            <h2 style="color: #333; border-bottom: 2px solid #667eea; padding-bottom: 10px;">🟡 High-Risk Virulence Genes</h2>
+            <table class="gene-table">
+                <thead>
+                    <tr>
+                        <th>Gene</th>
+                        <th>Product</th>
+                        <th>Database</th>
+                        <th>Coverage</th>
+                        <th>Identity</th>
+                        <th>Risk Level</th>
+                    </tr>
+                </thead>
+                <tbody>
+"""
+            
+            for gene_info in analysis['high_risk_virulence_genes']:
+                product_display = gene_info['product']
+                if len(product_display) > 100:
+                    product_display = gene_info['product'][:97] + "..."
+                
+                html_content += f"""
+                    <tr class="high-risk">
+                        <td><strong>{gene_info['gene']}</strong></td>
+                        <td title="{gene_info['product']}">{product_display}</td>
+                        <td>{gene_info['database']}</td>
+                        <td>{gene_info['coverage']}%</td>
+                        <td>{gene_info['identity']}%</td>
+                        <td><span class="warning-badge">{gene_info['risk_level']}</span></td>
+                    </tr>
+"""
+            
+            html_content += """
+                </tbody>
+            </table>
+        </div>
+"""
+        
+        # Other S. aureus genes table
+        if analysis['other_sa_genes']:
+            html_content += """
+        <div class="card">
+            <h2 style="color: #333; border-bottom: 2px solid #667eea; padding-bottom: 10px;">🔵 Other S. aureus Genes</h2>
+            <table class="gene-table">
+                <thead>
+                    <tr>
+                        <th>Gene</th>
+                        <th>Product</th>
+                        <th>Database</th>
+                        <th>Coverage</th>
+                        <th>Identity</th>
+                    </tr>
+                </thead>
+                <tbody>
+"""
+            
+            for gene_info in analysis['other_sa_genes']:
+                product_display = gene_info['product']
+                if len(product_display) > 100:
+                    product_display = gene_info['product'][:97] + "..."
+                
+                html_content += f"""
+                    <tr>
+                        <td><strong>{gene_info['gene']}</strong></td>
+                        <td title="{gene_info['product']}">{product_display}</td>
+                        <td>{gene_info['database']}</td>
+                        <td>{gene_info['coverage']}%</td>
+                        <td>{gene_info['identity']}%</td>
+                    </tr>
+"""
+            
+            html_content += """
+                </tbody>
+            </table>
+        </div>
+"""
+        
+        # Database summary
+        html_content += """
+        <div class="card">
+            <h2 style="color: #333; border-bottom: 2px solid #667eea; padding-bottom: 10px;">🗃️ Database Results Summary</h2>
+            <table class="gene-table">
+                <thead>
+                    <tr>
+                        <th>Database</th>
+                        <th>Hits</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+"""
+        
+        for db, result in results.items():
+            status_icon = "✅" if result['status'] == 'success' else "❌"
+            html_content += f"""
+                    <tr>
+                        <td>{db}</td>
+                        <td>{result['hit_count']}</td>
+                        <td>{status_icon} {result['status']}</td>
+                    </tr>
+"""
+        
+        html_content += """
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="footer">
+            <h3 style="color: #fff; border-bottom: 2px solid #667eea; padding-bottom: 10px;">👥 Contact Information</h3>
+            <p><strong>Author:</strong> Brown Beckley</p>
+            <p><strong>Email:</strong> brownbeckley94@gmail.com</p>
+            <p><strong>GitHub:</strong> <a href="https://github.com/bbeckley-hub" target="_blank">https://github.com/bbeckley-hub</a></p>
+            <p><strong>Affiliation:</strong> University of Ghana Medical School</p>
+            <p style="margin-top: 20px; font-size: 0.9em; color: #ccc;">
+                Analysis performed using StaphScope ABRicate v1.0.1
+            </p>
+        </div>
+    </div>
+</body>
+</html>
+"""
+        
+        # Write comprehensive HTML report
+        html_file = os.path.join(output_dir, f"{genome_name}_comprehensive_abricate_report.html")
+        with open(html_file, 'w') as f:
+            f.write(html_content)
+        
+        self.logger.info("Comprehensive S. aureus HTML report generated: %s", html_file)
     
     def create_database_summaries(self, all_results: Dict[str, Any], output_base: str):
-        """Create ABRicate summary files for each database across all genomes"""
-        self.logger.info("Creating database summary files...")
+        """Create ABRicate summary files and HTML reports for each database across all genomes"""
+        self.logger.info("Creating database summary files and HTML reports...")
         
         # Group results by database
         db_results = {}
@@ -396,13 +1145,15 @@ class AbricateExecutor:
                 
                 # Add hits with genome name
                 for hit in db_result['hits']:
-                    hit['genome'] = genome_name
-                    db_results[db].append(hit)
+                    hit_with_genome = hit.copy()
+                    hit_with_genome['genome'] = genome_name
+                    db_results[db].append(hit_with_genome)
         
-        # Create summary file for each database
+        # Create summary file and HTML report for each database
         for db, hits in db_results.items():
             if hits:
-                summary_file = os.path.join(output_base, f"{db}_abricate_summary.tsv")
+                # Create TSV summary
+                summary_file = os.path.join(output_base, f"staph_{db}_abricate_summary.tsv")
                 
                 # Get headers from first hit
                 headers = list(hits[0].keys())
@@ -417,222 +1168,265 @@ class AbricateExecutor:
                         f.write('\t'.join(row) + '\n')
                 
                 self.logger.info("✓ Created %s summary: %s (%d hits)", db, summary_file, len(hits))
+                
+                # Create HTML summary report for this database
+                self._create_database_summary_html(db, hits, output_base)
             else:
                 self.logger.info("No hits for database %s, skipping summary", db)
     
-    def analyze_saureus_genes(self, all_hits: List[Dict]) -> Dict[str, Any]:
-        """Analyze S. aureus specific genes with improved detection and partial PVL handling"""
-        analysis = {
-            'mrsa_status': 'negative',
-            'pvl_status': 'negative',  # negative, partial, or positive
-            'pvl_genes_found': [],
-            'sa_genes_found': [],
-            'total_sa_genes': 0,
-            'total_hits': len(all_hits)
-        }
+    def _create_database_summary_html(self, database: str, hits: List[Dict], output_base: str):
+        """Create HTML summary report for a specific database across all genomes"""
         
-        # Expanded S. aureus gene patterns
-        sa_gene_patterns = [
-            'mecA', 'mecC', 'lukS-PV', 'lukF-PV', 'spa', 'sdr', 'clf', 'fnb',
-            'hly', 'hla', 'hlb', 'hld', 'hlg', 'sel', 'se', 'et', 'tst',
-            'isd', 'cap', 'geh', 'aur', 'ssp', 'map', 'vWbp', 'sak', 'scn', 'chp',
-            'adsA', 'esx', 'ess', 'esa'
-        ]
-        
-        pvl_genes_found = []
-        
-        for hit in all_hits:
-            gene = hit['gene']
+        # JavaScript for rotating quotes
+        quotes_js = f"""
+        <script>
+            let quotes = {json.dumps(self.science_quotes)};
+            let currentQuote = 0;
             
-            # Check if this is an S. aureus gene
-            is_sa_gene = any(pattern.lower() in gene.lower() for pattern in sa_gene_patterns)
+            function rotateQuote() {{
+                document.getElementById('science-quote').innerHTML = quotes[currentQuote];
+                currentQuote = (currentQuote + 1) % quotes.length;
+            }}
             
-            if is_sa_gene:
-                # Determine function
-                function = 'Resistance'
-                if any(res in gene.lower() for res in ['mec']):
-                    function = 'Resistance'
-                    analysis['mrsa_status'] = 'positive'
-                else:
-                    function = 'Virulence'
-                
-                # Track PVL genes
-                if gene in ['lukS-PV', 'lukF-PV']:
-                    pvl_genes_found.append(gene)
-                    analysis['pvl_genes_found'].append(gene)
-                
-                analysis['sa_genes_found'].append({
-                    'gene': gene,
-                    'product': hit['product'],  # Now correctly gets the full product description
-                    'database': hit['database'],
-                    'coverage': hit['coverage_percent'],  # Correct %coverage
-                    'identity': hit['identity_percent'],  # Correct %identity
-                    'function': function
-                })
-        
-        # Set PVL status with partial detection
-        unique_pvl_genes = set(pvl_genes_found)
-        if len(unique_pvl_genes) == 2:  # Both lukS-PV and lukF-PV present
-            analysis['pvl_status'] = 'positive'
-        elif len(unique_pvl_genes) == 1:  # Only one PVL gene present
-            analysis['pvl_status'] = 'partial'
-        else:  # No PVL genes
-            analysis['pvl_status'] = 'negative'
+            // Rotate every 10 seconds
+            setInterval(rotateQuote, 10000);
             
-        analysis['total_sa_genes'] = len(analysis['sa_genes_found'])
-        return analysis
-    
-    def create_comprehensive_html_report(self, genome_name: str, results: Dict, output_dir: str):
-        """Create comprehensive HTML report with correct data mapping"""
+            // Initial display
+            document.addEventListener('DOMContentLoaded', function() {{
+                rotateQuote();
+            }});
+        </script>
+        """
         
-        # Collect all hits
-        all_hits = []
-        for db_result in results.values():
-            all_hits.extend(db_result['hits'])
+        # Count unique genomes
+        unique_genomes = list(set(hit['genome'] for hit in hits))
         
-        # Analyze S. aureus genes
-        analysis = self.analyze_saureus_genes(all_hits)
+        # Count genes per genome
+        genes_per_genome = {}
+        for hit in hits:
+            genome = hit['genome']
+            if genome not in genes_per_genome:
+                genes_per_genome[genome] = set()
+            genes_per_genome[genome].add(hit['gene'])
         
-        # Create HTML content
         html_content = f"""
 <!DOCTYPE html>
 <html>
 <head>
-    <title>StaphScope ABRicate Analysis Report</title>
+    <title>StaphScope ABRicate - {database.upper()} Database Summary</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        body {{ font-family: Arial, sans-serif; margin: 20px; }}
-        .header {{ background: #2c3e50; color: white; padding: 20px; border-radius: 5px; }}
-        .summary {{ background: #ecf0f1; padding: 15px; border-radius: 5px; margin: 10px 0; }}
-        .gene-table {{ width: 100%; border-collapse: collapse; margin: 10px 0; }}
-        .gene-table th, .gene-table td {{ border: 1px solid #ddd; padding: 8px; text-align: left; }}
-        .gene-table th {{ background-color: #34495e; color: white; }}
+        body {{ 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            margin: 0; 
+            padding: 0; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }}
+        .container {{ 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            padding: 20px; 
+        }}
+        .header {{ 
+            background: rgba(255, 255, 255, 0.95); 
+            padding: 30px; 
+            border-radius: 15px; 
+            margin-bottom: 30px; 
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+        }}
+        .card {{ 
+            background: rgba(255, 255, 255, 0.95); 
+            padding: 25px; 
+            margin: 20px 0; 
+            border-radius: 12px; 
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+        }}
+        .gene-table {{ 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin: 20px 0; 
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }}
+        .gene-table th, .gene-table td {{ 
+            padding: 15px; 
+            text-align: left; 
+            border-bottom: 1px solid #e0e0e0; 
+        }}
+        .gene-table th {{ 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: 600;
+        }}
+        tr:hover {{ background-color: #f8f9fa; }}
+        .summary-stats {{ 
+            display: flex; 
+            justify-content: space-around; 
+            margin: 20px 0; 
+            flex-wrap: wrap;
+        }}
+        .stat-card {{ 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px; 
+            border-radius: 12px; 
+            text-align: center; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            margin: 10px;
+            flex: 1;
+            min-width: 200px;
+        }}
+        .quote-container {{
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+            text-align: center;
+            font-style: italic;
+            border-left: 4px solid #fff;
+        }}
+        .footer {{
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 30px;
+            border-radius: 12px;
+            margin-top: 40px;
+        }}
+        .footer a {{
+            color: #667eea;
+            text-decoration: none;
+        }}
+        .footer a:hover {{
+            text-decoration: underline;
+        }}
         .present {{ background-color: #d4edda; }}
-        .absent {{ background-color: #f8d7da; }}
-        .mrsa {{ background-color: #fff3cd; font-weight: bold; }}
-        .pvl-partial {{ background-color: #ffeaa7; font-weight: bold; }}
     </style>
+    {quotes_js}
 </head>
 <body>
-    <div class="header">
-        <h1>StaphScope ABRicate Analysis Report</h1>
-        <p>Genome: {genome_name} | Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M')}</p>
-    </div>
-    
-    <div class="summary">
-        <h2>Summary</h2>
-        <p><strong>Total genes detected:</strong> {analysis['total_hits']}</p>
-        <p><strong>S. aureus virulence/resistance genes:</strong> {analysis['total_sa_genes']}</p>
-        <p><strong>Databases analyzed:</strong> {len(results)}</p>
-    </div>
+    <div class="container">
+        <div class="header">
+            <h1 style="color: #333; margin: 0; font-size: 2.5em;">🧫 StaphScope ABRicate - {database.upper()} Database Summary</h1>
+            <p style="color: #666; font-size: 1.2em;">Cross-genome analysis of {database.upper()} database results</p>
+        </div>
+        
+        <div class="quote-container">
+            <div id="science-quote" style="font-size: 1.1em;"></div>
+        </div>
+        
+        <div class="card">
+            <h2 style="color: #333; border-bottom: 2px solid #667eea; padding-bottom: 10px;">📊 Database Overview</h2>
+            <div class="summary-stats">
+                <div class="stat-card">
+                    <h3>Total Hits</h3>
+                    <p style="font-size: 2em; margin: 0;">{len(hits)}</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Genomes</h3>
+                    <p style="font-size: 2em; margin: 0;">{len(unique_genomes)}</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Unique Genes</h3>
+                    <p style="font-size: 2em; margin: 0;">{len(set(hit['gene'] for hit in hits))}</p>
+                </div>
+            </div>
+            <p><strong>Database:</strong> {database.upper()}</p>
+            <p><strong>Date:</strong> {self.metadata['analysis_date']}</p>
+        </div>
+        
+        <div class="card">
+            <h2 style="color: #333; border-bottom: 2px solid #667eea; padding-bottom: 10px;">🔍 Genes by Genome</h2>
+            <table class="gene-table">
+                <thead>
+                    <tr>
+                        <th>Genome</th>
+                        <th>Gene Count</th>
+                        <th>Genes Detected</th>
+                    </tr>
+                </thead>
+                <tbody>
 """
         
-        # MRSA status
-        if analysis['mrsa_status'] == 'positive':
+        for genome in sorted(unique_genomes):
+            genes = genes_per_genome.get(genome, set())
+            gene_list = ", ".join(sorted(genes))
             html_content += f"""
-    <div class="summary mrsa">
-        <h2>🔴 MRSA DETECTED</h2>
-        <p>mecA/mecC genes found in database results</p>
-    </div>
-"""
-        else:
-            html_content += """
-    <div class="summary">
-        <h2>🟢 MSSA (No MRSA markers detected)</h2>
-        <p>No mecA or mecC genes found</p>
-    </div>
-"""
-        
-        # PVL status - WITH PARTIAL DETECTION
-        if analysis['pvl_status'] == 'positive':
-            html_content += f"""
-    <div class="summary">
-        <h2>🦠 PVL POSITIVE</h2>
-        <p>Both Panton-Valentine Leukocidin genes detected: {', '.join(analysis['pvl_genes_found'])}</p>
-    </div>
-"""
-        elif analysis['pvl_status'] == 'partial':
-            html_content += f"""
-    <div class="summary pvl-partial">
-        <h2>🟡 PARTIAL PVL DETECTED</h2>
-        <p>Only one PVL gene detected: {', '.join(analysis['pvl_genes_found'])}</p>
-        <p><em>Note: Complete PVL requires both lukS-PV and lukF-PV genes</em></p>
-    </div>
-"""
-        else:
-            html_content += """
-    <div class="summary">
-        <h2>🔵 PVL NEGATIVE</h2>
-        <p>No PVL genes detected</p>
-    </div>
-"""
-        
-        # S. aureus genes table - WITH CORRECT DATA MAPPING
-        if analysis['sa_genes_found']:
-            html_content += """
-    <h2>S. aureus Specific Genes Detected</h2>
-    <table class="gene-table">
-        <tr>
-            <th>Gene</th>
-            <th>Product</th>
-            <th>Database</th>
-            <th>Coverage</th>
-            <th>Identity</th>
-            <th>Function</th>
-        </tr>
-"""
-            
-            for gene_info in analysis['sa_genes_found']:
-                # Truncate long product descriptions for display
-                product_display = gene_info['product']
-                if len(product_display) > 100:
-                    product_display = product_display[:97] + "..."
-                
-                html_content += f"""
-        <tr class="present">
-            <td>{gene_info['gene']}</td>
-            <td title="{gene_info['product']}">{product_display}</td>
-            <td>{gene_info['database']}</td>
-            <td>{gene_info['coverage']}%</td>
-            <td>{gene_info['identity']}%</td>
-            <td>{gene_info['function']}</td>
-        </tr>
-"""
-            
-            html_content += "</table>"
-        
-        # Database summary table
-        html_content += """
-    <h2>Database Results Summary</h2>
-    <table class="gene-table">
-        <tr>
-            <th>Database</th>
-            <th>Hits</th>
-            <th>Status</th>
-        </tr>
-"""
-        
-        for db, result in results.items():
-            status_icon = "✅" if result['status'] == 'success' else "❌"
-            html_content += f"""
-        <tr>
-            <td>{db}</td>
-            <td>{result['hit_count']}</td>
-            <td>{status_icon} {result['status']}</td>
-        </tr>
+                    <tr class="present">
+                        <td><strong>{genome}</strong></td>
+                        <td>{len(genes)}</td>
+                        <td>{gene_list}</td>
+                    </tr>
 """
         
         html_content += """
-    </table>
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="card">
+            <h2 style="color: #333; border-bottom: 2px solid #667eea; padding-bottom: 10px;">📈 Gene Frequency</h2>
+            <table class="gene-table">
+                <thead>
+                    <tr>
+                        <th>Gene</th>
+                        <th>Frequency</th>
+                        <th>Genomes</th>
+                    </tr>
+                </thead>
+                <tbody>
+"""
+        
+        # Calculate gene frequency
+        gene_frequency = {}
+        for hit in hits:
+            gene = hit['gene']
+            if gene not in gene_frequency:
+                gene_frequency[gene] = set()
+            gene_frequency[gene].add(hit['genome'])
+        
+        for gene, genomes in sorted(gene_frequency.items(), key=lambda x: len(x[1]), reverse=True):
+            genome_list = ", ".join(sorted(genomes))
+            html_content += f"""
+                    <tr>
+                        <td><strong>{gene}</strong></td>
+                        <td>{len(genomes)}</td>
+                        <td>{genome_list}</td>
+                    </tr>
+"""
+        
+        html_content += """
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="footer">
+            <h3 style="color: #fff; border-bottom: 2px solid #667eea; padding-bottom: 10px;">👥 Contact Information</h3>
+            <p><strong>Author:</strong> Brown Beckley</p>
+            <p><strong>Email:</strong> brownbeckley94@gmail.com</p>
+            <p><strong>GitHub:</strong> <a href="https://github.com/bbeckley-hub" target="_blank">https://github.com/bbeckley-hub</a></p>
+            <p><strong>Affiliation:</strong> University of Ghana Medical School</p>
+            <p style="margin-top: 20px; font-size: 0.9em; color: #ccc;">
+                Analysis performed using StaphScope ABRicate v1.0.1
+            </p>
+        </div>
+    </div>
 </body>
 </html>
 """
         
-        # Write comprehensive HTML report
-        html_file = os.path.join(output_dir, f"{genome_name}_comprehensive_abricate_report.html")
+        # Write database summary HTML report
+        html_file = os.path.join(output_base, f"staph_{database}_summary_report.html")
         with open(html_file, 'w') as f:
             f.write(html_content)
         
-        self.logger.info("Comprehensive HTML report generated: %s", html_file)
+        self.logger.info("Database summary HTML report: %s", html_file)
     
     def process_single_genome(self, genome_file: str, output_base: str = "abricate_results") -> Dict[str, Any]:
         """Process a single genome with all databases and HTML reporting"""
@@ -725,7 +1519,7 @@ class AbricateExecutor:
                 except Exception as e:
                     self.logger.error("✗ Failed: %s - %s", genome, e)
         
-        # Create database summary files after processing all genomes
+        # Create database summary files and HTML reports after processing all genomes
         self.create_database_summaries(all_results, output_base)
         
         self.logger.info("=== ANALYSIS COMPLETE ===")
@@ -782,9 +1576,29 @@ Supported FASTA extensions: .fasta, .fa, .fna, .faa
         executor.logger.info("\n" + "="*50)
         executor.logger.info("📊 FINAL SUMMARY")
         executor.logger.info("="*50)
+        
+        total_critical_resistance = 0
+        total_mrsa = 0
+        total_pvl = 0
+        
         for genome_name, result in results.items():
-            executor.logger.info("✓ %s: %d total hits across %d databases", 
-                               genome_name, result['total_hits'], len(result['results']))
+            # Collect all hits for this genome
+            all_genome_hits = []
+            for db_result in result['results'].values():
+                all_genome_hits.extend(db_result['hits'])
+            
+            # Analyze for this genome
+            analysis = executor.analyze_saureus_genes(all_genome_hits)
+            
+            executor.logger.info("✓ %s: %d total hits, %d critical resistance, MRSA: %s, PVL: %s", 
+                               genome_name, result['total_hits'], analysis['total_critical_resistance'], 
+                               analysis['mrsa_status'], analysis['pvl_status'])
+            
+            total_critical_resistance += analysis['total_critical_resistance']
+            if analysis['mrsa_status'] == 'positive':
+                total_mrsa += 1
+            if analysis['pvl_status'] == 'positive':
+                total_pvl += 1
         
         # Database usage summary
         executor.logger.info("\n" + "="*50)
@@ -799,7 +1613,13 @@ Supported FASTA extensions: .fasta, .fa, .fna, .faa
         executor.logger.info("CPU cores utilized: %d cores", executor.cpus)
         executor.logger.info("Available RAM: %.1f GB", executor.available_ram)
         executor.logger.info("Total genomes processed: %d", len(results))
+        executor.logger.info("Total critical resistance genes found: %d", total_critical_resistance)
+        executor.logger.info("MRSA-positive genomes: %d", total_mrsa)
+        executor.logger.info("PVL-positive genomes: %d", total_pvl)
         executor.logger.info("Processing mode: MAXIMUM SPEED 🚀")
+        
+        import random
+        executor.logger.info("\n💡 %s", random.choice(executor.science_quotes))
         
     except Exception as e:
         executor.logger.error("Analysis failed: %s", e)
