@@ -7,7 +7,15 @@
   [Quick Start](#-quick-start) • [Features](#-features) • [Installation](#-installation) • [Usage](#-usage) 
   
   </div> 
-  
+
+```bash
+███████╗████████╗ █████╗ ██████╗ ██╗  ██╗███████╗ ██████╗ ██████╗ ██████╗ ███████╗
+██╔════╝╚══██╔══╝██╔══██╗██╔══██╗██║  ██║██╔════╝██╔════╝██╔═══██╗██╔══██╗██╔════╝
+███████╗   ██║   ███████║██████╔╝███████║███████╗██║     ██║   ██║██████╔╝█████╗  
+╚════██║   ██║   ██╔══██║██╔═══╝ ██╔══██║╚════██║██║     ██║   ██║██╔═══╝ ██╔══╝  
+███████║   ██║   ██║  ██║██║     ██║  ██║███████║╚██████╗╚██████╔╝██║     ███████╗
+╚══════╝   ╚═╝   ╚═╝  ╚═╝╚═╝     ╚═╝  ╚═╝╚══════╝ ╚═════╝ ╚═════╝ ╚═╝     ╚══════╝
+```  
 ---
   
   ## 🎯 Purpose 
@@ -298,8 +306,7 @@ Bmc Bioinformatics,19(1), 307
 ---
 UPCOMING FEATURES
 ---
-Cross Genome Pattern Discovery,
-High risk AMR gene flagging,
+
 Machine Learning analysis pattern discovery,
 Regular database updates to strength MRSA surveillance
 
