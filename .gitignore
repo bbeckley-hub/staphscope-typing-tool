@@ -83,3 +83,8 @@ env/
 .coverage
 htmlcov/
 staphscope/modules/sccmec_module/database/
+staphscope/modules/sccmec_module/database/
+*.db
+*.fasta
+*.fa
+*.fna
