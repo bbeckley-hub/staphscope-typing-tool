@@ -82,3 +82,4 @@ env/
 .pytest_cache/
 .coverage
 htmlcov/
+staphscope/modules/sccmec_module/database/
