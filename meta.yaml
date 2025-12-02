@@ -9,35 +9,36 @@ source:
   path: .
 
 build:
-  number: 5
+  number: 0
+  noarch: python
   script: 
     - {{ PYTHON }} -m pip install . --no-deps -vv
-    - {{ PYTHON }} scripts/post_install.py  
   entry_points:
     - staphscope = staphscope.staphscope:main
-  skip: false
 
 requirements:
   host:
-    - python 
+    - python >=3.8
     - pip
     - setuptools
   run:
-     # Core Python packages
+    - python >=3.8
+    # Core Python packages
     - pandas >=1.5.0
     - biopython >=1.80
     - psutil >=5.9.0
     - requests >=2.28.0
     - tqdm >=4.64.0
     - click >=8.0.0
-    # Bioinformatics tools 
-    - abricate =1.0.1
-    - ncbi-amrfinderplus =3.12.8
+    # Bioinformatics tools (available as noarch or have noarch versions)
+    - abricate >=1.0.1
+    - ncbi-amrfinderplus >=3.12.8
     - perl
     - any2fasta
-    - blast >=2.13.0  
+    - blast >=2.13.0
+    # Perl dependencies
     - perl-moo
-    - perl-list-moreutils  
+    - perl-list-moreutils
     - perl-json
     - perl-lwp-protocol-https
     - perl-path-tiny

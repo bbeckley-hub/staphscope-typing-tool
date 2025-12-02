@@ -6,6 +6,8 @@ Rewritten by: Beckley Brown <brownbeckley94@gmail.com>
 Date: 2025-08-18
 Updated: 2025-08-20 (Added enhanced JSON reporting)
 Updated: 2025-08-21 (Enhanced HTML reporting with detailed results)
+Send a quick mail for any issues or further explanations.
+Affiliation: University of Ghana Medical School-Department of Medical Bioichemistry
 """
 
 import os

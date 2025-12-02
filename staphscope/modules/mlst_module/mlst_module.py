@@ -4,6 +4,8 @@ MLST Module for StaphScope - Complete with Beautiful HTML Reports
 Author: Brown Beckley <brownbeckley94@gmail.com>
 GitHub: bbeckley-hub
 Affiliation: University of Ghana Medical School - Department of Medical Biochemistry
+Date: 2025
+Send a quick mail for any issues or further explanations.
 """
 
 import os

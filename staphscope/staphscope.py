@@ -3,6 +3,9 @@
 StaphScope Main Orchestrator - FINAL VERSION WITH PROPER CLEANUP
 Complete S. aureus typing pipeline - MLST, spa, SCCmec, AMR, Virulence, Lineage
 Author: Brown Beckley <brownbeckley94@gmail.com>
+Date: 2025
+Send a quick mail for any issues or further explanations.
+Affiliation: University of Ghana Medical School-Department of Medical Bioichemistry
 """
 
 import os
@@ -103,7 +106,7 @@ class StaphScopeOrchestrator:
             # 2. Remove common output directories
             output_dirs = [
                 "mlst_results", "spa_results", "abricate_results", 
-                "amrfinder_results", "abricate_results"
+                "staph_amrfinder_results", "abricate_results"
             ]
             for output_dir in output_dirs:
                 dir_path = module_path / output_dir
@@ -381,7 +384,7 @@ class StaphScopeOrchestrator:
                 self.banner.display_success("AMRFinderPlus analysis completed!")
                 
                 # Copy results to output directory
-                amr_source = amr_module_path / "amrfinder_results"
+                amr_source = amr_module_path / "staph_amrfinder_results"
                 amr_target = output_dir / "amr_results"
                 
                 if amr_source.exists():
