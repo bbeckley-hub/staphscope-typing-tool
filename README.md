@@ -122,7 +122,7 @@ usage: staphscope [-h] -i INPUT -o OUTPUT [-t THREADS] [--skip-amr] [--skip-abri
 
 ### **3. SCCmec Finder**
 
-* Types I–XI + subtypes
+* Types I–XIII + subtypes
 * Determines mec & ccr complexes
 
 ### **4. AMR Profiling**
