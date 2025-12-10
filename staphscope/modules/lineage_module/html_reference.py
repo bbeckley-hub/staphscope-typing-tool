@@ -1,4 +1,4 @@
-# staphscope/modules/lineage_module/html_reference.py
+
 #!/usr/bin/env python3
 """
 StaphScope Lineage Reference HTML Generator
@@ -693,7 +693,7 @@ def generate_comprehensive_lineage_html(output_path="staphscope_lineage_referenc
                 <h3 style="color: var(--primary); margin-bottom: 15px;">Database Information</h3>
                 <p><strong>Version:</strong> 2025</p>
                 <p><strong>Last Updated:</strong> 20/10/2025</p>
-                <p><strong>Total Lineages:</strong> 26</p>
+                <p><strong>Total Lineages:</strong> 44</p>
                 <p><strong>Coverage:</strong> Global S. aureus lineages including HA-MRSA, CA-MRSA, and LA-MRSA</p>
                 
                 <h4 style="color: var(--primary); margin: 20px 0 10px 0;">Database Structure</h4>

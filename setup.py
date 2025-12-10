@@ -26,16 +26,18 @@ setup(
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
     ],
-    python_requires=">=3.8",
+    python_requires="==3.10.*",
     install_requires=[
-        "pandas",
-        "biopython", 
-        "psutil",
-        "requests",
-        "tqdm",
-        "click"
+        "pandas>=1.5.0",
+        "biopython>=1.80",  
+        "psutil>=5.9.0",
+        "requests>=2.28.0",
+        "tqdm>=4.64.0",
+        "click>=8.0.0"
     ],
     entry_points={
         "console_scripts": [

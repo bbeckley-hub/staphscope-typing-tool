@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-StaphScope Main Orchestrator - FINAL VERSION WITH PROPER CLEANUP
+StaphScope Main Orchestrator - UPDATED WITH SEQUENTIAL EXECUTION
 Complete S. aureus typing pipeline - MLST, spa, SCCmec, AMR, Virulence, Lineage
 Author: Brown Beckley <brownbeckley94@gmail.com>
 Date: 2025
@@ -27,12 +27,12 @@ except (ImportError, SystemError):
     from core.banner import StaphScopeBanner
 
 class StaphScopeOrchestrator:
-    """Final StaphScope orchestrator - with COMPLETE cleanup"""
+    """Final StaphScope orchestrator - with SEQUENTIAL execution for clean output"""
     
     def __init__(self):
         self.banner = StaphScopeBanner()
         self.base_dir = Path(__file__).parent
-        
+    
     def find_fasta_files(self, input_path: str) -> List[Path]:
         """Find all FASTA files using glob patterns"""
         self.banner.display_info(f"Searching for files with pattern: {input_path}")
@@ -138,11 +138,11 @@ class StaphScopeOrchestrator:
             self.banner.display_warning(f"⚠️  Partial cleanup issue in {module_path.name}: {str(e)}")
 
     def run_mlst_analysis(self, fasta_files: List[Path], output_dir: Path, threads: int) -> bool:
-        """Run MLST analysis - WITH CLEANUP"""
+        """Run MLST analysis - WITHOUT module header"""
         mlst_module_path = self.base_dir / "modules" / "mlst_module"
         
         try:
-            self.banner.display_module_header("MLST Analysis", "Multi-Locus Sequence Typing")
+            # REMOVED: self.banner.display_module_header("MLST Analysis", "Multi-Locus Sequence Typing")
             
             mlst_script = mlst_module_path / "mlst_module.py"
             
@@ -198,14 +198,17 @@ class StaphScopeOrchestrator:
             return False
         finally:
             # ALWAYS cleanup, even if analysis fails
+            self.banner.display_info("Cleaning up mlst_module...")
             self.cleanup_module_directory(mlst_module_path, fasta_files)
+            self.banner.display_success("✅ mlst_module cleaned up successfully")
+            self.banner.display_success("✅ MLST completed")
 
     def run_spa_typing(self, fasta_files: List[Path], output_dir: Path, threads: int) -> bool:
-        """Run spa typing - WITH CLEANUP"""
+        """Run spa typing - WITHOUT module header"""
         spa_module_path = self.base_dir / "modules" / "spa_module" / "spatyper" / "spa_typing"
         
         try:
-            self.banner.display_module_header("spa Typing Analysis", "Staphylococcal Protein A Typing")
+            # REMOVED: self.banner.display_module_header("spa Typing Analysis", "Staphylococcal Protein A Typing")
             
             spa_script = spa_module_path / "spa_typing_module.py"
             
@@ -261,14 +264,17 @@ class StaphScopeOrchestrator:
             return False
         finally:
             # ALWAYS cleanup, even if analysis fails
+            self.banner.display_info("Cleaning up spa_typing...")
             self.cleanup_module_directory(spa_module_path, fasta_files)
+            self.banner.display_success("✅ spa_typing cleaned up successfully")
+            self.banner.display_success("✅ spa typing completed")
 
     def run_sccmec_analysis(self, fasta_files: List[Path], output_dir: Path, threads: int) -> bool:
-        """Run SCCmec analysis - WITH CLEANUP"""
+        """Run SCCmec analysis - WITHOUT module header"""
         sccmec_module_path = self.base_dir / "modules" / "sccmec_module"
         
         try:
-            self.banner.display_module_header("SCCmec Analysis", "Methicillin Resistance Cassette Typing")
+            # REMOVED: self.banner.display_module_header("SCCmec Analysis", "Methicillin Resistance Cassette Typing")
             
             sccmec_script = sccmec_module_path / "run_sccmec_batch.sh"
             summary_script = sccmec_module_path / "generate_staphscope_summary.sh"
@@ -324,7 +330,7 @@ class StaphScopeOrchestrator:
                         s_dirs_copied += 1
                 
                 # Copy summary files
-                summary_files = ["staphscope_summary.html", "staphscope_summary.tsv"]
+                summary_files = ["staphscope_summary.html", "staphscope_summary.tsv", "staphscope_detailed_results.csv"]
                 for summary_file in summary_files:
                     source_file = sccmec_module_path / summary_file
                     if source_file.exists():
@@ -346,14 +352,17 @@ class StaphScopeOrchestrator:
             return False
         finally:
             # ALWAYS cleanup, even if analysis fails
+            self.banner.display_info("Cleaning up sccmec_module...")
             self.cleanup_module_directory(sccmec_module_path, fasta_files)
+            self.banner.display_success("✅ sccmec_module cleaned up successfully")
+            self.banner.display_success("✅ SCCmec completed")
 
     def run_amrfinder_analysis(self, fasta_files: List[Path], output_dir: Path, threads: int) -> bool:
-        """Run AMRFinderPlus analysis - WITH CLEANUP"""
+        """Run AMRFinderPlus analysis - WITHOUT module header"""
         amr_module_path = self.base_dir / "modules" / "amr_module"
         
         try:
-            self.banner.display_module_header("AMR Analysis", "Antimicrobial Resistance Gene Detection")
+            # REMOVED: self.banner.display_module_header("AMR Analysis", "Antimicrobial Resistance Gene Detection")
             
             amr_script = amr_module_path / "amrfinder_standalone.py"
             
@@ -405,14 +414,17 @@ class StaphScopeOrchestrator:
             return False
         finally:
             # ALWAYS cleanup, even if analysis fails
+            self.banner.display_info("Cleaning up amr_module...")
             self.cleanup_module_directory(amr_module_path, fasta_files)
+            self.banner.display_success("✅ amr_module cleaned up successfully")
+            self.banner.display_success("✅ AMRFinderPlus completed")
 
     def run_abricate_analysis(self, fasta_files: List[Path], output_dir: Path, threads: int) -> bool:
-        """Run Abricate analysis - WITH CLEANUP"""
+        """Run Abricate analysis - WITHOUT module header"""
         abricate_module_path = self.base_dir / "modules" / "abricate_module"
         
         try:
-            self.banner.display_module_header("ABRicate Analysis", "Comprehensive Resistance & Virulence Gene Screening")
+            # REMOVED: self.banner.display_module_header("ABRicate Analysis", "Comprehensive Resistance, Plasmid & Virulence Gene Screening")
             
             abricate_script = abricate_module_path / "abricate_standalone.py"
             
@@ -464,13 +476,14 @@ class StaphScopeOrchestrator:
             return False
         finally:
             # ALWAYS cleanup, even if analysis fails
+            self.banner.display_info("Cleaning up abricate_module...")
             self.cleanup_module_directory(abricate_module_path, fasta_files)
+            self.banner.display_success("✅ abricate_module cleaned up successfully")
+            self.banner.display_success("✅ ABRicate completed")
 
     def run_lineage_analysis(self, output_dir: Path) -> bool:
-        """Run lineage database generation"""
+        """Run lineage database generation - WITH module header in main method"""
         try:
-            self.banner.display_module_header("Lineage Database", "S. aureus Lineage Reference Generation")
-            
             lineage_module_path = self.base_dir / "modules" / "lineage_module"
             lineage_script = lineage_module_path / "html_reference.py"
             
@@ -508,19 +521,233 @@ class StaphScopeOrchestrator:
             self.banner.display_error(f"Lineage database generation failed: {str(e)}")
             return False
 
-    def run_parallel_analyses(self, fasta_files: List[Path], output_dir: Path, threads: int, 
-                            skip_modules: Dict[str, bool]) -> Dict[str, bool]:
-        """Run analyses in parallel"""
+    def copy_required_files_for_comprehensive_report(self, output_dir: Path) -> bool:
+        """Copy required files to summary_module for comprehensive report"""
+        try:
+            self.banner.display_info("Copying required files for comprehensive report...")
+            
+            summary_module_path = self.base_dir / "modules" / "summary_module"
+            
+            # Check if comprehensive report script exists
+            comprehensive_script = summary_module_path / "comprehensive_report.py"
+            if not comprehensive_script.exists():
+                self.banner.display_error(f"Comprehensive report script not found at: {comprehensive_script}")
+                return False
+            
+            # Files to copy from each module's results directory
+            files_to_copy = {
+                "mlst_results": ["mlst_summary.tsv"],
+                "spa_results": ["spa_summary.tsv"],
+                "sccmec_results": ["staphscope_summary.tsv"]
+            }
+            
+            copied_files = 0
+            
+            for source_dir, files in files_to_copy.items():
+                source_path = output_dir / source_dir
+                if not source_path.exists():
+                    self.banner.display_warning(f"Source directory not found: {source_path}")
+                    continue
+                    
+                for file in files:
+                    source_file = source_path / file
+                    if source_file.exists():
+                        target_file = summary_module_path / file
+                        shutil.copy2(source_file, target_file)
+                        copied_files += 1
+                        self.banner.display_info(f"  ✓ Copied: {file}")
+                    else:
+                        self.banner.display_warning(f"  ✗ File not found: {source_file}")
+            
+            if copied_files == 3:
+                self.banner.display_success(f"All required files copied to summary_module")
+                return True
+            else:
+                self.banner.display_warning(f"Only {copied_files}/3 required files copied")
+                return False
+                
+        except Exception as e:
+            self.banner.display_error(f"Error copying files for comprehensive report: {str(e)}")
+            return False
+
+    def copy_all_summary_files_to_final_report(self, output_dir: Path, final_report_dir: Path):
+        """Copy all summary files to the final report directory"""
+        try:
+            self.banner.display_info("Copying all summary files to final report directory...")
+            
+            # Define all the summary files from each module
+            summary_files_by_module = {
+                "mlst_results": [
+                    "mlst_summary.html",
+                    "mlst_summary.json",
+                    "mlst_summary.tsv"
+                ],
+                "spa_results": [
+                    "spa_summary.html",
+                    "spa_summary.json",
+                    "spa_summary.tsv"
+                ],
+                "sccmec_results": [
+                    "staphscope_detailed_results.csv",
+                    "staphscope_summary.html",
+                    "staphscope_summary.tsv"
+                ],
+                "amr_results": [
+                    "staph_amrfinder_master_summary.json",
+                    "staph_amrfinder_statistics_summary.tsv",
+                    "staph_amrfinder_summary.json",
+                    "staph_amrfinder_summary_report.html",
+                    "staph_amrfinder_summary.tsv"
+                ],
+                "abricate_results": [
+                    "staph_abricate_master_summary.json",
+                    "staph_argannot_abricate_summary.tsv",
+                    "staph_argannot_summary.json",
+                    "staph_argannot_summary_report.html",
+                    "staph_card_abricate_summary.tsv",
+                    "staph_card_summary.json",
+                    "staph_card_summary_report.html",
+                    "staph_megares_abricate_summary.tsv",
+                    "staph_megares_summary.json",
+                    "staph_megares_summary_report.html",
+                    "staph_ncbi_abricate_summary.tsv",
+                    "staph_ncbi_summary.json",
+                    "staph_ncbi_summary_report.html",
+                    "staph_resfinder_abricate_summary.tsv",
+                    "staph_resfinder_summary.json",
+                    "staph_resfinder_summary_report.html",
+                    "staph_vfdb_abricate_summary.tsv",
+                    "staph_vfdb_summary.json",
+                    "staph_vfdb_summary_report.html"
+                    "staph_plasmidfinder_abricate_summary.tsv",
+                    "staph_plasmidfinder_summary.json",
+                    "staph_plasmidfinder_summary_report.html"
+                    "staph_ecoh_abricate_summary.tsv",
+                    "staph_ecoh_summary.json",
+                    "staph_ecoh_summary_report.html"
+                    "staph_ecoli_vf_abricate_summary.tsv",
+                    "staph_ecoli_vf_summary.json",
+                    "staph_ecoli_vf_summary_report.html"
+                ]
+            }
+            
+            total_copied = 0
+            
+            # Copy files from each module's results directory
+            for module_dir, files in summary_files_by_module.items():
+                source_path = output_dir / module_dir
+                if not source_path.exists():
+                    continue  # Skip if module wasn't run
+                    
+                for file in files:
+                    source_file = source_path / file
+                    if source_file.exists():
+                        target_file = final_report_dir / file
+                        shutil.copy2(source_file, target_file)
+                        total_copied += 1
+                    else:
+                        # Try to find the file in alternative locations
+                        # Some files might be in root of module directory
+                        alt_paths = [
+                            self.base_dir / "modules" / module_dir.replace("_results", "_module") / file,
+                            self.base_dir / "modules" / "summary_module" / file
+                        ]
+                        for alt_path in alt_paths:
+                            if alt_path.exists():
+                                target_file = final_report_dir / file
+                                shutil.copy2(alt_path, target_file)
+                                total_copied += 1
+                                break
+            
+            # Copy comprehensive reports from summary_module
+            summary_module_path = self.base_dir / "modules" / "summary_module"
+            comprehensive_reports = [
+                "staphscope_comprehensive_report.html",
+                "staphscope_comprehensive_report.json",
+                "staphscope_comprehensive_report.tsv"
+            ]
+            
+            for report in comprehensive_reports:
+                source_file = summary_module_path / report
+                if source_file.exists():
+                    target_file = final_report_dir / report
+                    shutil.copy2(source_file, target_file)
+                    total_copied += 1
+                    self.banner.display_info(f"  ✓ Copied: {report}")
+            
+            self.banner.display_success(f"Copied {total_copied} files to final report directory")
+            return True
+            
+        except Exception as e:
+            self.banner.display_error(f"Error copying summary files: {str(e)}")
+            return False
+
+    def run_comprehensive_report(self, output_dir: Path) -> bool:
+        """Run comprehensive report generation as final step - WITHOUT module header"""
+        try:
+            summary_module_path = self.base_dir / "modules" / "summary_module"
+            comprehensive_script = summary_module_path / "comprehensive_report.py"
+            
+            if not comprehensive_script.exists():
+                self.banner.display_error(f"Comprehensive report script not found: {comprehensive_script}")
+                return False
+            
+            # Step 1: Copy required files to summary_module
+            if not self.copy_required_files_for_comprehensive_report(output_dir):
+                self.banner.display_warning("Skipping comprehensive report due to missing files")
+                return False
+            
+            # Step 2: Run comprehensive report in summary_module
+            self.banner.display_info("Generating comprehensive report...")
+            
+            cmd = [sys.executable, str(comprehensive_script)]
+            result = subprocess.run(cmd, capture_output=True, text=True, cwd=summary_module_path)
+            
+            if result.returncode == 0:
+                self.banner.display_success("Comprehensive report generated successfully!")
+                
+                # Step 3: Create final report directory
+                final_report_dir = output_dir / "Staphscope_final_report"
+                final_report_dir.mkdir(parents=True, exist_ok=True)
+                
+                # Step 4: Copy all summary files to final report directory
+                self.copy_all_summary_files_to_final_report(output_dir, final_report_dir)
+                
+                self.banner.display_success(f"✅ All reports consolidated in: {final_report_dir}")
+                
+                # Display the comprehensive report files
+                report_files = list(final_report_dir.glob("*.html")) + list(final_report_dir.glob("*.json")) + list(final_report_dir.glob("*.tsv"))
+                report_files = [f for f in report_files if "comprehensive" in f.name]
+                
+                if report_files:
+                    self.banner.display_info("Comprehensive Reports Generated:")
+                    for report in sorted(report_files):
+                        self.banner.display_info(f"  📄 {report.name}")
+                
+                return True
+            else:
+                self.banner.display_warning("Comprehensive report generation had issues")
+                if result.stderr:
+                    print(f"Comprehensive report stderr: {result.stderr[:200]}...")
+                return True
+                
+        except Exception as e:
+            self.banner.display_error(f"Comprehensive report generation failed: {str(e)}")
+            return False
+
+    def run_sequential_analyses(self, fasta_files: List[Path], output_dir: Path, threads: int, 
+                               skip_modules: Dict[str, bool]) -> Dict[str, bool]:
+        """Run analyses SEQUENTIALLY to keep module messages together"""
         analysis_functions = [
-            (self.run_mlst_analysis, "MLST", not skip_modules.get('mlst', False)),
-            (self.run_spa_typing, "spa typing", not skip_modules.get('spa', False)),
-            (self.run_sccmec_analysis, "SCCmec", not skip_modules.get('sccmec', False)),
-            (self.run_amrfinder_analysis, "AMRFinderPlus", not skip_modules.get('amr', False)),
-            (self.run_abricate_analysis, "ABRicate", not skip_modules.get('abricate', False))
+            ("MLST", self.run_mlst_analysis, not skip_modules.get('mlst', False)),
+            ("spa typing", self.run_spa_typing, not skip_modules.get('spa', False)),
+            ("SCCmec", self.run_sccmec_analysis, not skip_modules.get('sccmec', False)),
+            ("AMRFinderPlus", self.run_amrfinder_analysis, not skip_modules.get('amr', False)),
+            ("ABRicate", self.run_abricate_analysis, not skip_modules.get('abricate', False))
         ]
         
         # Filter out skipped analyses
-        active_analyses = [(func, name) for func, name, enabled in analysis_functions if enabled]
+        active_analyses = [(name, func) for name, func, enabled in analysis_functions if enabled]
         
         if not active_analyses:
             self.banner.display_warning("All analyses were skipped! Nothing to run.")
@@ -530,34 +757,42 @@ class StaphScopeOrchestrator:
         
         results = {}
         
-        # Run analyses in parallel
-        with ThreadPoolExecutor(max_workers=min(len(active_analyses), max(1, threads // 2))) as executor:
-            future_to_analysis = {
-                executor.submit(func, fasta_files, output_dir, max(1, threads // len(active_analyses))): name 
-                for func, name in active_analyses
-            }
+        # Run analyses SEQUENTIALLY
+        for analysis_name, analysis_func in active_analyses:
+            # Display module header before each analysis
+            if analysis_name == "MLST":
+                self.banner.display_module_header("MLST Analysis", "Multi-Locus Sequence Typing")
+            elif analysis_name == "spa typing":
+                self.banner.display_module_header("SPA TYPING ANALYSIS", "Staphylococcal Protein A Typing")
+            elif analysis_name == "SCCmec":
+                self.banner.display_module_header("SCCMEC ANALYSIS", "Methicillin Resistance Cassette Typing")
+            elif analysis_name == "AMRFinderPlus":
+                self.banner.display_module_header("AMR ANALYSIS", "Antimicrobial Resistance Gene Detection")
+            elif analysis_name == "ABRicate":
+                self.banner.display_module_header("ABRICATE ANALYSIS", "Comprehensive Resistance, Plasmid & Virulence Gene Screening")
             
-            for future in as_completed(future_to_analysis):
-                analysis_name = future_to_analysis[future]
+            try:
+                success = analysis_func(fasta_files, output_dir, max(1, threads // len(active_analyses)))
+                results[analysis_name] = success
                 
-                try:
-                    success = future.result()
-                    results[analysis_name] = success
+                if success:
+                    # Success message is already printed inside the analysis function
+                    pass
+                else:
+                    self.banner.display_error(f"❌ {analysis_name} failed")
                     
-                    if success:
-                        self.banner.display_success(f"✅ {analysis_name} completed")
-                    else:
-                        self.banner.display_error(f"❌ {analysis_name} failed")
-                        
-                except Exception as e:
-                    self.banner.display_error(f"❌ {analysis_name} failed with exception: {str(e)}")
-                    results[analysis_name] = False
+            except Exception as e:
+                self.banner.display_error(f"❌ {analysis_name} failed with exception: {str(e)}")
+                results[analysis_name] = False
+            
+            # Add spacing between modules
+            print()
         
         return results
 
     def run_complete_analysis(self, input_path: str, output_dir: str, threads: int = 1, 
-                            skip_modules: Dict[str, bool] = None):
-        """Run complete StaphScope analysis pipeline"""
+                             skip_modules: Dict[str, bool] = None, skip_comprehensive: bool = False):
+        """Run complete StaphScope analysis pipeline - UPDATED for sequential execution"""
         if skip_modules is None:
             skip_modules = {}
         
@@ -600,20 +835,33 @@ class StaphScopeOrchestrator:
                 ("SCCmec", not skip_modules.get('sccmec', False)),
                 ("AMRFinderPlus", not skip_modules.get('amr', False)),
                 ("ABRicate", not skip_modules.get('abricate', False)),
-                ("Lineage Reference", not skip_modules.get('lineage', False))
+                ("Lineage Reference", not skip_modules.get('lineage', False)),
+                ("Comprehensive Report", not skip_comprehensive)
             ]
             
             for analysis, enabled in analyses_to_run:
                 status = "✅ ENABLED" if enabled else "⏸️  SKIPPED"
                 print(f"   {status} - {analysis}")
             
-            # Run main analyses in parallel
-            analysis_results = self.run_parallel_analyses(fasta_files, output_path, threads, skip_modules)
+            # Force output flush before starting analyses
+            sys.stdout.flush()
+            
+            # Run main analyses SEQUENTIALLY
+            analysis_results = self.run_sequential_analyses(fasta_files, output_path, threads, skip_modules)
             
             # Run lineage analysis if not skipped
             if not skip_modules.get('lineage', False):
+                self.banner.display_module_header("Lineage Database", "S. aureus Lineage Reference Generation")
                 lineage_success = self.run_lineage_analysis(output_path)
                 analysis_results["Lineage Reference"] = lineage_success
+                print()  # Add spacing
+            
+            # Run comprehensive report if not skipped
+            if not skip_comprehensive:
+                self.banner.display_module_header("Comprehensive Report", "Unified MLST, spa & SCCmec Analysis")
+                comprehensive_success = self.run_comprehensive_report(output_path)
+                analysis_results["Comprehensive Report"] = comprehensive_success
+                print()  # Add spacing
             
             # Calculate analysis time
             analysis_time = datetime.now() - start_time
@@ -654,7 +902,7 @@ Examples:
   staphscope -i genome.fna -o results/
   staphscope -i "*.fna" -o batch_results --threads 8
   staphscope -i "*.fasta" -o analysis --threads 16 --skip-lineage
-  staphscope -i "genome*.fa" -o results/ --threads 4
+  staphscope -i "genome*.fa" -o results/ --threads 4 --skip-comprehensive
 
 Supported FASTA formats: .fna, .fasta, .fa, .fn
 
@@ -663,11 +911,15 @@ Analysis Modules:
   • spa typing (Staphylococcal Protein A)  
   • SCCmec typing (Methicillin Resistance Cassette)
   • AMR profiling (Antimicrobial Resistance)
-  • ABRicate (Comprehensive resistance/virulence)
+  • ABRicate (Comprehensive resistance/Plasmid/virulence)
   • Lineage reference database
-    Run : abricate --setupdb & amrfinder --update or amrfinder -u (For latest database)
+  • Comprehensive report (MLST + spa + SCCmec summary)
 
 Output: Comprehensive results for all analyses in organized directories
+Please run abricate --setupdb for recent gene annotations!!!
+⭐ Star us on GitHub if you find this tool useful!
+
+Transforming fragmented genomic data into coherent biological narratives 🧬✨
         """
     )
     
@@ -691,6 +943,8 @@ Output: Comprehensive results for all analyses in organized directories
                        help='Skip SCCmec analysis')
     parser.add_argument('--skip-lineage', action='store_true',
                        help='Skip lineage reference generation')
+    parser.add_argument('--skip-comprehensive', action='store_true',
+                       help='Skip comprehensive report generation (MLST + spa + SCCmec)')
     
     args = parser.parse_args()
     
@@ -712,7 +966,8 @@ Output: Comprehensive results for all analyses in organized directories
             input_path=args.input,
             output_dir=args.output,
             threads=args.threads,
-            skip_modules=skip_modules
+            skip_modules=skip_modules,
+            skip_comprehensive=args.skip_comprehensive
         )
     except KeyboardInterrupt:
         print("\n❌ Analysis interrupted by user")

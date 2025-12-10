@@ -10,15 +10,18 @@ include conda_build_config.yaml
 # Include EVERYTHING in staphscope directory
 recursive-include staphscope *
 
-# Only exclude things outside staphscope/ that are large
-exclude STAPHSCOPE_FINAL_RESULTS/*
-exclude MRSA_genomes/*
-exclude BROWN/*
-exclude *.fna
-exclude *.fasta
-exclude *_results
+# ONLY exclude things OUTSIDE staphscope/ directory
+prune STAPHSCOPE_FINAL_RESULTS
+prune MRSA_genomes
+prune BROWN
+prune *_results
 
-# Keep these but exclude cache and temp files
+# DO NOT exclude fasta files!
+# Remove or comment out:
+# exclude *.fna
+# exclude *.fasta
+
+# Standard exclusions
 global-exclude __pycache__
 global-exclude *.pyc
 global-exclude *.pyo

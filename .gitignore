@@ -88,3 +88,7 @@ staphscope/modules/sccmec_module/database/
 *.fasta
 *.fa
 *.fna
+staphscope/modules/amr_module/bin/
+staphscope/modules/amr_module/data/
+staphscope/modules/amr_module/stx/
+staphscope/modules/sccmec_module/database/

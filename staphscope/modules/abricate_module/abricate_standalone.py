@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 StaphScope ABRicate Standalone Module
-Comprehensive ABRicate analysis with HTML and summary.tsv reporting only - MAXIMUM SPEED VERSION
+Comprehensive ABRicate analysis with HTML, TSV, and JSON reporting - MAXIMUM SPEED VERSION
 Author: Beckley Brown <brownbeckley94@gmail.com>
 Affiliation: University of Ghana Medical School-Department of Medical Biochemistry
 Date: 2025
@@ -15,7 +15,7 @@ import glob
 import logging
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Set, Tuple
 import argparse
 import re
 from datetime import datetime
@@ -25,7 +25,7 @@ import json
 from collections import defaultdict, Counter
 
 class AbricateExecutor:
-    """ABRicate executor with comprehensive HTML reporting - MAXIMUM SPEED"""
+    """ABRicate executor with comprehensive HTML, TSV, and JSON reporting - MAXIMUM SPEED"""
     
     def __init__(self, cpus: int = None):
         # Setup logging FIRST
@@ -462,6 +462,22 @@ class AbricateExecutor:
         .present {{ background-color: #d4edda; }}
         .high-risk {{ background-color: #fff3cd; }}
         .critical {{ background-color: #f8d7da; font-weight: bold; }}
+        /* FIX FOR REVIEWER: Make product column responsive with word wrapping */
+        .product-cell {{
+            white-space: normal !important;
+            word-wrap: break-word;
+            max-width: 400px;
+            min-width: 200px;
+        }}
+        /* FIX FOR REVIEWER: Make tables responsive */
+        .table-responsive {{
+            width: 100%;
+            overflow-x: auto;
+            margin: 20px 0;
+        }}
+        .gene-table {{
+            min-width: 800px; /* Ensure table has minimum width */
+        }}
     </style>
     {quotes_js}
 </head>
@@ -495,17 +511,18 @@ class AbricateExecutor:
             html_content += """
         <div class="card">
             <h2 style="color: #333; border-bottom: 2px solid #667eea; padding-bottom: 10px;">🔍 Genes Detected</h2>
-            <table class="gene-table">
-                <thead>
-                    <tr>
-                        <th>Gene</th>
-                        <th>Product</th>
-                        <th>Coverage</th>
-                        <th>Identity</th>
-                        <th>Accession</th>
-                    </tr>
-                </thead>
-                <tbody>
+            <div class="table-responsive">
+                <table class="gene-table">
+                    <thead>
+                        <tr>
+                            <th>Gene</th>
+                            <th>Product</th>
+                            <th>Coverage</th>
+                            <th>Identity</th>
+                            <th>Accession</th>
+                        </tr>
+                    </thead>
+                    <tbody>
 """
             
             for hit in hits:
@@ -518,15 +535,13 @@ class AbricateExecutor:
                 elif any(vf_gene in gene_base for vf_gene in self.high_risk_virulence_genes):
                     row_class = "high-risk"
                 
-                # Truncate very long product descriptions for display
+                # Show full product description without truncation
                 product_display = hit['product']
-                if len(product_display) > 150:
-                    product_display = product_display[:147] + "..."
                 
                 html_content += f"""
                     <tr class="{row_class}">
                         <td><strong>{hit['gene']}</strong></td>
-                        <td title="{hit['product']}">{product_display}</td>
+                        <td class="product-cell">{product_display}</td>
                         <td>{hit['coverage_percent']}%</td>
                         <td>{hit['identity_percent']}%</td>
                         <td>{hit['accession']}</td>
@@ -534,8 +549,9 @@ class AbricateExecutor:
 """
             
             html_content += """
-                </tbody>
-            </table>
+                    </tbody>
+                </table>
+            </div>
         </div>
 """
         else:
@@ -868,6 +884,22 @@ class AbricateExecutor:
             margin: 2px;
             font-size: 0.9em;
         }}
+        /* FIX FOR REVIEWER: Make product column responsive with word wrapping */
+        .product-cell {{
+            white-space: normal !important;
+            word-wrap: break-word;
+            max-width: 500px;
+            min-width: 200px;
+        }}
+        /* FIX FOR REVIEWER: Make tables responsive */
+        .table-responsive {{
+            width: 100%;
+            overflow-x: auto;
+            margin: 20px 0;
+        }}
+        .gene-table {{
+            min-width: 900px; /* Ensure table has minimum width */
+        }}
     </style>
     {quotes_js}
 </head>
@@ -964,29 +996,29 @@ class AbricateExecutor:
             html_content += """
         <div class="card">
             <h2 style="color: #333; border-bottom: 2px solid #667eea; padding-bottom: 10px;">🔴 CRITICAL Resistance Genes</h2>
-            <table class="gene-table">
-                <thead>
-                    <tr>
-                        <th>Gene</th>
-                        <th>Product</th>
-                        <th>Database</th>
-                        <th>Coverage</th>
-                        <th>Identity</th>
-                        <th>Risk Level</th>
-                    </tr>
-                </thead>
-                <tbody>
+            <div class="table-responsive">
+                <table class="gene-table">
+                    <thead>
+                        <tr>
+                            <th>Gene</th>
+                            <th>Product</th>
+                            <th>Database</th>
+                            <th>Coverage</th>
+                            <th>Identity</th>
+                            <th>Risk Level</th>
+                        </tr>
+                    </thead>
+                    <tbody>
 """
             
             for gene_info in analysis['critical_resistance_genes']:
+                # Show full product description without truncation
                 product_display = gene_info['product']
-                if len(product_display) > 100:
-                    product_display = gene_info['product'][:97] + "..."
                 
                 html_content += f"""
                     <tr class="critical">
                         <td><strong>{gene_info['gene']}</strong></td>
-                        <td title="{gene_info['product']}">{product_display}</td>
+                        <td class="product-cell">{product_display}</td>
                         <td>{gene_info['database']}</td>
                         <td>{gene_info['coverage']}%</td>
                         <td>{gene_info['identity']}%</td>
@@ -995,8 +1027,9 @@ class AbricateExecutor:
 """
             
             html_content += """
-                </tbody>
-            </table>
+                    </tbody>
+                </table>
+            </div>
         </div>
 """
         
@@ -1005,29 +1038,29 @@ class AbricateExecutor:
             html_content += """
         <div class="card">
             <h2 style="color: #333; border-bottom: 2px solid #667eea; padding-bottom: 10px;">🟡 High-Risk Virulence Genes</h2>
-            <table class="gene-table">
-                <thead>
-                    <tr>
-                        <th>Gene</th>
-                        <th>Product</th>
-                        <th>Database</th>
-                        <th>Coverage</th>
-                        <th>Identity</th>
-                        <th>Risk Level</th>
-                    </tr>
-                </thead>
-                <tbody>
+            <div class="table-responsive">
+                <table class="gene-table">
+                    <thead>
+                        <tr>
+                            <th>Gene</th>
+                            <th>Product</th>
+                            <th>Database</th>
+                            <th>Coverage</th>
+                            <th>Identity</th>
+                            <th>Risk Level</th>
+                        </tr>
+                    </thead>
+                    <tbody>
 """
             
             for gene_info in analysis['high_risk_virulence_genes']:
+                # Show full product description without truncation
                 product_display = gene_info['product']
-                if len(product_display) > 100:
-                    product_display = gene_info['product'][:97] + "..."
                 
                 html_content += f"""
                     <tr class="high-risk">
                         <td><strong>{gene_info['gene']}</strong></td>
-                        <td title="{gene_info['product']}">{product_display}</td>
+                        <td class="product-cell">{product_display}</td>
                         <td>{gene_info['database']}</td>
                         <td>{gene_info['coverage']}%</td>
                         <td>{gene_info['identity']}%</td>
@@ -1036,8 +1069,9 @@ class AbricateExecutor:
 """
             
             html_content += """
-                </tbody>
-            </table>
+                    </tbody>
+                </table>
+            </div>
         </div>
 """
         
@@ -1046,28 +1080,28 @@ class AbricateExecutor:
             html_content += """
         <div class="card">
             <h2 style="color: #333; border-bottom: 2px solid #667eea; padding-bottom: 10px;">🔵 Other S. aureus Genes</h2>
-            <table class="gene-table">
-                <thead>
-                    <tr>
-                        <th>Gene</th>
-                        <th>Product</th>
-                        <th>Database</th>
-                        <th>Coverage</th>
-                        <th>Identity</th>
-                    </tr>
-                </thead>
-                <tbody>
+            <div class="table-responsive">
+                <table class="gene-table">
+                    <thead>
+                        <tr>
+                            <th>Gene</th>
+                            <th>Product</th>
+                            <th>Database</th>
+                            <th>Coverage</th>
+                            <th>Identity</th>
+                        </tr>
+                    </thead>
+                    <tbody>
 """
             
             for gene_info in analysis['other_sa_genes']:
+                # Show full product description without truncation
                 product_display = gene_info['product']
-                if len(product_display) > 100:
-                    product_display = gene_info['product'][:97] + "..."
                 
                 html_content += f"""
                     <tr>
                         <td><strong>{gene_info['gene']}</strong></td>
-                        <td title="{gene_info['product']}">{product_display}</td>
+                        <td class="product-cell">{product_display}</td>
                         <td>{gene_info['database']}</td>
                         <td>{gene_info['coverage']}%</td>
                         <td>{gene_info['identity']}%</td>
@@ -1075,8 +1109,9 @@ class AbricateExecutor:
 """
             
             html_content += """
-                </tbody>
-            </table>
+                    </tbody>
+                </table>
+            </div>
         </div>
 """
         
@@ -1084,15 +1119,16 @@ class AbricateExecutor:
         html_content += """
         <div class="card">
             <h2 style="color: #333; border-bottom: 2px solid #667eea; padding-bottom: 10px;">🗃️ Database Results Summary</h2>
-            <table class="gene-table">
-                <thead>
-                    <tr>
-                        <th>Database</th>
-                        <th>Hits</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody>
+            <div class="table-responsive">
+                <table class="gene-table">
+                    <thead>
+                        <tr>
+                            <th>Database</th>
+                            <th>Hits</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
 """
         
         for db, result in results.items():
@@ -1106,8 +1142,9 @@ class AbricateExecutor:
 """
         
         html_content += """
-                </tbody>
-            </table>
+                    </tbody>
+                </table>
+            </div>
         </div>
         
         <div class="footer">
@@ -1173,6 +1210,211 @@ class AbricateExecutor:
                 self._create_database_summary_html(db, hits, output_base)
             else:
                 self.logger.info("No hits for database %s, skipping summary", db)
+    
+    def create_database_json_summaries(self, all_results: Dict[str, Any], output_base: str):
+        """Create JSON summary files for each database across all genomes."""
+        self.logger.info("Creating JSON database summaries...")
+        
+        # Group results by database
+        db_results = {}
+        for genome_name, genome_result in all_results.items():
+            for db, db_result in genome_result['results'].items():
+                if db not in db_results:
+                    db_results[db] = {
+                        'hits': [],
+                        'genomes': [],
+                        'gene_frequency': {}
+                    }
+                
+                # Add hits with genome name
+                for hit in db_result['hits']:
+                    hit_with_genome = hit.copy()
+                    hit_with_genome['genome'] = genome_name
+                    db_results[db]['hits'].append(hit_with_genome)
+                
+                # Track unique genomes
+                if genome_name not in db_results[db]['genomes']:
+                    db_results[db]['genomes'].append(genome_name)
+        
+        # Create JSON summary for each database
+        for db, data in db_results.items():
+            if not data['hits']:
+                continue
+                
+            # Calculate gene frequency
+            gene_frequency = {}
+            for hit in data['hits']:
+                gene = hit['gene']
+                if gene not in gene_frequency:
+                    gene_frequency[gene] = {
+                        'count': 0,
+                        'genomes': set(),
+                        'details': []
+                    }
+                
+                gene_frequency[gene]['count'] += 1
+                gene_frequency[gene]['genomes'].add(hit['genome'])
+                gene_frequency[gene]['details'].append({
+                    'genome': hit['genome'],
+                    'product': hit['product'],
+                    'coverage': hit['coverage_percent'],
+                    'identity': hit['identity_percent'],
+                    'accession': hit['accession']
+                })
+            
+            # Convert sets to lists for JSON serialization
+            for gene in gene_frequency:
+                gene_frequency[gene]['genomes'] = list(gene_frequency[gene]['genomes'])
+            
+            # Create JSON structure
+            json_summary = {
+                'metadata': {
+                    'database': db,
+                    'analysis_date': self.metadata['analysis_date'],
+                    'tool': self.metadata['tool_name'],
+                    'version': self.metadata['version'],
+                    'total_hits': len(data['hits']),
+                    'total_genomes': len(data['genomes']),
+                    'unique_genes': len(gene_frequency)
+                },
+                'gene_frequency': gene_frequency,
+                'summary_by_genome': self._create_genome_summary(data),
+                'hits': data['hits'][:100]  # Include first 100 hits to keep file manageable
+            }
+            
+            # Write JSON file
+            json_file = os.path.join(output_base, f"staph_{db}_summary.json")
+            with open(json_file, 'w') as f:
+                json.dump(json_summary, f, indent=2, default=str)
+            
+            self.logger.info("✓ Created JSON summary: %s", json_file)
+    
+    def _create_genome_summary(self, data: Dict) -> Dict:
+        """Create summary of hits by genome."""
+        genome_summary = {}
+        
+        for hit in data['hits']:
+            genome = hit['genome']
+            if genome not in genome_summary:
+                genome_summary[genome] = {
+                    'gene_count': 0,
+                    'genes': set(),
+                    'resistance_genes': [],
+                    'virulence_genes': []
+                }
+            
+            genome_summary[genome]['gene_count'] += 1
+            genome_summary[genome]['genes'].add(hit['gene'])
+            
+            # Classify genes
+            if any(crit in hit['gene'] for crit in self.critical_resistance_genes):
+                genome_summary[genome]['resistance_genes'].append(hit['gene'])
+            elif any(vir in hit['gene'] for vir in self.high_risk_virulence_genes):
+                genome_summary[genome]['virulence_genes'].append(hit['gene'])
+        
+        # Convert sets to lists
+        for genome in genome_summary:
+            genome_summary[genome]['genes'] = list(genome_summary[genome]['genes'])
+        
+        return genome_summary
+    
+    def create_master_json_summary(self, all_results: Dict[str, Any], output_base: str):
+        """Create a master JSON summary combining all databases."""
+        self.logger.info("Creating master JSON summary...")
+        
+        # Collect overall statistics
+        master_summary = {
+            'metadata': {
+                'tool': 'StaphScope ABRicate Module',
+                'version': self.metadata['version'],
+                'analysis_date': self.metadata['analysis_date'],
+                'total_genomes': len(all_results),
+                'databases_used': self.required_databases
+            },
+            'genome_summaries': {},
+            'critical_findings': {},
+            'cross_database_patterns': {}
+        }
+        
+        # Analyze each genome
+        for genome_name, genome_result in all_results.items():
+            # Collect all hits for this genome
+            all_genome_hits = []
+            for db_result in genome_result['results'].values():
+                all_genome_hits.extend(db_result['hits'])
+            
+            # Analyze S. aureus genes
+            analysis = self.analyze_saureus_genes(all_genome_hits)
+            
+            master_summary['genome_summaries'][genome_name] = {
+                'total_hits': genome_result['total_hits'],
+                'mrsa_status': analysis['mrsa_status'],
+                'pvl_status': analysis['pvl_status'],
+                'critical_resistance_genes': len(analysis['critical_resistance_genes']),
+                'high_risk_virulence_genes': len(analysis['high_risk_virulence_genes']),
+                'databases_with_hits': [db for db, res in genome_result['results'].items() 
+                                      if res['hit_count'] > 0]
+            }
+            
+            # Track critical findings
+            if analysis['mrsa_status'] == 'positive':
+                if 'mrsa_genomes' not in master_summary['critical_findings']:
+                    master_summary['critical_findings']['mrsa_genomes'] = []
+                master_summary['critical_findings']['mrsa_genomes'].append(genome_name)
+            
+            if analysis['pvl_status'] == 'positive':
+                if 'pvl_genomes' not in master_summary['critical_findings']:
+                    master_summary['critical_findings']['pvl_genomes'] = []
+                master_summary['critical_findings']['pvl_genomes'].append(genome_name)
+        
+        # Find cross-database patterns (genes found in multiple genomes)
+        all_hits_by_gene = {}
+        for genome_name, genome_result in all_results.items():
+            for db_result in genome_result['results'].values():
+                for hit in db_result['hits']:
+                    gene = hit['gene']
+                    if gene not in all_hits_by_gene:
+                        all_hits_by_gene[gene] = {
+                            'count': 0,
+                            'genomes': [],
+                            'products': set(),
+                            'databases': set()
+                        }
+                    
+                    all_hits_by_gene[gene]['count'] += 1
+                    if genome_name not in all_hits_by_gene[gene]['genomes']:
+                        all_hits_by_gene[gene]['genomes'].append(genome_name)
+                    all_hits_by_gene[gene]['products'].add(hit['product'])
+                    all_hits_by_gene[gene]['databases'].add(hit['database'])
+        
+        # Convert sets to lists
+        for gene in all_hits_by_gene:
+            all_hits_by_gene[gene]['products'] = list(all_hits_by_gene[gene]['products'])
+            all_hits_by_gene[gene]['databases'] = list(all_hits_by_gene[gene]['databases'])
+        
+        # Find common genes (present in >1 genome)
+        common_genes = {}
+        for gene, data in all_hits_by_gene.items():
+            if data['count'] > 1:  # Gene found in multiple genomes
+                common_genes[gene] = data
+        
+        master_summary['cross_database_patterns'] = {
+            'total_genes_found': len(all_hits_by_gene),
+            'common_genes': common_genes,
+            'top_genes': sorted(
+                [(gene, data) for gene, data in all_hits_by_gene.items()],
+                key=lambda x: x[1]['count'],
+                reverse=True
+            )[:20]  # Top 20 most frequent genes
+        }
+        
+        # Write master JSON
+        json_file = os.path.join(output_base, "staph_abricate_master_summary.json")
+        with open(json_file, 'w') as f:
+            json.dump(master_summary, f, indent=2, default=str)
+        
+        self.logger.info("✓ Created master JSON summary: %s", json_file)
+        return master_summary
     
     def _create_database_summary_html(self, database: str, hits: List[Dict], output_base: str):
         """Create HTML summary report for a specific database across all genomes"""
@@ -1307,6 +1549,22 @@ class AbricateExecutor:
             text-decoration: underline;
         }}
         .present {{ background-color: #d4edda; }}
+        /* FIX FOR REVIEWER: Make product column responsive with word wrapping */
+        .product-cell {{
+            white-space: normal !important;
+            word-wrap: break-word;
+            max-width: 400px;
+            min-width: 200px;
+        }}
+        /* FIX FOR REVIEWER: Make tables responsive */
+        .table-responsive {{
+            width: 100%;
+            overflow-x: auto;
+            margin: 20px 0;
+        }}
+        .gene-table {{
+            min-width: 800px; /* Ensure table has minimum width */
+        }}
     </style>
     {quotes_js}
 </head>
@@ -1343,15 +1601,16 @@ class AbricateExecutor:
         
         <div class="card">
             <h2 style="color: #333; border-bottom: 2px solid #667eea; padding-bottom: 10px;">🔍 Genes by Genome</h2>
-            <table class="gene-table">
-                <thead>
-                    <tr>
-                        <th>Genome</th>
-                        <th>Gene Count</th>
-                        <th>Genes Detected</th>
-                    </tr>
-                </thead>
-                <tbody>
+            <div class="table-responsive">
+                <table class="gene-table">
+                    <thead>
+                        <tr>
+                            <th>Genome</th>
+                            <th>Gene Count</th>
+                            <th>Genes Detected</th>
+                        </tr>
+                    </thead>
+                    <tbody>
 """
         
         for genome in sorted(unique_genomes):
@@ -1366,21 +1625,23 @@ class AbricateExecutor:
 """
         
         html_content += """
-                </tbody>
-            </table>
+                    </tbody>
+                </table>
+            </div>
         </div>
         
         <div class="card">
             <h2 style="color: #333; border-bottom: 2px solid #667eea; padding-bottom: 10px;">📈 Gene Frequency</h2>
-            <table class="gene-table">
-                <thead>
-                    <tr>
-                        <th>Gene</th>
-                        <th>Frequency</th>
-                        <th>Genomes</th>
-                    </tr>
-                </thead>
-                <tbody>
+            <div class="table-responsive">
+                <table class="gene-table">
+                    <thead>
+                        <tr>
+                            <th>Gene</th>
+                            <th>Frequency</th>
+                            <th>Genomes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
 """
         
         # Calculate gene frequency
@@ -1397,13 +1658,14 @@ class AbricateExecutor:
                     <tr>
                         <td><strong>{gene}</strong></td>
                         <td>{len(genomes)}</td>
-                        <td>{genome_list}</td>
+                        <td class="product-cell">{genome_list}</td>
                     </tr>
 """
         
         html_content += """
-                </tbody>
-            </table>
+                    </tbody>
+                </table>
+            </div>
         </div>
         
         <div class="footer">
@@ -1522,6 +1784,10 @@ class AbricateExecutor:
         # Create database summary files and HTML reports after processing all genomes
         self.create_database_summaries(all_results, output_base)
         
+        # NEW: Create JSON summaries
+        self.create_database_json_summaries(all_results, output_base)
+        self.create_master_json_summary(all_results, output_base)
+        
         self.logger.info("=== ANALYSIS COMPLETE ===")
         self.logger.info("Processed %d genomes", len(all_results))
         self.logger.info("Results saved to: %s", output_base)
@@ -1605,6 +1871,15 @@ Supported FASTA extensions: .fasta, .fa, .fna, .faa
         executor.logger.info("🗃️  DATABASE USAGE SUMMARY")
         executor.logger.info("="*50)
         executor.logger.info("Used databases: %s", ", ".join(executor.required_databases))
+        
+        # Output files summary
+        executor.logger.info("\n" + "="*50)
+        executor.logger.info("📁 OUTPUT FILES SUMMARY")
+        executor.logger.info("="*50)
+        executor.logger.info("• HTML reports: One per genome + one per database")
+        executor.logger.info("• TSV summaries: One per database")
+        executor.logger.info("• JSON summaries: One per database + master summary")
+        executor.logger.info("Location: %s", args.output)
         
         # Performance summary
         executor.logger.info("\n" + "="*50)

@@ -12,7 +12,6 @@ dependencies:
   - tqdm
   - click
   - abricate=1.0.1
-  - ncbi-amrfinderplus=3.12.8
   - perl
   - any2fasta
   - blast

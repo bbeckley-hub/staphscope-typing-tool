@@ -6,6 +6,7 @@ Rewritten by: Beckley Brown <brownbeckley94@gmail.com>
 Date: 2025-08-18
 Updated: 2025-08-20 (Added enhanced JSON reporting)
 Updated: 2025-08-21 (Enhanced HTML reporting with detailed results)
+Updated: 2025-08-22 (Improved k-mer results display with colored table)
 Send a quick mail for any issues or further explanations.
 Affiliation: University of Ghana Medical School-Department of Medical Bioichemistry
 """
@@ -18,7 +19,7 @@ import argparse
 import subprocess
 import json
 from pathlib import Path
-from typing import Dict, List, Set, Tuple, Optional
+from typing import Dict, List, Set, Tuple, Optional, Any
 
 # SCCmec type definitions
 SCCMEC_DEFINITIONS = {
@@ -207,9 +208,79 @@ def parse_kmer_detailed_results(kmer_file: Path) -> List[Dict]:
     
     return results
 
+def parse_raw_kmer_content_to_table(raw_content: str) -> Tuple[List[str], List[List[str]]]:
+    """Parse raw k-mer content into header and rows for HTML table"""
+    lines = raw_content.strip().split('\n')
+    if not lines:
+        return [], []
+    
+    # Extract header (remove # if present)
+    header_line = lines[0]
+    if header_line.startswith('#'):
+        header_line = header_line[1:].strip()
+    
+    # Split header by tabs
+    headers = [h.strip() for h in header_line.split('\t')]
+    
+    # Parse data rows
+    rows = []
+    for line in lines[1:]:
+        if not line.strip():
+            continue
+        parts = line.strip().split('\t')
+        rows.append([p.strip() for p in parts])
+    
+    return headers, rows
+
+def get_top_kmer_predictions(kmer_results: List[Dict], has_mecA: bool) -> Dict[str, Any]:
+    """
+    Get top k-mer based predictions when gene-based fails.
+    Returns top 2 hits with highest template coverage.
+    """
+    if not kmer_results or not has_mecA:
+        return {
+            'should_use_kmer': False,
+            'top_hits': [],
+            'contradiction': False,
+            'message': ''
+        }
+    
+    # Sort by template coverage (highest first)
+    sorted_results = sorted(kmer_results, 
+                          key=lambda x: float(x['template_coverage']), 
+                          reverse=True)
+    
+    # Get top 2 hits
+    top_hits = sorted_results[:2] if len(sorted_results) >= 2 else sorted_results[:1]
+    
+    # Check for contradiction if we have 2 hits
+    contradiction = False
+    message = ''
+    
+    if len(top_hits) >= 2:
+        cov1 = float(top_hits[0]['template_coverage'])
+        cov2 = float(top_hits[1]['template_coverage'])
+        
+        # If top 2 are close in coverage (within 10%), show contradiction
+        if abs(cov1 - cov2) < 10.0 and cov1 >= 50.0:
+            contradiction = True
+            type1 = top_hits[0]['template'].split('|')[0]
+            type2 = top_hits[1]['template'].split('|')[0]
+            message = f"⚠️ K-mer based contradiction: Similar coverage between {type1} ({cov1:.1f}%) and {type2} ({cov2:.1f}%). Isolate could be either type."
+        elif cov1 >= 50.0:
+            # Good single prediction
+            message = f"✅ K-mer based prediction: {top_hits[0]['template'].split('|')[0]} with {cov1:.1f}% coverage"
+    
+    return {
+        'should_use_kmer': len(top_hits) > 0 and float(top_hits[0]['template_coverage']) >= 50.0,
+        'top_hits': top_hits,
+        'contradiction': contradiction,
+        'message': message
+    }
+
 def generate_enhanced_json_report(sample_name: str, mrsa_gene: str, sccmec_types: List[str], 
-                                 kmer_hits: List, ccrAB_genes: Set[str], ccrC_genes: Set[str], 
-                                 mec_genes: Set[str], subtyping_genes: Set[str], 
+                                 kmer_hits: List, kmer_prediction: Dict, ccrAB_genes: Set[str], 
+                                 ccrC_genes: Set[str], mec_genes: Set[str], subtyping_genes: Set[str], 
                                  total_genes: Set[str], output_path: Path):
     """
     Generate reliable JSON report - only include what actually works
@@ -253,6 +324,7 @@ def generate_enhanced_json_report(sample_name: str, mrsa_gene: str, sccmec_types
             "confidence": sccmec_confidence,
             "typing_method": "gene_based"
         },
+        "kmer_prediction": kmer_prediction,
         "gene_detection": {
             "mec_genes": [{"gene": gene, "detected": True} for gene in sorted(mec_genes)],
             "ccr_genes": [{"gene": gene, "detected": True} for gene in sorted(ccrAB_genes.union(ccrC_genes))],
@@ -275,8 +347,18 @@ def generate_staphscope_html_report(sample_name: str, mrsa_gene: str, sccmec_typ
                                    enhanced_report: Dict, ccrAB_genes: Set[str], ccrC_genes: Set[str],
                                    mec_genes: Set[str], kmer_hits: List, 
                                    detailed_gene_results: List[Dict], detailed_kmer_results: List[Dict],
-                                   output_path: Path, args):
+                                   output_path: Path, args, kmer_prediction: Dict):
     """Generate beautiful StaphScope HTML report with ALL detailed results"""
+    
+    # Read the ACTUAL results_MyKmerFinder.txt file content
+    full_kmer_content = ""
+    kmer_file = output_path / "results_MyKmerFinder.txt"
+    if kmer_file.exists():
+        with open(kmer_file, 'r') as f:
+            full_kmer_content = f.read()
+    
+    # Parse raw content for table display
+    kmer_headers, kmer_rows = parse_raw_kmer_content_to_table(full_kmer_content)
     
     # Read additional files for comprehensive reporting
     html_kmer_content = ""
@@ -460,21 +542,40 @@ def generate_staphscope_html_report(sample_name: str, mrsa_gene: str, sccmec_typ
             font-weight: bold;
             position: sticky;
             top: 0;
+            border: 1px solid #e5e7eb;
         }
         
         .detailed-table td {
             padding: 10px;
             border-bottom: 1px solid #e5e7eb;
+            border-right: 1px solid #e5e7eb;
         }
         
         .detailed-table tr:hover {
             background: #f3f4f6;
         }
         
+        .highlight-red {
+            background-color: #fee2e2 !important;
+            color: #dc2626 !important;
+            font-weight: bold;
+        }
+        
+        .highlight-orange {
+            background-color: #ffedd5 !important;
+            color: #ea580c !important;
+        }
+        
+        .highlight-yellow {
+            background-color: #fef3c7 !important;
+            color: #d97706 !important;
+        }
+        
         .kmer-table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 15px;
+            font-size: 14px;
         }
         
         .kmer-table th {
@@ -530,15 +631,44 @@ def generate_staphscope_html_report(sample_name: str, mrsa_gene: str, sccmec_typ
             font-size: 14px;
             line-height: 1.5;
             white-space: pre-wrap;
-            max-height: 400px;
+            max-height: 500px;
             overflow-y: auto;
         }
         
         .file-source {
-            font-size: 12px;
+            font-size: 14px;
             color: #666;
             font-style: italic;
             margin-bottom: 10px;
+            background: #f3f4f6;
+            padding: 8px 12px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+        
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 10px;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #f8fafc;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 12px;
+        }
+        
+        .legend-color {
+            width: 15px;
+            height: 15px;
+            border-radius: 3px;
         }
         
         .footer {
@@ -563,6 +693,22 @@ def generate_staphscope_html_report(sample_name: str, mrsa_gene: str, sccmec_typ
             font-size: 12px;
         }
         
+        .kmer-prediction-box {
+            background: #f0f9ff;
+            border-left: 4px solid #3b82f6;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 6px;
+        }
+        
+        .kmer-warning-box {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 6px;
+        }
+        
         @media (max-width: 768px) {
             .ascii-art {
                 font-size: 6px;
@@ -572,6 +718,9 @@ def generate_staphscope_html_report(sample_name: str, mrsa_gene: str, sccmec_typ
             }
             .detailed-table {
                 font-size: 12px;
+            }
+            .detailed-table th, .detailed-table td {
+                padding: 8px;
             }
         }
     </style>
@@ -652,6 +801,53 @@ def generate_staphscope_html_report(sample_name: str, mrsa_gene: str, sccmec_typ
             <p><strong>Typing Method:</strong> {sccmec['typing_method'].replace("_", " ").title()}</p>
 '''
     
+    # Add K-mer based prediction if gene-based failed
+    if not sccmec_types and mrsa_gene and kmer_prediction.get('should_use_kmer', False):
+        html_content += f'''
+            <div class="kmer-prediction-box">
+                <h3>🔍 K-mer Based Prediction (Gene-based typing inconclusive)</h3>
+                <p><strong>{kmer_prediction.get('message', '')}</strong></p>
+'''
+        
+        if kmer_prediction.get('top_hits'):
+            html_content += '''
+                <table class="detailed-table">
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Template</th>
+                            <th>Template Coverage [%]</th>
+                            <th>Query Coverage [%]</th>
+                            <th>Score</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+'''
+            for i, hit in enumerate(kmer_prediction['top_hits'], 1):
+                row_class = "highlight-red"  # ALWAYS HIGHLIGHT TOP 2 IN RED
+                html_content += f'''                    <tr class="{row_class}">
+                        <td>{i}</td>
+                        <td><strong>{hit['template'].split('|')[0]}</strong></td>
+                        <td>{hit['template_coverage']}</td>
+                        <td>{hit['query_coverage']}</td>
+                        <td>{hit['score']}</td>
+                    </tr>
+'''
+            html_content += '''                    </tbody>
+                </table>
+'''
+        
+        if kmer_prediction.get('contradiction'):
+            html_content += f'''
+                <div class="kmer-warning-box">
+                    <strong>⚠️ Interpretation Note:</strong> Top 2 k-mer hits have similar coverage. 
+                    Consider both possibilities or perform additional testing.
+                </div>
+'''
+        
+        html_content += '''            </div>
+'''
+    
     if len(sccmec['all_predicted_types']) > 1:
         html_content += '''
             <h3>All Predicted Types:</h3>
@@ -683,7 +879,7 @@ def generate_staphscope_html_report(sample_name: str, mrsa_gene: str, sccmec_typ
         <div class="report-section">
             <h2>🧪 Detailed Gene Detection Results</h2>
             <p class="file-source">From: results_tab_MyDbFinder.txt</p>
-            <div style="max-height: 400px; overflow-y: auto;">
+            <div style="max-height: 600px; overflow-y: auto;">
                 <table class="detailed-table">
                     <thead>
                         <tr>
@@ -696,7 +892,7 @@ def generate_staphscope_html_report(sample_name: str, mrsa_gene: str, sccmec_typ
                     </thead>
                     <tbody>
 '''
-        for result in detailed_gene_results[:50]:  # Show top 50 results
+        for result in detailed_gene_results:  # Show ALL results
             html_content += f'''
                         <tr>
                             <td><strong>{result['gene_full']}</strong></td>
@@ -706,12 +902,168 @@ def generate_staphscope_html_report(sample_name: str, mrsa_gene: str, sccmec_typ
                             <td>{result['position']}</td>
                         </tr>
 '''
-        html_content += '''
+        html_content += f'''
                     </tbody>
                 </table>
             </div>
-            <p style="margin-top: 10px; font-size: 12px; color: #666;">
-                Showing top 50 results. Total genes detected: ''' + str(len(detailed_gene_results)) + '''
+            <p style="margin-top: 10px; font-size: 14px; color: #666;">
+                Total genes detected: {len(detailed_gene_results)}
+            </p>
+        </div>
+'''
+    
+    # Add COMPLETE results_MyKmerFinder.txt content in BEAUTIFUL COLORED TABLE
+    if kmer_headers and kmer_rows:
+        # Sort rows by template coverage (8th column, index 7)
+        try:
+            sorted_rows = sorted(kmer_rows, key=lambda x: float(x[7] if len(x) > 7 else 0), reverse=True)
+        except (ValueError, IndexError):
+            sorted_rows = kmer_rows
+        
+        html_content += '''
+        <div class="report-section">
+            <h2>📋 Complete K-mer Results (Formatted Table)</h2>
+            <p class="file-source">From: results_MyKmerFinder.txt (All results in colored table)</p>
+            
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #fee2e2;"></div>
+                    <span>Top 2 hits with highest template coverage</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #ffedd5;"></div>
+                    <span>High coverage (≥ 70%)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #fef3c7;"></div>
+                    <span>Medium coverage (≥ 50%)</span>
+                </div>
+            </div>
+            
+            <div style="max-height: 600px; overflow-y: auto;">
+                <table class="detailed-table">
+                    <thead>
+                        <tr>
+'''
+        # Add headers
+        for i, header in enumerate(kmer_headers):
+            html_content += f'                            <th>{header}</th>\n'
+        
+        html_content += '''                        </tr>
+                    </thead>
+                    <tbody>
+'''
+        # Add rows with coloring
+        for i, row in enumerate(sorted_rows):
+            # Determine row class based on template coverage
+            row_class = ""
+            try:
+                if len(row) > 7:
+                    template_cov = float(row[7])
+                    if i < 2:  # Top 2 rows
+                        row_class = "highlight-red"
+                    elif template_cov >= 70.0:
+                        row_class = "highlight-orange"
+                    elif template_cov >= 50.0:
+                        row_class = "highlight-yellow"
+            except (ValueError, IndexError):
+                pass
+            
+            html_content += f'                        <tr class="{row_class}">\n'
+            
+            for j, cell in enumerate(row):
+                if j == 0:  # Template column - format for better display
+                    if '|' in cell:
+                        parts = cell.split('|')
+                        if len(parts) > 1 and not parts[1].startswith('gb'):
+                            display_cell = f"{parts[0]} | {parts[1]}"
+                        else:
+                            display_cell = parts[0]
+                        html_content += f'                            <td><strong>{display_cell}</strong></td>\n'
+                    else:
+                        html_content += f'                            <td><strong>{cell}</strong></td>\n'
+                else:
+                    html_content += f'                            <td>{cell}</td>\n'
+            
+            html_content += '                        </tr>\n'
+        
+        html_content += f'''                    </tbody>
+                </table>
+            </div>
+            <p style="margin-top: 10px; font-size: 14px; color: #666;">
+                Total templates analyzed: {len(sorted_rows)}
+                <br><span style="color: #dc2626; font-weight: bold;">● Top 2 hits highlighted in RED</span>
+                <br><span style="color: #ea580c;">● High coverage (≥70%) in ORANGE</span>
+                <br><span style="color: #d97706;">● Medium coverage (≥50%) in YELLOW</span>
+            </p>
+        </div>
+'''
+    
+    # Add parsed k-mer results table - HIGHLIGHTING TOP 2
+    if detailed_kmer_results:
+        # Sort by template coverage for highlighting
+        sorted_kmer = sorted(detailed_kmer_results, 
+                           key=lambda x: float(x.get('template_coverage', 0)), 
+                           reverse=True)
+        
+        html_content += '''
+        <div class="report-section">
+            <h2>🔍 Detailed K-mer Homology Analysis (Parsed View)</h2>
+            <p class="file-source">Parsed from: results_MyKmerFinder.txt</p>
+            <div style="max-height: 600px; overflow-y: auto;">
+                <table class="detailed-table">
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Template</th>
+                            <th>Score</th>
+                            <th>Expected</th>
+                            <th>z</th>
+                            <th>p-value</th>
+                            <th>query coverage [%]</th>
+                            <th>template coverage [%]</th>
+                            <th>depth</th>
+                            <th>Kmers in Template</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+'''
+        for i, result in enumerate(sorted_kmer):  # Show ALL results
+            # HIGHLIGHT TOP 2 WITH HIGHEST COVERAGE IN RED
+            template_cov = float(result.get('template_coverage', 0))
+            row_class = "highlight-red" if i < 2 else ""  # TOP 2 HIGHLIGHTED
+            
+            # Format template name for cleaner display
+            template = result['template']
+            if '|' in template:
+                parts = template.split('|')
+                if len(parts) > 1 and not parts[1].startswith('gb'):
+                    display_template = f"{parts[0]} | {parts[1]}"
+                else:
+                    display_template = parts[0]
+            else:
+                display_template = template
+            
+            html_content += f'''
+                        <tr class="{row_class}">
+                            <td>{i+1}</td>
+                            <td><strong>{display_template}</strong></td>
+                            <td>{result['score']}</td>
+                            <td>{result['expected']}</td>
+                            <td>{result['z']}</td>
+                            <td>{result['p_value']}</td>
+                            <td>{result['query_coverage']}</td>
+                            <td>{result['template_coverage']}</td>
+                            <td>{result['depth']}</td>
+                            <td>{result['kmers_in_template']}</td>
+                        </tr>
+'''
+        html_content += f'''
+                    </tbody>
+                </table>
+            </div>
+            <p style="margin-top: 10px; font-size: 14px; color: #666;">
+                Total templates analyzed: {len(sorted_kmer)}
             </p>
         </div>
 '''
@@ -761,53 +1113,6 @@ def generate_staphscope_html_report(sample_name: str, mrsa_gene: str, sccmec_typ
     html_content += '''        </div>
 '''
     
-    # Add detailed k-mer results
-    if detailed_kmer_results:
-        html_content += '''
-        <div class="report-section">
-            <h2>🔍 Detailed K-mer Homology Analysis</h2>
-            <p class="file-source">From: results_MyKmerFinder.txt</p>
-            <div style="max-height: 400px; overflow-y: auto;">
-                <table class="detailed-table">
-                    <thead>
-                        <tr>
-                            <th>Template</th>
-                            <th>Score</th>
-                            <th>Expected</th>
-                            <th>z</th>
-                            <th>p-value</th>
-                            <th>Query Cov%</th>
-                            <th>Template Cov%</th>
-                            <th>Depth</th>
-                            <th>Kmers</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-'''
-        for result in detailed_kmer_results[:20]:  # Show top 20 results
-            html_content += f'''
-                        <tr>
-                            <td><strong>{result['template']}</strong></td>
-                            <td>{result['score']}</td>
-                            <td>{result['expected']}</td>
-                            <td>{result['z']}</td>
-                            <td>{result['p_value']}</td>
-                            <td>{result['query_coverage']}</td>
-                            <td>{result['template_coverage']}</td>
-                            <td>{result['depth']}</td>
-                            <td>{result['kmers_in_template']}</td>
-                        </tr>
-'''
-        html_content += '''
-                    </tbody>
-                </table>
-            </div>
-            <p style="margin-top: 10px; font-size: 12px; color: #666;">
-                Showing top 20 results. Total templates matched: ''' + str(len(detailed_kmer_results)) + '''
-            </p>
-        </div>
-'''
-    
     # Add HTML K-mer Report
     if html_kmer_content:
         html_content += f'''
@@ -817,17 +1122,18 @@ def generate_staphscope_html_report(sample_name: str, mrsa_gene: str, sccmec_typ
             <div class="text-content">
 {html_kmer_content}
             </div>
-        </div>
+        </div> 
 '''
     
     # Add k-mer summary results if available
     if kmer_hits:
         html_content += '''
         <div class="report-section">
-            <h2>🎯 K-mer Homology Summary (Top 5 Hits)</h2>
+            <h2>🎯 K-mer Homology Summary (Top 10 Hits)</h2>
             <table class="kmer-table">
                 <thead>
                     <tr>
+                        <th>Rank</th>
                         <th>Template</th>
                         <th>Score</th>
                         <th>Template Coverage (%)</th>
@@ -837,8 +1143,12 @@ def generate_staphscope_html_report(sample_name: str, mrsa_gene: str, sccmec_typ
                 </thead>
                 <tbody>
 '''
-        for hit, data in kmer_hits[:5]:
-            html_content += f'''                    <tr>
+        for i, (hit, data) in enumerate(kmer_hits[:10], 1):
+            template_cov = float(data['template_coverage'])
+            row_class = "highlight-red" if i <= 2 and template_cov >= 50.0 else ""
+            
+            html_content += f'''                    <tr class="{row_class}">
+                        <td>{i}</td>
                         <td><strong>{hit}</strong></td>
                         <td>{data['Score']}</td>
                         <td>{data['template_coverage']}</td>
@@ -868,6 +1178,10 @@ def generate_staphscope_html_report(sample_name: str, mrsa_gene: str, sccmec_typ
                 <div class="metric-card">
                     <div class="metric-label">Analysis Parameters</div>
                     <div class="metric-value">ID: {args.id_threshold}% Len: {args.len_threshold}%</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">K-mer Prediction</div>
+                    <div class="metric-value">{"AVAILABLE" if kmer_prediction.get('should_use_kmer') else "NOT USED"}</div>
                 </div>
             </div>
         </div>
@@ -901,7 +1215,12 @@ def generate_staphscope_html_report(sample_name: str, mrsa_gene: str, sccmec_typ
             {{ text: "The science of today is the technology of tomorrow.", author: "Edward Teller" }},
             {{ text: "Nothing in life is to be feared, it is only to be understood.", author: "Marie Curie" }},
             {{ text: "Research is what I'm doing when I don't know what I'm doing.", author: "Wernher von Braun" }},
-            {{ text: "The universe is not required to be in perfect harmony with human ambition.", author: "Carl Sagan" }}
+            {{ text: "The universe is not required to be in perfect harmony with human ambition.", author: "Carl Sagan" }},
+            {{"text": "Staphscope represents the convergence of genomic surveillance and clinical diagnostics, transforming raw sequences into actionable insights for infection control.", "author": "Brown Beckley"}},
+            {{"text": "In the battle against antimicrobial resistance, tools like Staphscope are our eyes and ears, revealing the genetic blueprints of resistant pathogens.", "author": "Brown Beckley"}},
+            {{"text": "Staphscope isn't just a tool; it's a comprehensive system that bridges the gap between sequencing data and public health action.", "author": "Brown Beckley"}},    
+            {{"text": "Through Staphscope, we turn the complexity of bacterial genomes into clear, interpretable reports, empowering clinicians and researchers alike.", "author": "Brown Beckley"}},
+            {{"text": "Staphscope is a testament to the power of bioinformatics in the modern era, making advanced pathogen typing accessible to all.", "author": "Brown Beckley"}}
         ];
 
         const quoteContainer = document.getElementById('quoteContainer');
@@ -947,9 +1266,9 @@ def determine_primary_type_with_confidence(sccmec_types: List[str], kmer_results
         # Check if we have k-mer evidence even without gene-based types
         if kmer_results:
             best_kmer = kmer_results[0]
-            coverage = best_kmer.get("template_coverage", 0)
-            primary_type = best_kmer["Template"].split("|")[0]
-            evidence.append(f"kmer_only_evidence_{coverage}%")
+            coverage = float(best_kmer.get("template_coverage", 0))
+            primary_type = best_kmer["template"].split("|")[0]
+            evidence.append(f"kmer_only_evidence_{coverage:.1f}%")
             
             if coverage >= 85.0:
                 return primary_type, "HIGH", evidence
@@ -966,11 +1285,11 @@ def determine_primary_type_with_confidence(sccmec_types: List[str], kmer_results
         
         if kmer_results:
             best_kmer = kmer_results[0]
-            coverage = best_kmer.get("template_coverage", 0)
-            kmer_type = best_kmer["Template"].split("|")[0]
+            coverage = float(best_kmer.get("template_coverage", 0))
+            kmer_type = best_kmer["template"].split("|")[0]
             
             if kmer_type == primary_type:
-                evidence.append(f"kmer_support_{coverage}%_coverage")
+                evidence.append(f"kmer_support_{coverage:.1f}%_coverage")
                 if coverage >= 85.0:
                     return primary_type, "VERY_HIGH", evidence
                 elif coverage >= 70.0:
@@ -978,7 +1297,7 @@ def determine_primary_type_with_confidence(sccmec_types: List[str], kmer_results
                 else:
                     return primary_type, "MEDIUM", evidence
             else:
-                evidence.append(f"kmer_conflict_{kmer_type}_{coverage}%")
+                evidence.append(f"kmer_conflict_{kmer_type}_{coverage:.1f}%")
                 # Still use gene-based but with lower confidence
                 return primary_type, "MEDIUM", evidence
         
@@ -996,15 +1315,15 @@ def determine_primary_type_with_confidence(sccmec_types: List[str], kmer_results
         
         if kmer_results:
             best_kmer = kmer_results[0]
-            coverage = best_kmer.get("template_coverage", 0)
-            primary_type = best_kmer["Template"].split("|")[0]
+            coverage = float(best_kmer.get("template_coverage", 0))
+            primary_type = best_kmer["template"].split("|")[0]
             
             if coverage >= 70.0 and primary_type in sccmec_types:
-                evidence.append(f"kmer_resolution_{coverage}%_coverage")
+                evidence.append(f"kmer_resolution_{coverage:.1f}%_coverage")
                 confidence = "VERY_HIGH" if coverage >= 90.0 else "HIGH" if coverage >= 85.0 else "MEDIUM"
                 return primary_type, confidence, evidence
             elif primary_type in sccmec_types:
-                evidence.append(f"weak_kmer_support_{coverage}%")
+                evidence.append(f"weak_kmer_support_{coverage:.1f}%")
                 return primary_type, "LOW", evidence
         
         # Fallback to first gene-based prediction
@@ -1182,6 +1501,10 @@ def main():
     best_kmer_hit = kmer_hits[0][0].split("|")[0] if kmer_hits else ""
     kmer_subtype = kmer_hits[0][0].split("|")[1] if kmer_hits and "|" in kmer_hits[0][0] else ""
     
+    # Get k-mer based prediction for isolates with mecA but no gene-based type
+    has_mecA = "mecA" in mec_genes or "mecA" in mrsa_gene
+    kmer_prediction = get_top_kmer_predictions(detailed_kmer_results, has_mecA)
+    
     # Generate final text results
     result_file = output_path / args.output_file
     with open(result_file, 'w') as out:
@@ -1229,7 +1552,19 @@ def main():
                     out.write("\nAdditional genes found:\n")
                     out.write("\n".join(additional_genes) + "\n")
         else:
-            out.write("No SCCmec element was detected\n")
+            out.write("No SCCmec element was detected by gene-based prediction\n")
+            
+            # Add k-mer based prediction if available
+            if kmer_prediction['should_use_kmer']:
+                out.write("\n=== K-MER BASED PREDICTION ===\n")
+                out.write(f"{kmer_prediction['message']}\n\n")
+                out.write("Top k-mer hits:\n")
+                for i, hit in enumerate(kmer_prediction['top_hits'], 1):
+                    out.write(f"{i}. {hit['template']} - Template Coverage: {hit['template_coverage']}%, Query Coverage: {hit['query_coverage']}%\n")
+                
+                if kmer_prediction['contradiction']:
+                    out.write("\n⚠️ NOTE: Top 2 hits have similar coverage. Consider both possibilities.\n")
+            
             if all_classes:
                 out.write("\nDetected gene complexes:\n")
                 out.write("\n".join(all_classes) + "\n")
@@ -1252,6 +1587,7 @@ def main():
             mrsa_gene=mrsa_gene,
             sccmec_types=sccmec_types,
             kmer_hits=kmer_hits,
+            kmer_prediction=kmer_prediction,
             ccrAB_genes=ccrAB_genes,
             ccrC_genes=ccrC_genes,
             mec_genes=mec_genes,
@@ -1277,7 +1613,8 @@ def main():
             detailed_gene_results=detailed_gene_results,
             detailed_kmer_results=detailed_kmer_results,
             output_path=output_path,
-            args=args
+            args=args,
+            kmer_prediction=kmer_prediction
         )
         print(f"Beautiful StaphScope HTML report saved to: {html_file}")
     except Exception as e:

@@ -9,34 +9,30 @@ source:
   path: .
 
 build:
-  number: 0
-  noarch: python
-  script: 
-    - {{ PYTHON }} -m pip install . --no-deps -vv
+  number: 1
+  script: "{{ PYTHON }} -m pip install . -vv"
+  
   entry_points:
     - staphscope = staphscope.staphscope:main
 
 requirements:
   host:
-    - python >=3.8
+    - python =3.10
     - pip
     - setuptools
   run:
-    - python >=3.8
-    # Core Python packages
-    - pandas >=1.5.0
-    - biopython >=1.80
-    - psutil >=5.9.0
-    - requests >=2.28.0
-    - tqdm >=4.64.0
-    - click >=8.0.0
-    # Bioinformatics tools (available as noarch or have noarch versions)
+    - python =3.10
+    - pip
     - abricate >=1.0.1
-    - ncbi-amrfinderplus >=3.12.8
     - perl
     - any2fasta
     - blast >=2.13.0
-    # Perl dependencies
+    - pandas>=1.5.0
+    - biopython>=1.80
+    - psutil>=5.9.0
+    - requests>=2.28.0
+    - tqdm>=4.64.0
+    - click>=8.0.0
     - perl-moo
     - perl-list-moreutils
     - perl-json
@@ -45,21 +41,13 @@ requirements:
     - perl-data-dumper
     - perl-getopt-long
     - perl-file-which
-
+    
 test:
   imports:
     - staphscope
-    - staphscope.core
-    - staphscope.modules
-    - staphscope.modules.mlst_module
-    - staphscope.modules.abricate_module
-    - staphscope.modules.amr_module
-    - staphscope.modules.spa_module
-    - staphscope.modules.sccmec_module
   commands:
     - staphscope --help
-    - python -c "import staphscope; print('StaphScope import successful')"
-
+    
 about:
   home: https://github.com/bbeckley-hub/staphscope-typing-tool
   license: MIT
@@ -69,8 +57,7 @@ about:
     StaphScope is a comprehensive bioinformatics tool for Staphylococcus aureus
     genomic analysis including MLST typing, spa typing, SCCmec analysis, 
     antimicrobial resistance detection, virulence factors, plasmid profiling,
-    and lineage prediction from whole genome sequencing data. Designed specifically for MRSA research and
-    global surveillance.
+    and lineage prediction from whole genome sequencing data.
   doc_url: https://github.com/bbeckley-hub/staphscope-typing-tool
   dev_url: https://github.com/bbeckley-hub/staphscope-typing-tool
 

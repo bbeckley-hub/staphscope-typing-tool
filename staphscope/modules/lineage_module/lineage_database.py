@@ -129,7 +129,7 @@ LINEAGE_DATABASE = {
         "clinical_significance": "Includes both HA-MRSA and CA-MRSA, USA300 is hypervirulent community clone",
         "outbreak_potential": "VERY HIGH",
         "risk_level": "HIGH",
-        "key_references": ["PMID: 26484389", "PMID: 20610826", "PMID: 27992523"]
+        "key_references": ["PMID: 26484389", "PMID: 20610826", "PMID: 27992523", "PMID: 39431343"]
     },
     
     "CC12": {
@@ -351,6 +351,144 @@ LINEAGE_DATABASE = {
         "outbreak_potential": "HIGH",
         "risk_level": "HIGH",
         "key_references": ["https://doi.org/10.1128/jcm.43.10.5069-5073.2005", "PMID: 38990431", "PMID: 36504833", "https://doi.org/10.1089/fpd.2013.171"]
+    },
+    "CC3": {
+        "primary_name": "EMRSA-3/UK Hospital Clone",
+        "type": "Healthcare-associated MRSA",
+        "subtypes": ["EMRSA-3", "UK Hospital", "Early UK HA-MRSA"],
+        "sequence_types": [3, 254, 255, 256, 257, 258, 1094],
+        "common_spa_types": ["t037", "t045", "t091", "t186", "t242"],
+        "sccmec_types": ["I", "II", "III"],
+        "geographic_distribution": {
+            "regions": ["UK", "Europe", "Global"],
+            "prevalence": "High",
+            "notes": "Early hospital clone in UK, major European healthcare clone"
+        },
+        "virulence_profile": {
+            "toxins": ["tst", "sea", "sec", "sel"],
+            "adhesins": ["fnbA", "clfA", "clfB", "sdrC"],
+            "immune_evasion": ["scn", "chp", "sak"],
+            "enzymes": ["aur", "spl"]
+        },
+        "resistance_profile": {
+            "antimicrobial_classes": ["Methicillin", "Aminoglycosides", "Macrolides", "Tetracyclines"],
+            "common_genes": ["mecA", "aac(6')-aph(2'')", "erm(A)", "erm(C)", "tet(K)"],
+            "typical_patterns": ["Multidrug-resistant", "Early hospital clone"]
+        },
+        "clinical_significance": "Major European healthcare-associated clone, early hospital clone in UK, causes bacteremia, pneumonia, surgical site infections",
+        "outbreak_potential": "HIGH",
+        "risk_level": "HIGH",
+        "key_references": ["PMID: 11310446", "PMID: 23675030", "PMID: 27992523"]
+    },
+    
+    "CC20": {
+        "primary_name": "European Hospital Clone",
+        "type": "Healthcare-associated MRSA",
+        "subtypes": ["European Hospital", "Device-associated"],
+        "sequence_types": [20, 21, 22, 23, 24],
+        "common_spa_types": ["t164", "t021", "t032", "t037"],
+        "sccmec_types": ["II", "IV"],
+        "geographic_distribution": {
+            "regions": ["Europe", "Middle East", "Global"],
+            "prevalence": "Medium",
+            "notes": "Hospital-associated with specific geographic distribution"
+        },
+        "virulence_profile": {
+            "toxins": ["sea", "sek", "seq"],
+            "adhesins": ["fnbA", "clfA", "sdrC"],
+            "enzymes": ["aur"]
+        },
+        "resistance_profile": {
+            "antimicrobial_classes": ["Methicillin", "Aminoglycosides"],
+            "common_genes": ["mecA", "aac(6')-aph(2'')"],
+            "typical_patterns": ["Hospital-associated resistance patterns"]
+        },
+        "clinical_significance": "Hospital-associated clone, often associated with device-related infections",
+        "outbreak_potential": "MEDIUM",
+        "risk_level": "MEDIUM",
+        "key_references": ["PMID: 23675030", "PMID: 27992523"]
+    },
+    
+    "CC31": {
+        "primary_name": "Emerging Healthcare Clone",
+        "type": "Healthcare-associated MRSA",
+        "subtypes": ["Emerging", "Hospital-associated"],
+        "sequence_types": [31, 32, 33],
+        "common_spa_types": ["t032", "t037", "t045"],
+        "sccmec_types": ["II", "IV"],
+        "geographic_distribution": {
+            "regions": ["Global", "Europe", "Asia"],
+            "prevalence": "Emerging",
+            "notes": "Emerging in some healthcare settings"
+        },
+        "virulence_profile": {
+            "toxins": ["sea", "sek"],
+            "adhesins": ["fnbA", "clfA"]
+        },
+        "resistance_profile": {
+            "antimicrobial_classes": ["Methicillin"],
+            "common_genes": ["mecA"],
+            "typical_patterns": ["Variable resistance patterns"]
+        },
+        "clinical_significance": "Emerging healthcare-associated clone",
+        "outbreak_potential": "MEDIUM",
+        "risk_level": "MEDIUM",
+        "key_references": ["PMID: 27992523"]
+    },
+    
+    "CC18": {
+        "primary_name": "EMRSA-18",
+        "type": "Healthcare-associated MRSA",
+        "subtypes": ["EMRSA-18", "European Hospital"],
+        "sequence_types": [18, 19, 20],
+        "common_spa_types": ["t032", "t037", "t045"],
+        "sccmec_types": ["II", "IV"],
+        "geographic_distribution": {
+            "regions": ["Europe", "UK"],
+            "prevalence": "Medium",
+            "notes": "Significant healthcare clone in Europe"
+        },
+        "virulence_profile": {
+            "toxins": ["sea", "sek", "seq"],
+            "adhesins": ["fnbA", "clfA", "clfB"],
+            "immune_evasion": ["scn", "chp"]
+        },
+        "resistance_profile": {
+            "antimicrobial_classes": ["Methicillin", "Erythromycin"],
+            "common_genes": ["mecA", "erm(C)"],
+            "typical_patterns": ["Multi-drug resistant"]
+        },
+        "clinical_significance": "Significant healthcare clone in Europe, hospital-associated",
+        "outbreak_potential": "MEDIUM",
+        "risk_level": "MEDIUM",
+        "key_references": ["PMID: 27992523"]
+    },
+    "CC17": {
+        "primary_name": "Neonatal Infections Clone",
+        "type": "Healthcare-associated MRSA",
+        "subtypes": ["Neonatal", "NICU-associated"],
+        "sequence_types": [17, 18, 19],
+        "common_spa_types": ["t701", "t304", "t843"],
+        "sccmec_types": ["IV", "V"],
+        "geographic_distribution": {
+            "regions": ["Global"],
+            "prevalence": "Medium",
+            "notes": "Important in neonatal intensive care units"
+        },
+        "virulence_profile": {
+            "toxins": ["sea", "sek"],
+            "adhesins": ["fnbA", "clfA"],
+            "immune_evasion": ["scn", "chp"]
+        },
+        "resistance_profile": {
+            "antimicrobial_classes": ["Methicillin", "Gentamicin", "Erythromycin"],
+            "common_genes": ["mecA", "aac(6')-aph(2'')", "erm(C)"],
+            "typical_patterns": ["NICU-associated resistance patterns"]
+        },
+        "clinical_significance": "Important in neonatal intensive care units, outbreaks in NICU settings",
+        "outbreak_potential": "HIGH (in NICU settings)",
+        "risk_level": "MEDIUM",
+        "key_references": ["PMID: 27992523"]
     },
     
     # =========================================================================
@@ -603,6 +741,281 @@ LINEAGE_DATABASE = {
         "risk_level": "MEDIUM", 
         "key_references": ["PMID: 30951513", "PMID: 36671279"]
     },
+    "CC22-PVL+": {
+        "primary_name": "PVL-positive ST22 / CA-MRSA Variant",
+        "type": "Community-associated MRSA",
+        "subtypes": ["Community-associated", "PVL-positive", "Beijing clone"],
+        "sequence_types": [22],
+        "common_spa_types": ["Variable - associated with local epidemic strains"],
+        "sccmec_types": ["IV", "V"],
+        "geographic_distribution": {
+            "regions": ["China (Beijing)", "Potentially wider dissemination in Asia"],
+            "prevalence": "Emerging / Regionally Dominant",
+            "notes": "Emerging as a dominant CA-MRSA clone in specific regions, distinct from the classic healthcare-associated EMRSA-15. Reported to replace other local clones like ST398."
+        },
+        "virulence_profile": {
+            "toxins": ["lukS-PV", "lukF-PV", "tst-1 (common)", "eta (rare)"],
+            "adhesins": ["icaA", "icaD (biofilm formation)"],
+            "clinical": "Strong association with purulent skin and soft tissue infections (SSTIs)"
+        },
+        "resistance_profile": {
+            "antimicrobial_classes": ["Methicillin"],
+            "common_genes": ["mecA"],
+            "typical_patterns": ["Often retains susceptibility to non-beta-lactam antibiotics, typical of CA-MRSA"]
+        },
+        "clinical_significance": "Emerging community clone associated with skin and soft tissue infections. Represents a virulent, community-adapted offshoot of the ST22 lineage.",
+        "outbreak_potential": "MEDIUM",
+        "risk_level": "MEDIUM",
+        "key_references": [" PMID: 31616166","PMID: 35992657"]
+    },
+    "CC4": {
+        "primary_name": "USA800/Pediatric Clone",
+        "type": "Community-associated MRSA",
+        "subtypes": ["USA800", "Pediatric", "CA-MRSA"],
+        "sequence_types": [4, 5, 6],
+        "common_spa_types": ["t008", "t064", "t121"],
+        "sccmec_types": ["IV", "V"],
+        "geographic_distribution": {
+            "regions": ["USA", "Global"],
+            "prevalence": "Medium",
+            "notes": "Often associated with pediatric infections"
+        },
+        "virulence_profile": {
+            "toxins": ["lukS-PV", "lukF-PV", "sea"],
+            "adhesins": ["fnbA", "clfA"],
+            "immune_evasion": ["scn", "sak"]
+        },
+        "resistance_profile": {
+            "antimicrobial_classes": ["Methicillin"],
+            "common_genes": ["mecA"],
+            "typical_patterns": ["Often susceptible to non-beta-lactams", "Pediatric resistance patterns"]
+        },
+        "clinical_significance": "Pediatric clone, community-associated, often associated with skin infections in children",
+        "outbreak_potential": "MEDIUM",
+        "risk_level": "MEDIUM",
+        "key_references": ["PMID: 23055880", "PMID: 27992523"]
+    },
+    
+    "CC10": {
+        "primary_name": "Community-associated Lineage",
+        "type": "Community-associated MRSA",
+        "subtypes": ["Community-associated", "Global"],
+        "sequence_types": [10, 11, 12],
+        "common_spa_types": ["t021", "t045", "t128"],
+        "sccmec_types": ["IV", "V"],
+        "geographic_distribution": {
+            "regions": ["Global", "Eastern Asia", "Europe"],
+            "prevalence": "Medium",
+            "notes": "Distinct lineage, community-associated"
+        },
+        "virulence_profile": {
+            "toxins": ["sea", "sek"],
+            "adhesins": ["fnbA", "clfA"],
+            "immune_evasion": ["scn", "chp"]
+        },
+        "resistance_profile": {
+            "antimicrobial_classes": ["Methicillin"],
+            "common_genes": ["mecA"],
+            "typical_patterns": ["Variable resistance patterns"]
+        },
+        "clinical_significance": "Community-associated lineage with global distribution",
+        "outbreak_potential": "MEDIUM",
+        "risk_level": "MEDIUM",
+        "key_references": ["PMID: 19178545"]
+    },
+    
+    "CC14": {
+        "primary_name": "Animal-associated/Community Lineage",
+        "type": "Animal-associated/Community MRSA",
+        "subtypes": ["Animal-associated", "Community", "Zoonotic"],
+        "sequence_types": [14, 15, 16],
+        "common_spa_types": ["t034", "t108", "t164"],
+        "sccmec_types": ["IV", "V"],
+        "geographic_distribution": {
+            "regions": ["Global", "Europe", "Asia"],
+            "prevalence": "Low",
+            "notes": "Associated with animals but also human infections"
+        },
+        "virulence_profile": {
+            "toxins": ["sea", "sek"],
+            "adhesins": ["fnbA", "clfA"],
+            "other": ["Animal adaptation genes"]
+        },
+        "resistance_profile": {
+            "antimicrobial_classes": ["Methicillin", "Tetracycline"],
+            "common_genes": ["mecA", "tet(K)"],
+            "typical_patterns": ["Variable, often animal-associated patterns"]
+        },
+        "clinical_significance": "Animal-associated lineage with zoonotic potential, occasional human infections",
+        "outbreak_potential": "LOW",
+        "risk_level": "LOW",
+        "key_references": [" PMID: 36689019", "PMID: 39281059"]
+    },
+    
+    "CC16": {
+        "primary_name": "Pediatric Infections Clone",
+        "type": "Community-associated MRSA",
+        "subtypes": ["Pediatric", "Community-associated"],
+        "sequence_types": [16, 17, 18],
+        "common_spa_types": ["t084", "t085", "t127"],
+        "sccmec_types": ["IV", "V"],
+        "geographic_distribution": {
+            "regions": ["Global"],
+            "prevalence": "Medium",
+            "notes": "Specifically associated with pediatric populations"
+        },
+        "virulence_profile": {
+            "toxins": ["sea", "lukS-PV", "lukF-PV"],
+            "adhesins": ["fnbA", "clfA"],
+            "immune_evasion": ["scn"]
+        },
+        "resistance_profile": {
+            "antimicrobial_classes": ["Methicillin"],
+            "common_genes": ["mecA"],
+            "typical_patterns": ["Often susceptible to non-beta-lactams", "Pediatric patterns"]
+        },
+        "clinical_significance": "Specifically associated with pediatric infections",
+        "outbreak_potential": "MEDIUM",
+        "risk_level": "MEDIUM",
+        "key_references": ["PMID: 23055880", "PMID: 27992523"]
+    },
+    "CC27": {
+        "primary_name": "Rare Documented Lineage",
+        "type": "Rare Lineage",
+        "subtypes": ["Rare", "Documented"],
+        "sequence_types": [27, 28, 29],
+        "common_spa_types": ["Variable"],
+        "sccmec_types": ["Variable"],
+        "geographic_distribution": {
+            "regions": ["Global"],
+            "prevalence": "Rare",
+            "notes": "Rare but documented lineage"
+        },
+        "virulence_profile": {
+            "toxins": ["Variable"],
+            "adhesins": ["Variable"]
+        },
+        "resistance_profile": {
+            "antimicrobial_classes": ["Variable"],
+            "common_genes": ["mecA if MRSA"],
+            "typical_patterns": ["Variable"]
+        },
+        "clinical_significance": "Rare but documented lineage",
+        "outbreak_potential": "LOW",
+        "risk_level": "LOW",
+        "key_references": ["PMID: 32110980"]
+    },
+    
+    "CC34": {
+        "primary_name": "Emerging Regional Clone",
+        "type": "Healthcare-associated MRSA",
+        "subtypes": ["Emerging", "Regional"],
+        "sequence_types": [34, 35, 36],
+        "common_spa_types": ["t032", "t037", "t045"],
+        "sccmec_types": ["II", "IV"],
+        "geographic_distribution": {
+            "regions": ["Specific regions", "Emerging"],
+            "prevalence": "Emerging",
+            "notes": "Emerging in some regions"
+        },
+        "virulence_profile": {
+            "toxins": ["sea", "sek"],
+            "adhesins": ["fnbA", "clfA"]
+        },
+        "resistance_profile": {
+            "antimicrobial_classes": ["Methicillin"],
+            "common_genes": ["mecA"],
+            "typical_patterns": ["Variable"]
+        },
+        "clinical_significance": "Emerging in some regions",
+        "outbreak_potential": "LOW",
+        "risk_level": "LOW",
+        "key_references": ["PMID: 22535928"]
+    },
+    
+    "CC40": {
+        "primary_name": "Common MSSA Background",
+        "type": "Community-associated MRSA",
+        "subtypes": ["MSSA background", "Community"],
+        "sequence_types": [40, 41, 42],
+        "common_spa_types": ["t084", "t085", "t127"],
+        "sccmec_types": ["IV", "V"],
+        "geographic_distribution": {
+            "regions": ["Global"],
+            "prevalence": "Medium",
+            "notes": "Common MSSA background lineage"
+        },
+        "virulence_profile": {
+            "toxins": ["sea", "sek", "seq"],
+            "adhesins": ["fnbA", "clfA", "sdrC"],
+            "immune_evasion": ["scn", "chp", "sak"]
+        },
+        "resistance_profile": {
+            "antimicrobial_classes": ["Methicillin"],
+            "common_genes": ["mecA"],
+            "typical_patterns": ["Variable, often MSSA background"]
+        },
+        "clinical_significance": "Common MSSA lineage that can acquire SCCmec to become MRSA",
+        "outbreak_potential": "MEDIUM",
+        "risk_level": "MEDIUM",
+        "key_references": ["PMID: 36689019", "PMID: 22535928", "PMID: 37047168"]
+    },
+    
+    "CC73": {
+        "primary_name": "Common MSSA Lineage",
+        "type": "Community-associated MRSA",
+        "subtypes": ["MSSA background", "Community"],
+        "sequence_types": [73, 74, 75],
+        "common_spa_types": ["t084", "t085", "t091"],
+        "sccmec_types": ["IV", "V"],
+        "geographic_distribution": {
+            "regions": ["Global"],
+            "prevalence": "Medium",
+            "notes": "Common MSSA lineage with MRSA potential"
+        },
+        "virulence_profile": {
+            "toxins": ["sea", "sek"],
+            "adhesins": ["fnbA", "clfA"]
+        },
+        "resistance_profile": {
+            "antimicrobial_classes": ["Methicillin"],
+            "common_genes": ["mecA"],
+            "typical_patterns": ["Variable"]
+        },
+        "clinical_significance": "Common MSSA lineage with potential to become MRSA",
+        "outbreak_potential": "MEDIUM",
+        "risk_level": "MEDIUM",
+        "key_references": ["PMID: 26856837", "PMID: 19713400", "PMID: 22514264"]
+    },
+    
+    "CC89": {
+        "primary_name": "Major Community-associated Lineage",
+        "type": "Community-associated MRSA",
+        "subtypes": ["Community", "CA-MRSA"],
+        "sequence_types": [89, 90, 91],
+        "common_spa_types": ["t084", "t085", "t127"],
+        "sccmec_types": ["IV", "V"],
+        "geographic_distribution": {
+            "regions": ["Global"],
+            "prevalence": "Medium",
+            "notes": "Major community-associated lineage"
+        },
+        "virulence_profile": {
+            "toxins": ["sea", "lukS-PV", "lukF-PV"],
+            "adhesins": ["fnbA", "clfA"],
+            "immune_evasion": ["scn", "sak"]
+        },
+        "resistance_profile": {
+            "antimicrobial_classes": ["Methicillin"],
+            "common_genes": ["mecA"],
+            "typical_patterns": ["Often susceptible to non-beta-lactams"]
+        },
+        "clinical_significance": "Major community-associated lineage",
+        "outbreak_potential": "MEDIUM",
+        "risk_level": "MEDIUM",
+        "key_references": ["PMID: 33463096", "PMID: 21398072", "PMID: 30694723", "PMID: 20392913", "PMID: 40667846"]
+    },
+
     
     # =========================================================================
     # LIVESTOCK-ASSOCIATED MRSA (LA-MRSA) LINEAGES
@@ -659,7 +1072,7 @@ LINEAGE_DATABASE = {
         "clinical_significance": "Occasional livestock-associated isolates; low prevalence in surveys",
         "outbreak_potential": "LOW",
         "risk_level": "LOW",
-        "key_references": ["PMID: 31920996", "PMID: 19178545"]
+        "key_references": ["PMID: 31920996", "PMID: 19178545", "PMID: 19178545"]
     },
     
     "CC130": {
@@ -744,8 +1157,90 @@ LINEAGE_DATABASE = {
         "outbreak_potential": "LOW",
         "risk_level": "LOW",
         "key_references": ["PMID: 39650146", "https://doi.org/10.1186/1751-0147-55-6", "https://doi.org/10.1038/s41586-021-04265-w"]
-    }
+    },
+    "CC133": {
+        "primary_name": "Ruminant-associated LA-MRSA",
+        "type": "Livestock-associated MRSA",
+        "subtypes": ["Ruminant-associated", "Livestock", "Zoonotic"],
+        "sequence_types": [133, 134, 135],
+        "common_spa_types": ["t1166", "t1730", "t2245"],
+        "sccmec_types": ["IV", "V"],
+        "geographic_distribution": {
+            "regions": ["Europe", "Middle East", "Global"],
+            "prevalence": "Medium",
+            "notes": "Associated with ruminants, zoonotic potential"
+        },
+        "virulence_profile": {
+            "toxins": ["Limited virulence factors"],
+            "adhesins": ["Livestock adaptation genes"],
+            "other": ["Animal-specific factors"]
+        },
+        "resistance_profile": {
+            "antimicrobial_classes": ["Methicillin", "Tetracycline"],
+            "common_genes": ["mecA", "tet(K)", "tet(M)"],
+            "typical_patterns": ["Livestock-associated resistance", "Often tetracycline-resistant"]
+        },
+        "clinical_significance": "Associated with ruminants, emerging zoonotic potential",
+        "outbreak_potential": "LOW (human), MEDIUM (livestock)",
+        "risk_level": "MEDIUM",
+        "key_references": ["PMID: 27992523", "PMID: 25976751", "PMID: 28916003", "PMID: 19528163"]
+    },
+    
+    "CC151": {
+        "primary_name": "Emerging Livestock-associated",
+        "type": "Livestock-associated MRSA",
+        "subtypes": ["Emerging", "Livestock"],
+        "sequence_types": [151, 152, 153],
+        "common_spa_types": ["t084", "t085", "t127"],
+        "sccmec_types": ["IV", "V", "XIII"],
+        "geographic_distribution": {
+            "regions": ["Europe", "Global"],
+            "prevalence": "Emerging",
+            "notes": "Emerging in livestock settings"
+        },
+        "virulence_profile": {
+            "toxins": ["Limited virulence"],
+            "adhesins": ["Animal adaptation"]
+        },
+        "resistance_profile": {
+            "antimicrobial_classes": ["Methicillin"],
+            "common_genes": ["mecA"],
+            "typical_patterns": ["Livestock-associated patterns"]
+        },
+        "clinical_significance": "Emerging in livestock settings",
+        "outbreak_potential": "LOW",
+        "risk_level": "LOW",
+        "key_references": ["PMID: 39565128", "PMID: 29567305", "PMID: 18375551", "PMID: 36074767"]
+    },
+    
+    "CC98": {
+        "primary_name": "Livestock-associated Lineage",
+        "type": "Livestock-associated MRSA",
+        "subtypes": ["Livestock-associated", "Animal"],
+        "sequence_types": [98, 99, 100],
+        "common_spa_types": ["t267", "t359", "t1730"],
+        "sccmec_types": ["IV", "V"],
+        "geographic_distribution": {
+            "regions": ["Europe", "Global"],
+            "prevalence": "Low",
+            "notes": "Livestock-associated lineage"
+        },
+        "virulence_profile": {
+            "toxins": ["Limited"],
+            "adhesins": ["Animal adaptation"]
+        },
+        "resistance_profile": {
+            "antimicrobial_classes": ["Methicillin", "Tetracycline"],
+            "common_genes": ["mecA", "tet(K)"],
+            "typical_patterns": ["Livestock-associated resistance"]
+        },
+        "clinical_significance": "Livestock-associated lineage with occasional human infections",
+        "outbreak_potential": "LOW",
+        "risk_level": "LOW",
+        "key_references": ["PMID: 15252717", "PMID: 27991847", "PMID: 36830286"]
+    },
 }
+
 
 # =============================================================================
 # SPECIALIZED LINEAGE PROFILES - UPDATED

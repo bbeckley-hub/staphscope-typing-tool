@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """
-StaphScope AMRfinderPlus Standalone Module
-Comprehensive AMR analysis with HTML reporting - MAXIMUM SPEED VERSION
+StaphScope AMRfinderPlus Standalone Module - BUNDLED VERSION
+Comprehensive AMR analysis with HTML, TSV, and JSON reporting - MAXIMUM SPEED VERSION
 Author: Beckley Brown <brownbeckley94@gmail.com>
 Date: 2025
 Send a quick mail for any issues or further explanations.
-Affiliation: University of Ghana Medical School-Department of Medical Bioichemistry
+Affiliation: University of Ghana Medical School-Department of Medical Biochemistry
+Uses BUNDLED AMRFinderPlus 4.2.4 with database 2025-12-03.1
 """
 
 import subprocess
@@ -15,20 +16,24 @@ import glob
 import logging
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 import argparse
 import re
 from datetime import datetime
 import psutil
 import math
 import json
+from collections import defaultdict, Counter
 
 class AMRfinderPlusExecutor:
-    """AMRfinderPlus executor with comprehensive HTML reporting - MAXIMUM SPEED"""
+    """AMRfinderPlus executor with BUNDLED resources - Comprehensive HTML, TSV, and JSON reporting"""
     
     def __init__(self, cpus: int = None):
         # Setup logging FIRST
         self.logger = self._setup_logging()
+        
+        # Get module directory
+        self.module_dir = os.path.dirname(os.path.abspath(__file__))
         
         # Initialize available_ram before calculating cpus
         self.available_ram = self._get_available_ram()
@@ -36,14 +41,20 @@ class AMRfinderPlusExecutor:
         # Then calculate resources - MAXIMUM SPEED MODE
         self.cpus = self._calculate_optimal_cpus(cpus)
         
+        # Set bundled resources paths
+        self.bundled_amrfinder = os.path.join(self.module_dir, "bin", "amrfinder")
+        self.bundled_database = os.path.join(self.module_dir, "data", "amrfinder_db", "2025-12-03.1")
+        
         self.metadata = {
-            "tool_name": "StaphScope AMRfinderPlus",
+            "tool_name": "StaphScope AMRfinderPlus (BUNDLED)",
             "version": "1.0.0", 
             "authors": ["Brown Beckley"],
             "email": "brownbeckley94@gmail.com",
             "github": "https://github.com/bbeckley-hub",
             "affiliation": "University of Ghana Medical School",
-            "analysis_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            "analysis_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "amrfinder_version": "4.2.4",
+            "database_version": "2025-12-03.1"
         }
         
         # S. aureus specific high-risk and critical gene sets
@@ -164,69 +175,73 @@ class AMRfinderPlusExecutor:
             self.logger.info("💡 Performance: MAXIMUM SPEED MODE 🚀")
     
     def check_amrfinder_installed(self) -> bool:
-        """Check if AMRfinderPlus is installed and meets requirements"""
+        """Check if BUNDLED AMRfinderPlus is available"""
         try:
-            result = subprocess.run(['amrfinder', '--version'], 
-                                  capture_output=True, text=True, check=True)
-            version_line = result.stdout.strip()
-            self.logger.info("AMRfinderPlus version: %s", version_line)
-            
-            # Check for version number in output
-            version_match = re.search(r'(\d+\.\d+\.\d+)', version_line)
-            if version_match:
-                version_str = version_match.group(1)
-                self.logger.info("✓ AMRfinderPlus version: %s", version_str)
-            else:
-                self.logger.info("✓ AMRfinderPlus installed (version check skipped)")
-            
-            return True
-            
-        except (subprocess.CalledProcessError, FileNotFoundError):
-            self.logger.error("AMRfinderPlus not found. Installing with conda...")
-            return self._install_amrfinder()
-    
-    def _install_amrfinder(self) -> bool:
-        """Install AMRfinderPlus using conda"""
-        try:
-            self.logger.info("Installing AMRfinderPlus with conda...")
-            # Run conda install silently
-            result = subprocess.run([
-                'conda', 'install', '-c', 'bioconda', 'ncbi-amrfinderplus', '-y'
-            ], capture_output=True, text=True, check=True)
-            
-            self.logger.info("✓ AMRfinderPlus installed successfully")
-            return True
-            
-        except subprocess.CalledProcessError as e:
-            self.logger.error("Failed to install AMRfinderPlus with conda. Trying pip...")
-            try:
-                # Try pip as fallback
-                result = subprocess.run([
-                    'pip', 'install', 'ncbi-amrfinderplus'
-                ], capture_output=True, text=True, check=True)
-                self.logger.info("✓ AMRfinderPlus installed successfully with pip")
-                return True
-            except subprocess.CalledProcessError as e2:
-                self.logger.error("Failed to install AMRfinderPlus: %s", e2.stderr)
+            if not os.path.exists(self.bundled_amrfinder):
+                self.logger.error(f"Bundled AMRfinderPlus not found at: {self.bundled_amrfinder}")
                 return False
-
+            
+            if not os.access(self.bundled_amrfinder, os.X_OK):
+                self.logger.warning(f"Bundled AMRfinderPlus not executable, fixing permissions...")
+                os.chmod(self.bundled_amrfinder, 0o755)
+            
+            # Test the bundled version
+            result = subprocess.run(
+                [self.bundled_amrfinder, '--version'], 
+                capture_output=True, 
+                text=True, 
+                check=True
+            )
+            
+            version_line = result.stdout.strip()
+            self.logger.info(f"Bundled AMRfinderPlus version: {version_line}")
+            
+            # Check database
+            if os.path.exists(self.bundled_database):
+                self.logger.info(f"✅ Bundled database found: {self.bundled_database}")
+                db_version_file = os.path.join(self.bundled_database, "version.txt")
+                if os.path.exists(db_version_file):
+                    with open(db_version_file, 'r') as f:
+                        db_version = f.read().strip()
+                        self.logger.info(f"✅ Database version: {db_version}")
+            else:
+                self.logger.warning(f"⚠️  Bundled database not found at: {self.bundled_database}")
+                self.logger.info("Will use default AMRfinderPlus database location")
+            
+            return True
+            
+        except (subprocess.CalledProcessError, FileNotFoundError) as e:
+            self.logger.error(f"Bundled AMRfinderPlus check failed: {e}")
+            self.logger.error("This tool requires the bundled AMRfinderPlus in bin/ directory")
+            return False
+    
     def run_amrfinder_single_genome(self, genome_file: str, output_dir: str) -> Dict[str, Any]:
-        """Run AMRfinderPlus on a single genome - MAXIMUM SPEED"""
+        """Run BUNDLED AMRfinderPlus on a single genome - MAXIMUM SPEED"""
         genome_name = Path(genome_file).stem
         output_file = os.path.join(output_dir, f"{genome_name}_amrfinder.txt")
         
         # USE ALL AVAILABLE CPU CORES for each genome - MAXIMUM SPEED!
         run_cpus = self.cpus
         
+        # Build command with BUNDLED resources
         cmd = [
-            'amrfinder',
-            '--nucleotide', genome_file,
+            self.bundled_amrfinder,
+            '-n', genome_file,  # Nucleotide mode
             '--output', output_file,
             '--threads', str(run_cpus),
-            '--plus'
+            '--plus',  # Include virulence factors
+            '--organism', 'Staphylococcus_aureus'
         ]
         
-        self.logger.info("Running AMRfinderPlus: %s (using %d CPU cores - MAXIMUM SPEED)", genome_name, run_cpus)
+        # Add bundled database if it exists
+        if os.path.exists(self.bundled_database):
+            cmd.extend(['--database', self.bundled_database])
+            self.logger.info(f"Using bundled database: {self.bundled_database}")
+        else:
+            self.logger.warning("Using default AMRfinderPlus database location")
+        
+        self.logger.info(f"Running BUNDLED AMRfinderPlus: {genome_name} (using {run_cpus} CPU cores)")
+        self.logger.debug(f"Command: {' '.join(cmd)}")
         
         try:
             result = subprocess.run(cmd, capture_output=True, text=True, check=True)
@@ -246,17 +261,21 @@ class AMRfinderPlusExecutor:
             }
             
         except subprocess.CalledProcessError as e:
-            self.logger.error("AMRfinderPlus failed for %s: %s", genome_name, e.stderr)
+            self.logger.error(f"AMRfinderPlus failed for {genome_name}")
+            self.logger.error(f"STDERR: {e.stderr}")
+            self.logger.error(f"STDOUT: {e.stdout}")
+            
             return {
                 'genome': genome_name,
                 'output_file': output_file,
                 'hits': [],
                 'hit_count': 0,
-                'status': 'failed'
+                'status': 'failed',
+                'error': e.stderr
             }
     
     def _parse_amrfinder_output(self, amrfinder_file: str) -> List[Dict]:
-        """Parse AMRfinderPlus output file into structured data"""
+        """Parse AMRFinderPlus 4.2.4 output file into structured data"""
         hits = []
         try:
             with open(amrfinder_file, 'r') as f:
@@ -265,8 +284,11 @@ class AMRfinderPlusExecutor:
             if not lines or len(lines) < 2:  # Need at least header and one data line
                 return hits
                 
-            # Parse header
+            # Parse header for AMRFinderPlus 4.2.4
             headers = lines[0].strip().split('\t')
+            
+            # Log the headers for debugging
+            self.logger.debug(f"Found headers: {headers}")
             
             # Parse data lines
             for line_num, line in enumerate(lines[1:], 2):
@@ -276,47 +298,55 @@ class AMRfinderPlusExecutor:
                     
                 parts = line.split('\t')
                 if len(parts) >= len(headers):
-                    hit = {}
-                    for i, header in enumerate(headers):
-                        if i < len(parts):
-                            hit[header] = parts[i]
-                        else:
-                            hit[header] = ''
+                    hit = dict(zip(headers, parts))
                     
-                    # Map to consistent field names
+                    # Map to consistent field names for AMRFinderPlus 4.2.4
+                    # New headers: 
+                    # Protein id, Contig id, Start, Stop, Strand, Element symbol, Element name,
+                    # Scope, Type, Subtype, Class, Subclass, Method, Target length,
+                    # Reference sequence length, % Coverage of reference, % Identity to reference,
+                    # Alignment length, Closest reference accession, Closest reference name,
+                    # HMM accession, HMM description
+                    
                     processed_hit = {
-                        'protein_id': hit.get('Protein identifier', ''),
+                        'protein_id': hit.get('Protein id', ''),
                         'contig_id': hit.get('Contig id', ''),
                         'start': hit.get('Start', ''),
                         'stop': hit.get('Stop', ''),
                         'strand': hit.get('Strand', ''),
-                        'gene_symbol': hit.get('Gene symbol', ''),
-                        'sequence_name': hit.get('Sequence name', ''),
+                        'gene_symbol': hit.get('Element symbol', ''),  # New: Element symbol
+                        'sequence_name': hit.get('Element name', ''),  # New: Element name
                         'scope': hit.get('Scope', ''),
-                        'element_type': hit.get('Element type', ''),
-                        'element_subtype': hit.get('Element subtype', ''),
+                        'element_type': hit.get('Type', ''),  # New: Type
+                        'element_subtype': hit.get('Subtype', ''),  # New: Subtype
                         'class': hit.get('Class', ''),
                         'subclass': hit.get('Subclass', ''),
                         'method': hit.get('Method', ''),
                         'target_length': hit.get('Target length', ''),
                         'ref_length': hit.get('Reference sequence length', ''),
-                        'coverage': hit.get('% Coverage of reference sequence', ''),
-                        'identity': hit.get('% Identity to reference sequence', ''),
+                        'coverage': hit.get('% Coverage of reference', '').replace('%', ''),
+                        'identity': hit.get('% Identity to reference', '').replace('%', ''),
                         'alignment_length': hit.get('Alignment length', ''),
-                        'accession': hit.get('Accession of closest sequence', ''),
-                        'closest_name': hit.get('Name of closest sequence', ''),
-                        'hmm_id': hit.get('HMM id', ''),
+                        'accession': hit.get('Closest reference accession', ''),
+                        'closest_name': hit.get('Closest reference name', ''),
+                        'hmm_id': hit.get('HMM accession', ''),
                         'hmm_description': hit.get('HMM description', '')
                     }
+                    
+                    # Also store original hit for debugging
+                    processed_hit['_original'] = hit
+                    
                     hits.append(processed_hit)
+                    
                 else:
-                    self.logger.warning("Line %d has %d parts, expected %d: %s", 
-                                      line_num, len(parts), len(headers), line[:100] + "...")
+                    self.logger.warning(f"Line {line_num} has {len(parts)} parts, expected {len(headers)}: {line[:100]}...")
                     
         except Exception as e:
-            self.logger.error("Error parsing %s: %s", amrfinder_file, e)
+            self.logger.error(f"Error parsing {amrfinder_file}: {e}")
+            import traceback
+            self.logger.error(traceback.format_exc())
             
-        self.logger.info("Parsed %d AMR hits from %s", len(hits), amrfinder_file)
+        self.logger.info(f"Parsed {len(hits)} AMR hits from {amrfinder_file}")
         return hits
     
     def _create_amrfinder_html_report(self, genome_name: str, hits: List[Dict], output_dir: str):
@@ -473,6 +503,31 @@ class AMRfinderPlusExecutor:
         .present {{ background-color: #d4edda; }}
         .critical-row {{ background-color: #f8d7da; font-weight: bold; border-left: 4px solid #dc3545; }}
         .high-risk-row {{ background-color: #fff3cd; border-left: 4px solid #ffc107; }}
+        /* Make sequence name column responsive with word wrapping */
+        .sequence-cell {{
+            white-space: normal !important;
+            word-wrap: break-word;
+            max-width: 400px;
+            min-width: 200px;
+        }}
+        /* Make tables responsive */
+        .table-responsive {{
+            width: 100%;
+            overflow-x: auto;
+            margin: 20px 0;
+        }}
+        .gene-table, .class-table {{
+            min-width: 900px;
+        }}
+        /* Tool info box */
+        .tool-info {{
+            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-size: 0.9em;
+        }}
     </style>
     {quotes_js}
 </head>
@@ -481,6 +536,11 @@ class AMRfinderPlusExecutor:
         <div class="header">
             <h1 style="color: #333; margin: 0; font-size: 2.5em;">🧫 StaphScope AMRfinderPlus Analysis Report</h1>
             <p style="color: #666; font-size: 1.2em;">Comprehensive S. aureus Antimicrobial Resistance Analysis</p>
+            <div class="tool-info">
+                <strong>Tool Info:</strong> Bundled AMRfinderPlus {self.metadata['amrfinder_version']} | 
+                Database: {self.metadata['database_version']} | 
+                Analysis includes AMR genes and virulence factors (--plus mode)
+            </div>
         </div>
         
         <div class="quote-container">
@@ -527,6 +587,8 @@ class AMRfinderPlusExecutor:
             <p><strong>Genome:</strong> {genome_name}</p>
             <p><strong>Date:</strong> {self.metadata['analysis_date']}</p>
             <p><strong>Tool Version:</strong> {self.metadata['version']}</p>
+            <p><strong>AMRfinderPlus:</strong> {self.metadata['amrfinder_version']}</p>
+            <p><strong>Database:</strong> {self.metadata['database_version']}</p>
         </div>
 """
         
@@ -599,15 +661,16 @@ class AMRfinderPlusExecutor:
             html_content += """
         <div class="card">
             <h2 style="color: #333; border-bottom: 2px solid #667eea; padding-bottom: 10px;">🧪 Resistance Classes Detected</h2>
-            <table class="class-table">
-                <thead>
-                    <tr>
-                        <th>Resistance Class</th>
-                        <th>Gene Count</th>
-                        <th>Genes</th>
-                    </tr>
-                </thead>
-                <tbody>
+            <div class="table-responsive">
+                <table class="class-table">
+                    <thead>
+                        <tr>
+                            <th>Resistance Class</th>
+                            <th>Gene Count</th>
+                            <th>Genes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
 """
             
             for class_name, genes in analysis['resistance_classes'].items():
@@ -616,13 +679,14 @@ class AMRfinderPlusExecutor:
                     <tr>
                         <td><strong>{class_name}</strong></td>
                         <td>{len(genes)}</td>
-                        <td>{gene_list}</td>
+                        <td class="sequence-cell">{gene_list}</td>
                     </tr>
 """
             
             html_content += """
-                </tbody>
-            </table>
+                    </tbody>
+                </table>
+            </div>
         </div>
 """
         
@@ -631,44 +695,50 @@ class AMRfinderPlusExecutor:
             html_content += """
         <div class="card">
             <h2 style="color: #333; border-bottom: 2px solid #667eea; padding-bottom: 10px;">🔬 Detailed AMR Genes Detected</h2>
-            <table class="gene-table">
-                <thead>
-                    <tr>
-                        <th>Gene Symbol</th>
-                        <th>Sequence Name</th>
-                        <th>Class</th>
-                        <th>Subclass</th>
-                        <th>Coverage</th>
-                        <th>Identity</th>
-                        <th>Scope</th>
-                    </tr>
-                </thead>
-                <tbody>
+            <div class="table-responsive">
+                <table class="gene-table">
+                    <thead>
+                        <tr>
+                            <th>Gene Symbol</th>
+                            <th>Sequence Name</th>
+                            <th>Class</th>
+                            <th>Subclass</th>
+                            <th>Coverage</th>
+                            <th>Identity</th>
+                            <th>Scope</th>
+                        </tr>
+                    </thead>
+                    <tbody>
 """
             
             for hit in hits:
                 # Determine row class based on risk level
                 row_class = "present"
-                if hit['gene_symbol'] in analysis['critical_risk_list']:
+                gene_symbol = hit.get('gene_symbol', '')
+                if gene_symbol in analysis['critical_risk_list']:
                     row_class = "critical-row"
-                elif hit['gene_symbol'] in analysis['high_risk_list']:
+                elif gene_symbol in analysis['high_risk_list']:
                     row_class = "high-risk-row"
+                
+                # Show full sequence name without truncation
+                sequence_display = hit.get('sequence_name', '')
                 
                 html_content += f"""
                     <tr class="{row_class}">
-                        <td><strong>{hit['gene_symbol']}</strong></td>
-                        <td title="{hit['sequence_name']}">{hit['sequence_name'][:80]}{'...' if len(hit['sequence_name']) > 80 else ''}</td>
-                        <td>{hit['class']}</td>
-                        <td>{hit['subclass']}</td>
-                        <td>{hit['coverage']}%</td>
-                        <td>{hit['identity']}%</td>
-                        <td>{hit['scope']}</td>
+                        <td><strong>{gene_symbol}</strong></td>
+                        <td class="sequence-cell">{sequence_display}</td>
+                        <td>{hit.get('class', '')}</td>
+                        <td>{hit.get('subclass', '')}</td>
+                        <td>{hit.get('coverage', '')}%</td>
+                        <td>{hit.get('identity', '')}%</td>
+                        <td>{hit.get('scope', '')}</td>
                     </tr>
 """
             
             html_content += """
-                </tbody>
-            </table>
+                    </tbody>
+                </table>
+            </div>
         </div>
 """
         else:
@@ -688,7 +758,8 @@ class AMRfinderPlusExecutor:
             <p><strong>GitHub:</strong> <a href="https://github.com/bbeckley-hub" target="_blank">https://github.com/bbeckley-hub</a></p>
             <p><strong>Affiliation:</strong> University of Ghana Medical School</p>
             <p style="margin-top: 20px; font-size: 0.9em; color: #ccc;">
-                Analysis performed using StaphScope AMRfinderPlus v1.0.1
+                Analysis performed using StaphScope AMRfinderPlus v1.0.1<br>
+                Bundled AMRfinderPlus {self.metadata['amrfinder_version']} with database {self.metadata['database_version']}
             </p>
         </div>
     </div>
@@ -701,7 +772,7 @@ class AMRfinderPlusExecutor:
         with open(html_file, 'w') as f:
             f.write(html_content)
         
-        self.logger.info("S. aureus AMRfinderPlus HTML report generated: %s", html_file)
+        self.logger.info(f"S. aureus AMRfinderPlus HTML report generated: {html_file}")
     
     def _analyze_saureus_amr_results(self, hits: List[Dict]) -> Dict[str, Any]:
         """Analyze AMR results specifically for S. aureus with enhanced risk assessment"""
@@ -728,8 +799,11 @@ class AMRfinderPlusExecutor:
         }
         
         for hit in hits:
-            gene_symbol = hit['gene_symbol']
-            resistance_class = hit['class']
+            gene_symbol = hit.get('gene_symbol', '')
+            resistance_class = hit.get('class', '')
+            
+            if not gene_symbol:
+                continue
             
             # Categorize resistance mechanism
             self._categorize_resistance_mechanism(gene_symbol, resistance_class, analysis)
@@ -836,7 +910,7 @@ class AMRfinderPlusExecutor:
                     ]
                     f.write('\t'.join(str(x) for x in row) + '\n')
         
-        self.logger.info("✓ S. aureus AMR summary file created: %s", summary_file)
+        self.logger.info(f"✓ S. aureus AMR summary file created: {summary_file}")
         
         # Create statistics summary
         stats_file = os.path.join(output_base, "staph_amrfinder_statistics_summary.tsv")
@@ -858,10 +932,253 @@ class AMRfinderPlusExecutor:
                 
                 f.write(f"{genome_name}\t{result['hit_count']}\t{high_risk_count}\t{critical_risk_count}\t{class_list}\t{gene_list}\n")
         
-        self.logger.info("✓ S. aureus AMR statistics summary created: %s", stats_file)
+        self.logger.info(f"✓ S. aureus AMR statistics summary created: {stats_file}")
         
         # Create comprehensive HTML summary report for staph_amrfinder_summary.tsv
         self._create_summary_html_report(all_results, output_base)
+        
+        # NEW: Create JSON summaries
+        self.create_amr_json_summaries(all_results, output_base)
+        self.create_amr_master_json_summary(all_results, output_base)
+    
+    def create_amr_json_summaries(self, all_results: Dict[str, Any], output_base: str):
+        """Create JSON summary files for AMR genes across all genomes."""
+        self.logger.info("Creating JSON AMR summaries...")
+        
+        # Collect all hits with genome information
+        all_hits = []
+        for genome_name, result in all_results.items():
+            for hit in result['hits']:
+                hit_with_genome = hit.copy()
+                hit_with_genome['genome'] = genome_name
+                all_hits.append(hit_with_genome)
+        
+        if not all_hits:
+            self.logger.info("No AMR hits found, skipping JSON summaries")
+            return
+        
+        # Calculate gene frequency
+        gene_frequency = {}
+        for hit in all_hits:
+            gene = hit['gene_symbol']
+            if not gene:
+                continue
+                
+            if gene not in gene_frequency:
+                gene_frequency[gene] = {
+                    'count': 0,
+                    'genomes': set(),
+                    'details': []
+                }
+            
+            gene_frequency[gene]['count'] += 1
+            gene_frequency[gene]['genomes'].add(hit['genome'])
+            gene_frequency[gene]['details'].append({
+                'genome': hit['genome'],
+                'sequence_name': hit['sequence_name'],
+                'class': hit['class'],
+                'subclass': hit['subclass'],
+                'coverage': hit['coverage'],
+                'identity': hit['identity'],
+                'accession': hit['accession']
+            })
+        
+        # Convert sets to lists for JSON serialization
+        for gene in gene_frequency:
+            gene_frequency[gene]['genomes'] = list(gene_frequency[gene]['genomes'])
+        
+        # Create JSON structure
+        json_summary = {
+            'metadata': {
+                'tool': 'StaphScope AMRfinderPlus',
+                'version': self.metadata['version'],
+                'amrfinder_version': self.metadata['amrfinder_version'],
+                'database_version': self.metadata['database_version'],
+                'analysis_date': self.metadata['analysis_date'],
+                'total_hits': len(all_hits),
+                'total_genomes': len(all_results),
+                'unique_genes': len(gene_frequency),
+                'critical_risk_genes_found': list(self.critical_risk_genes.intersection(set(gene_frequency.keys()))),
+                'high_risk_genes_found': list(self.high_risk_genes.intersection(set(gene_frequency.keys())))
+            },
+            'gene_frequency': gene_frequency,
+            'summary_by_genome': self._create_amr_genome_summary(all_results),
+            'hits': all_hits[:100]  # Include first 100 hits to keep file manageable
+        }
+        
+        # Write JSON file
+        json_file = os.path.join(output_base, "staph_amrfinder_summary.json")
+        with open(json_file, 'w') as f:
+            json.dump(json_summary, f, indent=2, default=str)
+        
+        self.logger.info(f"✓ Created JSON summary: {json_file}")
+    
+    def _create_amr_genome_summary(self, all_results: Dict) -> Dict:
+        """Create summary of AMR hits by genome."""
+        genome_summary = {}
+        
+        for genome_name, result in all_results.items():
+            if genome_name not in genome_summary:
+                genome_summary[genome_name] = {
+                    'total_genes': result['hit_count'],
+                    'genes': set(),
+                    'critical_risk_genes': [],
+                    'high_risk_genes': [],
+                    'resistance_classes': set()
+                }
+            
+            for hit in result['hits']:
+                gene = hit['gene_symbol']
+                if not gene:
+                    continue
+                    
+                genome_summary[genome_name]['genes'].add(gene)
+                
+                if hit['class']:
+                    genome_summary[genome_name]['resistance_classes'].add(hit['class'])
+                
+                # Classify genes
+                if gene in self.critical_risk_genes:
+                    if gene not in genome_summary[genome_name]['critical_risk_genes']:
+                        genome_summary[genome_name]['critical_risk_genes'].append(gene)
+                elif gene in self.high_risk_genes:
+                    if gene not in genome_summary[genome_name]['high_risk_genes']:
+                        genome_summary[genome_name]['high_risk_genes'].append(gene)
+        
+        # Convert sets to lists
+        for genome in genome_summary:
+            genome_summary[genome]['genes'] = list(genome_summary[genome]['genes'])
+            genome_summary[genome]['resistance_classes'] = list(genome_summary[genome]['resistance_classes'])
+        
+        return genome_summary
+    
+    def create_amr_master_json_summary(self, all_results: Dict[str, Any], output_base: str):
+        """Create a master JSON summary for AMR genes with cross-genome patterns."""
+        self.logger.info("Creating master JSON summary for AMR genes...")
+        
+        # Collect overall statistics
+        master_summary = {
+            'metadata': {
+                'tool': 'StaphScope AMRfinderPlus Module',
+                'version': self.metadata['version'],
+                'amrfinder_version': self.metadata['amrfinder_version'],
+                'database_version': self.metadata['database_version'],
+                'analysis_date': self.metadata['analysis_date'],
+                'total_genomes': len(all_results),
+                'critical_risk_genes': list(self.critical_risk_genes),
+                'high_risk_genes': list(self.high_risk_genes)
+            },
+            'genome_summaries': {},
+            'critical_findings': {},
+            'cross_genome_patterns': {}
+        }
+        
+        # Analyze each genome
+        genomes_with_critical = 0
+        genomes_with_high_risk = 0
+        
+        for genome_name, result in all_results.items():
+            # Collect genes for this genome
+            genes = [hit['gene_symbol'] for hit in result['hits'] if hit['gene_symbol']]
+            unique_genes = set(genes)
+            
+            # Get resistance classes
+            classes = set(hit['class'] for hit in result['hits'] if hit['class'])
+            
+            # Check for critical and high-risk genes
+            has_critical = any(gene in unique_genes for gene in self.critical_risk_genes)
+            has_high_risk = any(gene in unique_genes for gene in self.high_risk_genes)
+            
+            if has_critical:
+                genomes_with_critical += 1
+            if has_high_risk:
+                genomes_with_high_risk += 1
+            
+            master_summary['genome_summaries'][genome_name] = {
+                'total_hits': result['hit_count'],
+                'unique_genes': len(unique_genes),
+                'has_critical_risk': has_critical,
+                'has_high_risk': has_high_risk,
+                'resistance_classes': list(classes),
+                'genes': list(unique_genes)
+            }
+            
+            # Track critical findings
+            if has_critical:
+                critical_genes_found = [g for g in unique_genes if g in self.critical_risk_genes]
+                if 'genomes_with_critical' not in master_summary['critical_findings']:
+                    master_summary['critical_findings']['genomes_with_critical'] = []
+                master_summary['critical_findings']['genomes_with_critical'].append({
+                    'genome': genome_name,
+                    'critical_genes': critical_genes_found
+                })
+        
+        # Find cross-genome patterns (genes found in multiple genomes)
+        all_hits_by_gene = {}
+        for genome_name, result in all_results.items():
+            for hit in result['hits']:
+                gene = hit['gene_symbol']
+                if not gene:
+                    continue
+                    
+                if gene not in all_hits_by_gene:
+                    all_hits_by_gene[gene] = {
+                        'count': 0,
+                        'genomes': [],
+                        'classes': set(),
+                        'details': []
+                    }
+                
+                all_hits_by_gene[gene]['count'] += 1
+                if genome_name not in all_hits_by_gene[gene]['genomes']:
+                    all_hits_by_gene[gene]['genomes'].append(genome_name)
+                if hit['class']:
+                    all_hits_by_gene[gene]['classes'].add(hit['class'])
+                
+                all_hits_by_gene[gene]['details'].append({
+                    'genome': genome_name,
+                    'sequence_name': hit['sequence_name'],
+                    'coverage': hit['coverage'],
+                    'identity': hit['identity']
+                })
+        
+        # Convert sets to lists
+        for gene in all_hits_by_gene:
+            all_hits_by_gene[gene]['classes'] = list(all_hits_by_gene[gene]['classes'])
+        
+        # Find common genes (present in >1 genome)
+        common_genes = {}
+        for gene, data in all_hits_by_gene.items():
+            if data['count'] > 1:  # Gene found in multiple genomes
+                common_genes[gene] = data
+        
+        # Get top genes
+        top_genes = sorted(
+            [(gene, data) for gene, data in all_hits_by_gene.items()],
+            key=lambda x: x[1]['count'],
+            reverse=True
+        )[:20]  # Top 20 most frequent genes
+        
+        master_summary['cross_genome_patterns'] = {
+            'total_genes_found': len(all_hits_by_gene),
+            'genomes_with_critical_risk': genomes_with_critical,
+            'genomes_with_high_risk': genomes_with_high_risk,
+            'common_genes': common_genes,
+            'top_genes': top_genes,
+            'risk_gene_distribution': {
+                'critical_risk_found': len([g for g in all_hits_by_gene.keys() if g in self.critical_risk_genes]),
+                'high_risk_found': len([g for g in all_hits_by_gene.keys() if g in self.high_risk_genes]),
+                'standard_risk_found': len([g for g in all_hits_by_gene.keys() if g not in self.high_risk_genes])
+            }
+        }
+        
+        # Write master JSON
+        json_file = os.path.join(output_base, "staph_amrfinder_master_summary.json")
+        with open(json_file, 'w') as f:
+            json.dump(master_summary, f, indent=2, default=str)
+        
+        self.logger.info(f"✓ Created master JSON summary: {json_file}")
+        return master_summary
     
     def _create_summary_html_report(self, all_results: Dict[str, Any], output_base: str):
         """Create comprehensive HTML summary report with pattern discovery"""
@@ -939,7 +1256,7 @@ class AMRfinderPlusExecutor:
 <!DOCTYPE html>
 <html>
 <head>
-    <title>StaphScope AMRfinderPlus - Summary Report</title>
+    <title>StaphScope AMRfinderPlus - Summary Report (BUNDLED)</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
@@ -1080,20 +1397,50 @@ class AMRfinderPlusExecutor:
             margin: 2px;
             font-size: 0.9em;
         }}
+        /* Make sequence name column responsive with word wrapping */
+        .sequence-cell {{
+            white-space: normal !important;
+            word-wrap: break-word;
+            max-width: 400px;
+            min-width: 200px;
+        }}
+        /* Make tables responsive */
+        .table-responsive {{
+            width: 100%;
+            overflow-x: auto;
+            margin: 20px 0;
+        }}
+        .gene-table {{
+            min-width: 1000px;
+        }}
         /* IMPROVED GENE FREQUENCY COLOR SCHEME */
         .frequency-high {{ background-color: #f8d7da; font-weight: bold; border-left: 4px solid #dc3545; }}
         .frequency-medium-high {{ background-color: #ffeaa7; border-left: 4px solid #fdcb6e; }}
         .frequency-medium {{ background-color: #fff3cd; border-left: 4px solid #ffc107; }}
         .frequency-low-medium {{ background-color: #d1ecf1; border-left: 4px solid #17a2b8; }}
         .frequency-low {{ background-color: #d4edda; border-left: 4px solid #28a745; }}
+        /* Tool info box */
+        .tool-info {{
+            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-size: 0.9em;
+        }}
     </style>
     {quotes_js}
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1 style="color: #333; margin: 0; font-size: 2.5em;">🧫 StaphScope AMRfinderPlus - Summary Report</h1>
+            <h1 style="color: #333; margin: 0; font-size: 2.5em;">🧫 StaphScope AMRfinderPlus - Summary Report </h1>
             <p style="color: #666; font-size: 1.2em;">Comprehensive S. aureus Antimicrobial Resistance Analysis Across All Genomes</p>
+            <div class="tool-info">
+                <strong>Tool Info:</strong> Bundled AMRfinderPlus {self.metadata['amrfinder_version']} | 
+                Database: {self.metadata['database_version']} | 
+                Analysis includes AMR genes and virulence factors (--plus mode)
+            </div>
         </div>
         
         <div class="quote-container">
@@ -1138,6 +1485,8 @@ class AMRfinderPlusExecutor:
             </div>
             <p><strong>Date:</strong> {self.metadata['analysis_date']}</p>
             <p><strong>Tool Version:</strong> {self.metadata['version']}</p>
+            <p><strong>AMRfinderPlus:</strong> {self.metadata['amrfinder_version']} </p>
+            <p><strong>Database:</strong> {self.metadata['database_version']} </p>
         </div>
 """
         
@@ -1160,16 +1509,17 @@ class AMRfinderPlusExecutor:
         html_content += """
         <div class="card">
             <h2 style="color: #333; border-bottom: 2px solid #667eea; padding-bottom: 10px;">🔍 Genes by Genome</h2>
-            <table class="gene-table">
-                <thead>
-                    <tr>
-                        <th>Genome</th>
-                        <th>Gene Count</th>
-                        <th>Critical Genes</th>
-                        <th>High Risk Genes</th>
-                    </tr>
-                </thead>
-                <tbody>
+            <div class="table-responsive">
+                <table class="gene-table">
+                    <thead>
+                        <tr>
+                            <th>Genome</th>
+                            <th>Gene Count</th>
+                            <th>Critical Genes</th>
+                            <th>High Risk Genes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
 """
         
         for genome in sorted(genes_per_genome.keys()):
@@ -1187,36 +1537,38 @@ class AMRfinderPlusExecutor:
                     <tr class="{row_class}">
                         <td><strong>{genome}</strong></td>
                         <td>{len(genes)}</td>
-                        <td>{critical_display}</td>
-                        <td>{high_risk_display}</td>
+                        <td class="sequence-cell">{critical_display}</td>
+                        <td class="sequence-cell">{high_risk_display}</td>
                     </tr>
 """
         
         html_content += """
-                </tbody>
-            </table>
+                    </tbody>
+                </table>
+            </div>
         </div>
         
         <div class="card">
             <h2 style="color: #333; border-bottom: 2px solid #667eea; padding-bottom: 10px;">📈 Gene Frequency</h2>
-            <table class="gene-table">
-                <thead>
-                    <tr>
-                        <th>Gene</th>
-                        <th>Frequency</th>
-                        <th>Prevalence</th>
-                        <th>Risk Level</th>
-                        <th>Genomes</th>
-                    </tr>
-                </thead>
-                <tbody>
+            <div class="table-responsive">
+                <table class="gene-table">
+                    <thead>
+                        <tr>
+                            <th>Gene</th>
+                            <th>Frequency</th>
+                            <th>Prevalence</th>
+                            <th>Risk Level</th>
+                            <th>Genomes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
 """
         
         # Calculate gene frequency with IMPROVED color highlighting
         for gene, genomes in sorted(gene_frequency.items(), key=lambda x: len(x[1]), reverse=True):
             frequency = len(genomes)
             genome_list = ", ".join(sorted(genomes))
-            frequency_percent = (frequency / total_genomes) * 100
+            frequency_percent = (frequency / total_genomes) * 100 if total_genomes > 0 else 0
             
             # Determine risk level
             if gene in self.critical_risk_genes:
@@ -1249,13 +1601,14 @@ class AMRfinderPlusExecutor:
                         <td>{frequency} ({frequency_percent:.1f}%)</td>
                         <td>{prevalence_badge}</td>
                         <td>{risk_level}</td>
-                        <td>{genome_list}</td>
+                        <td class="sequence-cell">{genome_list}</td>
                     </tr>
 """
         
         html_content += """
-                </tbody>
-            </table>
+                    </tbody>
+                </table>
+            </div>
         </div>
         
         <div class="card">
@@ -1263,6 +1616,8 @@ class AMRfinderPlusExecutor:
             <ul style="color: #666; font-size: 1.1em;">
                 <li><strong>staph_amrfinder_summary.tsv</strong> - Complete AMR data for all genomes</li>
                 <li><strong>staph_amrfinder_statistics_summary.tsv</strong> - Statistical summary</li>
+                <li><strong>staph_amrfinder_summary.json</strong> - JSON summary with gene frequencies</li>
+                <li><strong>staph_amrfinder_master_summary.json</strong> - Master JSON with cross-genome patterns</li>
                 <li><strong>Individual genome HTML reports</strong> - Detailed analysis per genome</li>
                 <li><strong>This summary report</strong> - Cross-genome analysis with pattern discovery</li>
             </ul>
@@ -1275,8 +1630,7 @@ class AMRfinderPlusExecutor:
             <p><strong>GitHub:</strong> <a href="https://github.com/bbeckley-hub" target="_blank">https://github.com/bbeckley-hub</a></p>
             <p><strong>Affiliation:</strong> University of Ghana Medical School</p>
             <p style="margin-top: 20px; font-size: 0.9em; color: #ccc;">
-                Analysis performed using StaphScope AMRfinderPlus v1.0.1
-            </p>
+                Analysis performed using StaphScope AMRfinderPlus v1.0.1<br></p>
         </div>
     </div>
 </body>
@@ -1288,14 +1642,14 @@ class AMRfinderPlusExecutor:
         with open(html_file, 'w') as f:
             f.write(html_content)
         
-        self.logger.info("✓ S. aureus AMRfinderPlus summary HTML report created: %s", html_file)
+        self.logger.info(f"✓ S. aureus AMRfinderPlus summary HTML report created: {html_file}")
     
     def process_single_genome(self, genome_file: str, output_base: str = "amrfinder_results") -> Dict[str, Any]:
-        """Process a single genome with AMRfinderPlus"""
+        """Process a single genome with BUNDLED AMRfinderPlus"""
         genome_name = Path(genome_file).stem
         results_dir = os.path.join(output_base, genome_name)
         
-        self.logger.info("=== PROCESSING GENOME: %s ===", genome_name)
+        self.logger.info(f"=== PROCESSING GENOME: {genome_name} ===")
         
         # Create output directory
         os.makedirs(results_dir, exist_ok=True)
@@ -1304,16 +1658,16 @@ class AMRfinderPlusExecutor:
         result = self.run_amrfinder_single_genome(genome_file, results_dir)
         
         status_icon = "✓" if result['status'] == 'success' else "✗"
-        self.logger.info("%s %s: %d AMR hits", status_icon, genome_name, result['hit_count'])
+        self.logger.info(f"{status_icon} {genome_name}: {result['hit_count']} AMR hits")
         
         return result
     
     def process_multiple_genomes(self, genome_pattern: str, output_base: str = "amrfinder_results") -> Dict[str, Any]:
         """Process multiple genomes using wildcard pattern - MAXIMUM SPEED"""
         
-        # Check AMRfinderPlus installation
+        # Check BUNDLED AMRfinderPlus installation
         if not self.check_amrfinder_installed():
-            raise RuntimeError("AMRfinderPlus not properly installed")
+            raise RuntimeError("BUNDLED AMRfinderPlus not properly installed")
         
         # Find genome files (support all FASTA extensions)
         fasta_patterns = [genome_pattern, f"{genome_pattern}.fasta", f"{genome_pattern}.fa", 
@@ -1329,7 +1683,7 @@ class AMRfinderPlusExecutor:
         if not genome_files:
             raise FileNotFoundError(f"No FASTA files found matching pattern: {genome_pattern}")
         
-        self.logger.info("Found %d genomes: %s", len(genome_files), [Path(f).name for f in genome_files])
+        self.logger.info(f"Found {len(genome_files)} genomes: {[Path(f).name for f in genome_files]}")
         
         # Create output directory
         os.makedirs(output_base, exist_ok=True)
@@ -1341,9 +1695,9 @@ class AMRfinderPlusExecutor:
         # Use all available CPU cores for concurrent processing
         max_concurrent = max(1, min(self.cpus, len(genome_files), int(self.available_ram / 1.5)))  # 1.5GB per genome
         
-        self.logger.info("🚀 MAXIMUM SPEED: Using %d concurrent genome processing jobs", max_concurrent)
-        self.logger.info("   Each AMRfinderPlus instance uses %d threads internally", self.cpus)
-        self.logger.info("   This provides maximum throughput for multiple genome analysis")
+        self.logger.info(f"🚀 MAXIMUM SPEED: Using {max_concurrent} concurrent genome processing jobs")
+        self.logger.info(f"   Each AMRfinderPlus instance uses {self.cpus} threads internally")
+        self.logger.info(f"   This provides maximum throughput for multiple genome analysis")
         
         with ThreadPoolExecutor(max_workers=max_concurrent) as executor:
             # Submit all tasks
@@ -1358,9 +1712,9 @@ class AMRfinderPlusExecutor:
                 try:
                     result = future.result()
                     all_results[result['genome']] = result
-                    self.logger.info("✓ COMPLETED: %s (%d AMR hits)", result['genome'], result['hit_count'])
+                    self.logger.info(f"✓ COMPLETED: {result['genome']} ({result['hit_count']} AMR hits)")
                 except Exception as e:
-                    self.logger.error("✗ FAILED: %s - %s", genome, e)
+                    self.logger.error(f"✗ FAILED: {genome} - {e}")
                     all_results[Path(genome).stem] = {
                         'genome': Path(genome).stem,
                         'hits': [],
@@ -1372,8 +1726,8 @@ class AMRfinderPlusExecutor:
         self.create_amr_summary(all_results, output_base)
         
         self.logger.info("=== S. AUREUS AMR ANALYSIS COMPLETE ===")
-        self.logger.info("Processed %d genomes", len(all_results))
-        self.logger.info("Results saved to: %s", output_base)
+        self.logger.info(f"Processed {len(all_results)} genomes")
+        self.logger.info(f"Results saved to: {output_base}")
         
         return all_results
 
@@ -1381,7 +1735,7 @@ class AMRfinderPlusExecutor:
 def main():
     """Command line interface"""
     parser = argparse.ArgumentParser(
-        description='StaphScope AMRfinderPlus Analysis - S. aureus Antimicrobial Resistance - MAXIMUM SPEED VERSION',
+        description='StaphScope AMRfinderPlus Analysis - S. aureus Antimicrobial Resistance - BUNDLED VERSION',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -1420,7 +1774,7 @@ Supported FASTA extensions: .fasta, .fa, .fna, .faa
         
         # Print summary
         executor.logger.info("\n" + "="*50)
-        executor.logger.info("🧫 StaphScope AMRfinderPlus FINAL SUMMARY")
+        executor.logger.info("🧫 StaphScope AMRfinderPlus FINAL SUMMARY (BUNDLED)")
         executor.logger.info("="*50)
         
         total_hits = 0
@@ -1435,27 +1789,31 @@ Supported FASTA extensions: .fasta, .fa, .fna, .faa
             high_risk_count += sum(1 for gene in genes if gene in executor.high_risk_genes)
             critical_risk_count += sum(1 for gene in genes if gene in executor.critical_risk_genes)
             
-            executor.logger.info("✓ %s: %d AMR hits", genome_name, result['hit_count'])
+            executor.logger.info(f"✓ {genome_name}: {result['hit_count']} AMR hits")
         
         executor.logger.info("\n📊 S. AUREUS SUMMARY STATISTICS:")
-        executor.logger.info("   Total genomes processed: %d", len(results))
-        executor.logger.info("   Total AMR hits: %d", total_hits)
-        executor.logger.info("   High-risk genes detected: %d", high_risk_count)
-        executor.logger.info("   CRITICAL RISK genes detected: %d", critical_risk_count)
-        executor.logger.info("   Average AMR hits per genome: %.1f", total_hits / len(results) if results else 0)
+        executor.logger.info(f"   Total genomes processed: {len(results)}")
+        executor.logger.info(f"   Total AMR hits: {total_hits}")
+        executor.logger.info(f"   High-risk genes detected: {high_risk_count}")
+        executor.logger.info(f"   CRITICAL RISK genes detected: {critical_risk_count}")
+        executor.logger.info(f"   Average AMR hits per genome: {total_hits / len(results) if results else 0:.1f}")
         
         # Show summary file locations
         executor.logger.info("\n📁 SUMMARY FILES CREATED:")
-        executor.logger.info("   Comprehensive AMR data: %s/staph_amrfinder_summary.tsv", args.output)
-        executor.logger.info("   Statistics summary: %s/staph_amrfinder_statistics_summary.tsv", args.output)
-        executor.logger.info("   Summary HTML report: %s/staph_amrfinder_summary_report.html", args.output)
+        executor.logger.info(f"   Comprehensive AMR data: {args.output}/staph_amrfinder_summary.tsv")
+        executor.logger.info(f"   Statistics summary: {args.output}/staph_amrfinder_statistics_summary.tsv")
+        executor.logger.info(f"   JSON summary: {args.output}/staph_amrfinder_summary.json")
+        executor.logger.info(f"   Master JSON summary: {args.output}/staph_amrfinder_master_summary.json")
+        executor.logger.info(f"   Summary HTML report: {args.output}/staph_amrfinder_summary_report.html")
         
         # Performance summary
         executor.logger.info("\n⚡ MAXIMUM SPEED PERFORMANCE SUMMARY:")
-        executor.logger.info("   CPU cores utilized: %d cores", executor.cpus)
-        executor.logger.info("   Available RAM: %.1f GB", executor.available_ram)
+        executor.logger.info(f"   CPU cores utilized: {executor.cpus} cores")
+        executor.logger.info(f"   Available RAM: {executor.available_ram:.1f} GB")
         executor.logger.info("   Processing mode: MAXIMUM SPEED CONCURRENT MODE 🚀")
         executor.logger.info("   Strategy: Process multiple genomes concurrently with optimal core allocation")
+        executor.logger.info(f"   Bundled AMRfinderPlus: {executor.metadata['amrfinder_version']}")
+        executor.logger.info(f"   Bundled database: {executor.metadata['database_version']}")
         
         # Critical risk warning if detected
         if critical_risk_count > 0:
@@ -1463,10 +1821,12 @@ Supported FASTA extensions: .fasta, .fa, .fna, .faa
             executor.logger.info("   Immediate clinical attention and infection control measures required.")
         
         import random
-        executor.logger.info("\n💡 %s", random.choice(executor.science_quotes))
+        executor.logger.info(f"\n💡 {random.choice(executor.science_quotes)}")
         
     except Exception as e:
-        executor.logger.error("S. aureus AMR analysis failed: %s", e)
+        executor.logger.error(f"S. aureus AMR analysis failed: {e}")
+        import traceback
+        executor.logger.error(traceback.format_exc())
         sys.exit(1)
 
 

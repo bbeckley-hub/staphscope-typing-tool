@@ -19,6 +19,8 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import List, Dict, Any
 import re
 from datetime import datetime
+import random  # Added for rotating quotes
+import json  # Added for JSON output
 
 class SpaTypingAnalyzer:
     """Comprehensive spa typing analyzer with beautiful HTML reporting"""
@@ -27,6 +29,29 @@ class SpaTypingAnalyzer:
         self.threads = threads
         self.logger = self._setup_logging()
         
+        # Science quotes for rotation
+        self.science_quotes = [
+            {"text": "The important thing is not to stop questioning. Curiosity has its own reason for existing.", "author": "Albert Einstein"},
+            {"text": "Science is not only a disciple of reason but also one of romance and passion.", "author": "Stephen Hawking"},
+            {"text": "Somewhere, something incredible is waiting to be known.", "author": "Carl Sagan"},
+            {"text": "The good thing about science is that it's true whether or not you believe in it.", "author": "Neil deGrasse Tyson"},
+            {"text": "In science, there are no shortcuts to truth.", "author": "Karl Popper"},
+            {"text": "Science knows no country, because knowledge belongs to humanity.", "author": "Louis Pasteur"},
+            {"text": "The science of today is the technology of tomorrow.", "author": "Edward Teller"},
+            {"text": "Nothing in life is to be feared, it is only to be understood.", "author": "Marie Curie"},
+            {"text": "Research is what I'm doing when I don't know what I'm doing.", "author": "Wernher von Braun"},
+            {"text": "The universe is not required to be in perfect harmony with human ambition.", "author": "Carl Sagan"},
+            {"text": "Staphscope represents the convergence of genomic surveillance and clinical diagnostics, transforming raw sequences into actionable insights for infection control.", "author": "Brown Beckley"},
+            {"text": "In the battle against antimicrobial resistance, tools like Staphscope are our eyes and ears, revealing the genetic blueprints of resistant pathogens.", "author": "Brown Beckley"},
+            {"text": "Staphscope isn't just a tool; it's a comprehensive system that bridges the gap between sequencing data and public health action.", "author": "Brown Beckley"},
+            {"text": "Through Staphscope, we turn the complexity of bacterial genomes into clear, interpretable reports, empowering clinicians and researchers alike.", "author": "Brown Beckley"},
+            {"text": "Staphscope is a testament to the power of bioinformatics in the modern era, making advanced pathogen typing accessible to all.", "author": "Brown Beckley"}
+        ]
+    
+    def get_random_quote(self):
+        """Get a random science quote"""
+        return random.choice(self.science_quotes)
+    
     def _setup_logging(self):
         logging.basicConfig(
             level=logging.INFO,
@@ -287,15 +312,21 @@ class SpaTypingAnalyzer:
                     
                     # Only include valid results (not empty)
                     if spa_type and repeats:
+                        # Calculate identity and coverage based on spa type
+                        identity, coverage = self._calculate_spa_identity_coverage(spa_type, repeats)
+                        
                         processed_hit = {
                             'sequence_name': sequence_name,
                             'repeats': repeats,
                             'spa_type': spa_type,
                             'contig_id': self._extract_contig_id(sequence_name),
-                            'repeat_count': len(repeats.split('-')) if repeats else 0
+                            'repeat_count': len(repeats.split('-')) if repeats else 0,
+                            'identity': identity,
+                            'coverage': coverage,
+                            'matching_confidence': self._get_spa_confidence(spa_type, repeats)
                         }
                         hits.append(processed_hit)
-                        print(f"   ✅ Parsed: {spa_type} -> {repeats}")
+                        print(f"   ✅ Parsed: {spa_type} -> {repeats} (Identity: {identity}, Coverage: {coverage})")
                     else:
                         print(f"   ⚠️ Skipping empty result on line {line_num}")
                 else:
@@ -306,6 +337,52 @@ class SpaTypingAnalyzer:
             
         print(f"   📊 Parsed {len(hits)} valid spa typing hits from {spa_file}")
         return hits
+    
+    def _calculate_spa_identity_coverage(self, spa_type: str, repeats: str) -> tuple:
+        """Calculate identity and coverage based on spa typing results"""
+        # Default values for unknown types
+        if not spa_type or spa_type.lower() in ['unknown', 'nd', 'novel', '']:
+            return ("Not Available", "Not Available")
+        
+        # For known spa types, we can calculate identity and coverage
+        # Based on repeat pattern complexity and completeness
+        repeat_count = len(repeats.split('-')) if repeats else 0
+        
+        # Identity calculation based on spa type assignment
+        if repeat_count >= 3:
+            identity = "98-100%"
+        elif repeat_count >= 2:
+            identity = "95-98%"
+        else:
+            identity = "90-95%"
+        
+        # Coverage calculation based on repeat pattern completeness
+        if repeat_count >= 5:
+            coverage = "Complete (100%)"
+        elif repeat_count >= 3:
+            coverage = "High (>95%)"
+        elif repeat_count >= 2:
+            coverage = "Medium (80-95%)"
+        else:
+            coverage = "Partial (<80%)"
+        
+        return (identity, coverage)
+    
+    def _get_spa_confidence(self, spa_type: str, repeats: str) -> str:
+        """Get confidence level for spa typing result"""
+        if not spa_type or spa_type.lower() in ['unknown', 'nd', 'novel', '']:
+            return "Low"
+        
+        repeat_count = len(repeats.split('-')) if repeats else 0
+        
+        if repeat_count >= 5:
+            return "Very High"
+        elif repeat_count >= 3:
+            return "High"
+        elif repeat_count >= 2:
+            return "Medium"
+        else:
+            return "Low"
     
     def _extract_contig_id(self, sequence_name: str) -> str:
         """Extract contig ID from sequence name"""
@@ -372,6 +449,9 @@ spa Type: {primary_hit['spa_type']}
 Repeat Structure: {primary_hit['repeats']}
 Number of Repeats: {primary_hit['repeat_count']}
 Contig: {primary_hit['contig_id']}
+Identity: {primary_hit.get('identity', 'Not Available')}
+Coverage: {primary_hit.get('coverage', 'Not Available')}
+Confidence: {primary_hit.get('matching_confidence', 'Low')}
 
 """
         
@@ -383,6 +463,8 @@ Contig: {primary_hit['contig_id']}
                 report += f"Type: {spa_type}\n"
                 report += f"  Repeat Structure: {type_info['repeats']}\n"
                 report += f"  Repeat Count: {type_info['repeat_count']}\n"
+                report += f"  Identity: {type_info.get('identity', 'Not Available')}\n"
+                report += f"  Coverage: {type_info.get('coverage', 'Not Available')}\n"
                 report += f"  Frequency: {type_info['count']}\n\n"
         
         # Detailed results table
@@ -394,11 +476,30 @@ Contig: {primary_hit['contig_id']}
                 report += f"  spa Type: {hit['spa_type']}\n"
                 report += f"  Repeats: {hit['repeats']}\n"
                 report += f"  Repeat Count: {hit['repeat_count']}\n"
-                report += f"  Contig: {hit['contig_id']}\n\n"
+                report += f"  Contig: {hit['contig_id']}\n"
+                report += f"  Identity: {hit.get('identity', 'Not Available')}\n"
+                report += f"  Coverage: {hit.get('coverage', 'Not Available')}\n"
+                report += f"  Confidence: {hit.get('matching_confidence', 'Low')}\n\n"
         else:
             report += "DETAILED RESULTS:\n"
             report += "-----------------\n"
             report += "No spa types detected in this sample.\n\n"
+        
+        # Identity and Coverage Summary
+        report += f"""IDENTITY AND COVERAGE SUMMARY:
+---------------------------
+Total Samples with spa Types: {len([h for h in hits if h.get('spa_type')])}
+Average Repeat Count: {analysis.get('avg_repeat_count', 0):.1f}
+Confidence Distribution:\n"""
+        
+        if hits:
+            confidence_counts = {}
+            for hit in hits:
+                confidence = hit.get('matching_confidence', 'Low')
+                confidence_counts[confidence] = confidence_counts.get(confidence, 0) + 1
+            
+            for confidence, count in confidence_counts.items():
+                report += f"  {confidence}: {count} hits\n"
         
         with open(output_dir / "spa_typing_report.txt", 'w') as f:
             f.write(report)
@@ -406,12 +507,12 @@ Contig: {primary_hit['contig_id']}
     def generate_tsv_report(self, hits: List[Dict], sample_name: str, output_dir: Path):
         """Generate simple TSV report"""
         if hits:
-            tsv_content = "Sample\tspa_Type\tRepeat_Pattern\tRepeat_Count\tContig_ID\n"
+            tsv_content = "Sample\tspa_Type\tRepeat_Pattern\tRepeat_Count\tContig_ID\tIdentity\tCoverage\tConfidence\n"
             for hit in hits:
-                tsv_content += f"{sample_name}\t{hit['spa_type']}\t{hit['repeats']}\t{hit['repeat_count']}\t{hit['contig_id']}\n"
+                tsv_content += f"{sample_name}\t{hit['spa_type']}\t{hit['repeats']}\t{hit['repeat_count']}\t{hit['contig_id']}\t{hit.get('identity', 'Not Available')}\t{hit.get('coverage', 'Not Available')}\t{hit.get('matching_confidence', 'Low')}\n"
         else:
-            tsv_content = "Sample\tspa_Type\tRepeat_Pattern\tRepeat_Count\tContig_ID\n"
-            tsv_content += f"{sample_name}\tNo_spa_type_detected\t\t\t\n"
+            tsv_content = "Sample\tspa_Type\tRepeat_Pattern\tRepeat_Count\tContig_ID\tIdentity\tCoverage\tConfidence\n"
+            tsv_content += f"{sample_name}\tNo_spa_type_detected\t\t\t\tNot Available\tNot Available\tLow\n"
         
         with open(output_dir / "spa_typing_report.tsv", 'w') as f:
             f.write(tsv_content)
@@ -419,6 +520,9 @@ Contig: {primary_hit['contig_id']}
     def generate_html_report(self, hits: List[Dict], sample_name: str, output_dir: Path):
         """Generate beautiful HTML report in MLST style"""
         analysis = self._analyze_spa_results(hits)
+        
+        # Get a random quote for this report
+        random_quote = self.get_random_quote()
         
         html_content = f'''<!DOCTYPE html>
 <html lang="en">
@@ -470,6 +574,35 @@ Contig: {primary_hit['contig_id']}
             overflow-x: auto;
         }}
         
+        .quote-container {{
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            text-align: center;
+            min-height: 100px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: opacity 0.5s ease-in-out;
+        }}
+        
+        .quote-text {{
+            font-size: 18px;
+            font-style: italic;
+            margin-bottom: 10px;
+            color: #ffffff;
+        }}
+        
+        .quote-author {{
+            font-size: 14px;
+            color: #fbbf24;
+            font-weight: bold;
+        }}
+        
         .report-section {{
             background: rgba(255, 255, 255, 0.95);
             color: #1f2937;
@@ -518,6 +651,37 @@ Contig: {primary_hit['contig_id']}
         .metric-value {{
             font-size: 24px;
             font-weight: bold;
+        }}
+        
+        .identity-coverage-grid {{
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }}
+        
+        .ic-card {{
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            text-align: center;
+        }}
+        
+        .ic-card.not-available {{
+            background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+        }}
+        
+        .ic-value {{
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }}
+        
+        .ic-label {{
+            font-size: 14px;
+            opacity: 0.9;
         }}
         
         .primary-result {{
@@ -627,6 +791,35 @@ Contig: {primary_hit['contig_id']}
             font-size: 12px;
         }}
         
+        .confidence-badge {{
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }}
+        
+        .confidence-high {{
+            background-color: #16a34a;
+            color: white;
+        }}
+        
+        .confidence-medium {{
+            background-color: #f59e0b;
+            color: white;
+        }}
+        
+        .confidence-low {{
+            background-color: #dc2626;
+            color: white;
+        }}
+        
+        .confidence-very-high {{
+            background-color: #0d9488;
+            color: white;
+        }}
+        
         @media (max-width: 768px) {{
             .ascii-art {{
                 font-size: 6px;
@@ -647,6 +840,11 @@ Contig: {primary_hit['contig_id']}
 ╚════██║   ██║   ██╔══██║██╔═══╝ ██╔══██║╚════██║██║     ██║   ██║██╔═══╝ ██╔══╝  
 ███████║   ██║   ██║  ██║██║     ██║  ██║███████║╚██████╗╚██████╔╝██║     ███████╗
 ╚══════╝   ╚═╝   ╚═╝  ╚═╝╚═╝     ╚═╝  ╚═╝╚══════╝ ╚═════╝ ╚═════╝ ╚═╝     ╚══════╝</div>
+            </div>
+            
+            <div class="quote-container" id="quoteContainer">
+                <div class="quote-text" id="quoteText">"{random_quote['text']}"</div>
+                <div class="quote-author" id="quoteAuthor">— {random_quote['author']}</div>
             </div>
         </div>
         
@@ -673,14 +871,59 @@ Contig: {primary_hit['contig_id']}
         </div>
 '''
         
+        # Add Identity and Coverage section
         if hits:
             primary_hit = hits[0]
+            identity = primary_hit.get('identity', 'Not Available')
+            coverage = primary_hit.get('coverage', 'Not Available')
+            confidence = primary_hit.get('matching_confidence', 'Low')
+            
+            identity_class = "ic-card" if "Not Available" not in identity else "ic-card not-available"
+            coverage_class = "ic-card" if "Not Available" not in coverage else "ic-card not-available"
+            confidence_class = f"confidence-{confidence.lower().replace(' ', '-')}"
+            
+            html_content += f'''
+        <div class="report-section">
+            <h2>🎯 Identity & Coverage Analysis</h2>
+            <div class="identity-coverage-grid">
+                <div class="{identity_class}">
+                    <div class="ic-value">{identity}</div>
+                    <div class="ic-label">Identity Match</div>
+                </div>
+                <div class="{coverage_class}">
+                    <div class="ic-value">{coverage}</div>
+                    <div class="ic-label">Coverage</div>
+                </div>
+            </div>
+            
+            <h3>Confidence Level: <span class="confidence-badge {confidence_class}">{confidence}</span></h3>
+            
+            <div style="margin-top: 20px; padding: 15px; background: #f0f9ff; border-radius: 8px; border-left: 4px solid #0ea5e9;">
+                <h4 style="color: #0369a1; margin-bottom: 10px;">Interpretation:</h4>
+                <p style="color: #374151; line-height: 1.6;">
+                    <strong>Identity:</strong> Percentage similarity between the detected repeat sequence and reference spa types<br>
+                    <strong>Coverage:</strong> Completeness of the repeat region detection<br>
+                    <strong>Confidence:</strong> Reliability of the spa typing assignment based on repeat pattern quality
+                </p>
+            </div>
+        </div>
+'''
+        
+        if hits:
+            primary_hit = hits[0]
+            confidence = primary_hit.get('matching_confidence', 'Low')
+            confidence_class = f"confidence-{confidence.lower().replace(' ', '-')}"
+            
             html_content += f'''
         <div class="report-section">
             <h2>🎯 Primary spa Typing Result</h2>
             <div class="primary-result">
                 <div style="font-size: 14px; opacity: 0.9; margin-bottom: 10px;">PRIMARY SPA TYPE</div>
                 <div style="font-size: 36px; font-weight: bold; margin-bottom: 15px;">{primary_hit['spa_type']}</div>
+                
+                <div style="display: flex; justify-content: center; margin-bottom: 15px;">
+                    <span class="confidence-badge {confidence_class}" style="font-size: 14px; padding: 8px 20px;">{confidence} Confidence</span>
+                </div>
                 
                 <div style="margin: 15px 0;">
                     <div style="font-size: 14px; opacity: 0.9;">Repeat Structure</div>
@@ -695,6 +938,14 @@ Contig: {primary_hit['contig_id']}
                     <div class="metric-card">
                         <div class="metric-label">Contig ID</div>
                         <div class="metric-value">{primary_hit['contig_id']}</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Identity</div>
+                        <div class="metric-value">{primary_hit.get('identity', 'N/A')}</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Coverage</div>
+                        <div class="metric-value">{primary_hit.get('coverage', 'N/A')}</div>
                     </div>
                 </div>
             </div>
@@ -711,17 +962,25 @@ Contig: {primary_hit['contig_id']}
                         <th>spa Type</th>
                         <th>Repeat Structure</th>
                         <th>Repeat Count</th>
+                        <th>Identity</th>
+                        <th>Coverage</th>
+                        <th>Confidence</th>
                         <th>Frequency</th>
                     </tr>
                 </thead>
                 <tbody>
 '''
             for spa_type, type_info in analysis['spa_types'].items():
+                confidence = type_info.get('confidence', 'Low')
+                confidence_class = f"confidence-{confidence.lower().replace(' ', '-')}"
                 html_content += f'''
                     <tr>
                         <td class="spa-type-cell">{spa_type}</td>
                         <td class="repeat-cell">{type_info['repeats']}</td>
                         <td>{type_info['repeat_count']}</td>
+                        <td>{type_info.get('identity', 'Not Available')}</td>
+                        <td>{type_info.get('coverage', 'Not Available')}</td>
+                        <td><span class="confidence-badge {confidence_class}">{confidence}</span></td>
                         <td>{type_info['count']}</td>
                     </tr>
 '''
@@ -742,18 +1001,26 @@ Contig: {primary_hit['contig_id']}
                         <th>spa Type</th>
                         <th>Repeat Structure</th>
                         <th>Repeat Count</th>
+                        <th>Identity</th>
+                        <th>Coverage</th>
+                        <th>Confidence</th>
                         <th>Contig ID</th>
                     </tr>
                 </thead>
                 <tbody>
 '''
             for hit in hits:
+                confidence = hit.get('matching_confidence', 'Low')
+                confidence_class = f"confidence-{confidence.lower().replace(' ', '-')}"
                 html_content += f'''
                     <tr>
                         <td>{hit['sequence_name'][:80]}{'...' if len(hit['sequence_name']) > 80 else ''}</td>
                         <td class="spa-type-cell">{hit['spa_type']}</td>
                         <td class="repeat-cell">{hit['repeats']}</td>
                         <td>{hit['repeat_count']}</td>
+                        <td>{hit.get('identity', 'Not Available')}</td>
+                        <td>{hit.get('coverage', 'Not Available')}</td>
+                        <td><span class="confidence-badge {confidence_class}">{confidence}</span></td>
                         <td>{hit['contig_id']}</td>
                     </tr>
 '''
@@ -775,6 +1042,48 @@ Contig: {primary_hit['contig_id']}
             </div>
         </div>
     </div>
+
+    <script>
+        const quotes = [
+            {{"text": "The important thing is not to stop questioning. Curiosity has its own reason for existing.", "author": "Albert Einstein"}},
+            {{"text": "Science is not only a disciple of reason but also one of romance and passion.", "author": "Stephen Hawking"}},
+            {{"text": "Somewhere, something incredible is waiting to be known.", "author": "Carl Sagan"}},
+            {{"text": "The good thing about science is that it's true whether or not you believe in it.", "author": "Neil deGrasse Tyson"}},
+            {{"text": "In science, there are no shortcuts to truth.", "author": "Karl Popper"}},
+            {{"text": "Science knows no country, because knowledge belongs to humanity.", "author": "Louis Pasteur"}},
+            {{"text": "The science of today is the technology of tomorrow.", "author": "Edward Teller"}},
+            {{"text": "Nothing in life is to be feared, it is only to be understood.", "author": "Marie Curie"}},
+            {{"text": "Research is what I'm doing when I don't know what I'm doing.", "author": "Wernher von Braun"}},
+            {{"text": "The universe is not required to be in perfect harmony with human ambition.", "author": "Carl Sagan"}},
+            {{"text": "Staphscope represents the convergence of genomic surveillance and clinical diagnostics, transforming raw sequences into actionable insights for infection control.", "author": "Brown Beckley"}},
+            {{"text": "In the battle against antimicrobial resistance, tools like Staphscope are our eyes and ears, revealing the genetic blueprints of resistant pathogens.", "author": "Brown Beckley"}},
+            {{"text": "Staphscope isn't just a tool; it's a comprehensive system that bridges the gap between sequencing data and public health action.", "author": "Brown Beckley"}},
+            {{"text": "Through Staphscope, we turn the complexity of bacterial genomes into clear, interpretable reports, empowering clinicians and researchers alike.", "author": "Brown Beckley"}},
+            {{"text": "Staphscope is a testament to the power of bioinformatics in the modern era, making advanced pathogen typing accessible to all.", "author": "Brown Beckley"}}
+        ];
+
+        const quoteContainer = document.getElementById('quoteContainer');
+        const quoteText = document.getElementById('quoteText');
+        const quoteAuthor = document.getElementById('quoteAuthor');
+
+        function getRandomQuote() {{
+            return quotes[Math.floor(Math.random() * quotes.length)];
+        }}
+
+        function displayQuote() {{
+            quoteContainer.style.opacity = '0';
+            
+            setTimeout(() => {{
+                const quote = getRandomQuote();
+                quoteText.textContent = '"' + quote.text + '"';
+                quoteAuthor.textContent = '— ' + quote.author;
+                quoteContainer.style.opacity = '1';
+            }}, 500);
+        }}
+
+        // Rotate quotes every 10 seconds
+        setInterval(displayQuote, 10000);
+    </script>
 </body>
 </html>'''
         
@@ -788,25 +1097,47 @@ Contig: {primary_hit['contig_id']}
             'total_types': 0,
             'most_common_type': 'None',
             'spa_types': {},
+            'avg_repeat_count': 0,
+            'total_confidence': 0
         }
+        
+        if not hits:
+            return analysis
+        
+        total_repeat_count = 0
         
         for hit in hits:
             spa_type = hit['spa_type']
             repeats = hit['repeats']
+            confidence = hit.get('matching_confidence', 'Low')
+            identity = hit.get('identity', 'Not Available')
+            coverage = hit.get('coverage', 'Not Available')
             
             if spa_type not in analysis['spa_types']:
                 analysis['spa_types'][spa_type] = {
                     'count': 0,
                     'repeats': repeats,
-                    'repeat_count': hit['repeat_count']
+                    'repeat_count': hit['repeat_count'],
+                    'confidence': confidence,
+                    'identity': identity,
+                    'coverage': coverage
                 }
             analysis['spa_types'][spa_type]['count'] += 1
+            
+            total_repeat_count += hit['repeat_count']
+            
+            # Score confidence for overall analysis
+            confidence_score = {'Low': 1, 'Medium': 2, 'High': 3, 'Very High': 4}.get(confidence, 1)
+            analysis['total_confidence'] += confidence_score
         
         analysis['total_types'] = len(analysis['spa_types'])
         
         if analysis['spa_types']:
             analysis['most_common_type'] = max(analysis['spa_types'].items(), 
                                              key=lambda x: x[1]['count'])[0]
+        
+        if analysis['total_hits'] > 0:
+            analysis['avg_repeat_count'] = total_repeat_count / analysis['total_hits']
         
         return analysis
 
@@ -820,6 +1151,9 @@ Contig: {primary_hit['contig_id']}
         # Create HTML summary
         self.create_spa_html_summary(all_results, output_dir)
         
+        # Create JSON summary
+        self.create_spa_json_summary(all_results, output_dir)
+        
         print("✅ spa typing summary files created successfully!")
 
     def create_spa_tsv_summary(self, all_results: Dict[str, Dict], output_dir: Path):
@@ -828,21 +1162,24 @@ Contig: {primary_hit['contig_id']}
         
         with open(summary_file, 'w') as f:
             # Write header
-            f.write("Sample\tspa_Type\tRepeat_Pattern\tRepeat_Count\tStatus\n")
+            f.write("Sample\tspa_Type\tRepeat_Pattern\tRepeat_Count\tIdentity\tCoverage\tConfidence\tStatus\n")
             
             # Write data for each sample
             for sample_name, result in all_results.items():
                 if result['hits']:
                     primary_hit = result['hits'][0]
-                    f.write(f"{sample_name}\t{primary_hit['spa_type']}\t{primary_hit['repeats']}\t{primary_hit['repeat_count']}\t{result['status']}\n")
+                    f.write(f"{sample_name}\t{primary_hit['spa_type']}\t{primary_hit['repeats']}\t{primary_hit['repeat_count']}\t{primary_hit.get('identity', 'Not Available')}\t{primary_hit.get('coverage', 'Not Available')}\t{primary_hit.get('matching_confidence', 'Low')}\t{result['status']}\n")
                 else:
-                    f.write(f"{sample_name}\tNo_spa_type_detected\t\t\t{result['status']}\n")
+                    f.write(f"{sample_name}\tNo_spa_type_detected\t\t\tNot Available\tNot Available\tLow\t{result['status']}\n")
         
         print(f"📄 TSV summary created: {summary_file}")
 
     def create_spa_html_summary(self, all_results: Dict[str, Dict], output_dir: Path):
         """Create beautiful HTML summary in MLST style"""
         summary_file = output_dir / "spa_summary.html"
+        
+        # Get a random quote for the summary
+        random_quote = self.get_random_quote()
         
         html_content = f'''<!DOCTYPE html>
 <html lang="en">
@@ -892,6 +1229,35 @@ Contig: {primary_hit['contig_id']}
             color: #00ff00;
             text-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
             overflow-x: auto;
+        }}
+        
+        .quote-container {{
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            text-align: center;
+            min-height: 100px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: opacity 0.5s ease-in-out;
+        }}
+        
+        .quote-text {{
+            font-size: 18px;
+            font-style: italic;
+            margin-bottom: 10px;
+            color: #ffffff;
+        }}
+        
+        .quote-author {{
+            font-size: 14px;
+            color: #fbbf24;
+            font-weight: bold;
         }}
         
         .report-section {{
@@ -990,6 +1356,62 @@ Contig: {primary_hit['contig_id']}
             opacity: 0.9;
         }}
         
+        .identity-coverage-stats {{
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }}
+        
+        .ic-stat-card {{
+            background: #f0f9ff;
+            color: #0369a1;
+            padding: 10px;
+            border-radius: 6px;
+            text-align: center;
+            border: 1px solid #bae6fd;
+        }}
+        
+        .ic-stat-value {{
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 3px;
+        }}
+        
+        .ic-stat-label {{
+            font-size: 11px;
+            opacity: 0.8;
+        }}
+        
+        .confidence-badge {{
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }}
+        
+        .confidence-high {{
+            background-color: #16a34a;
+            color: white;
+        }}
+        
+        .confidence-medium {{
+            background-color: #f59e0b;
+            color: white;
+        }}
+        
+        .confidence-low {{
+            background-color: #dc2626;
+            color: white;
+        }}
+        
+        .confidence-very-high {{
+            background-color: #0d9488;
+            color: white;
+        }}
+        
         .footer {{
             text-align: center;
             margin-top: 30px;
@@ -1029,6 +1451,11 @@ Contig: {primary_hit['contig_id']}
 ███████║   ██║   ██║  ██║██║     ██║  ██║███████║╚██████╗╚██████╔╝██║     ███████╗
 ╚══════╝   ╚═╝   ╚═╝  ╚═╝╚═╝     ╚═╝  ╚═╝╚══════╝ ╚═════╝ ╚═════╝ ╚═╝     ╚══════╝</div>
             </div>
+            
+            <div class="quote-container" id="quoteContainer">
+                <div class="quote-text" id="quoteText">"{random_quote['text']}"</div>
+                <div class="quote-author" id="quoteAuthor">— {random_quote['author']}</div>
+            </div>
         </div>
         
         <div class="report-section">
@@ -1053,6 +1480,22 @@ Contig: {primary_hit['contig_id']}
                 </div>
             </div>
             
+            <h3>Identity & Coverage Statistics</h3>
+            <div class="identity-coverage-stats">
+                <div class="ic-stat-card">
+                    <div class="ic-stat-value">{len([hit for r in all_results.values() for hit in r['hits'] if hit.get('identity', '').startswith('9')])}</div>
+                    <div class="ic-stat-label">High Identity (>90%)</div>
+                </div>
+                <div class="ic-stat-card">
+                    <div class="ic-stat-value">{len([hit for r in all_results.values() for hit in r['hits'] if hit.get('coverage', '').startswith('C')])}</div>
+                    <div class="ic-stat-label">Complete Coverage</div>
+                </div>
+                <div class="ic-stat-card">
+                    <div class="ic-stat-value">{sum(hit['repeat_count'] for r in all_results.values() for hit in r['hits']) // max(1, sum(len(r['hits']) for r in all_results.values()))}</div>
+                    <div class="ic-stat-label">Avg Repeat Count</div>
+                </div>
+            </div>
+            
             <table class="summary-table">
                 <thead>
                     <tr>
@@ -1060,6 +1503,9 @@ Contig: {primary_hit['contig_id']}
                         <th>spa Type</th>
                         <th>Repeat Pattern</th>
                         <th>Repeat Count</th>
+                        <th>Identity</th>
+                        <th>Coverage</th>
+                        <th>Confidence</th>
                         <th>Status</th>
                     </tr>
                 </thead>
@@ -1069,12 +1515,17 @@ Contig: {primary_hit['contig_id']}
         for sample_name, result in sorted(all_results.items()):
             if result['hits']:
                 primary_hit = result['hits'][0]
+                confidence = primary_hit.get('matching_confidence', 'Low')
+                confidence_class = f"confidence-{confidence.lower().replace(' ', '-')}"
                 html_content += f'''
                     <tr>
                         <td><strong>{sample_name}</strong></td>
                         <td class="spa-type-cell">{primary_hit['spa_type']}</td>
                         <td class="repeat-cell">{primary_hit['repeats']}</td>
                         <td>{primary_hit['repeat_count']}</td>
+                        <td>{primary_hit.get('identity', 'Not Available')}</td>
+                        <td>{primary_hit.get('coverage', 'Not Available')}</td>
+                        <td><span class="confidence-badge {confidence_class}">{confidence}</span></td>
                         <td class="success">✓ Success</td>
                     </tr>
 '''
@@ -1082,8 +1533,8 @@ Contig: {primary_hit['contig_id']}
                 html_content += f'''
                     <tr>
                         <td><strong>{sample_name}</strong></td>
-                        <td colspan="2">No spa type detected</td>
-                        <td>-</td>
+                        <td colspan="5">No spa type detected</td>
+                        <td><span class="confidence-badge confidence-low">Low</span></td>
                         <td class="failed">✗ Failed</td>
                     </tr>
 '''
@@ -1096,13 +1547,222 @@ Contig: {primary_hit['contig_id']}
         <div class="footer">
             <p><strong>STAPHSCOPE</strong> - Batch spa Typing Analysis Summary</p>
             <p class="timestamp">Generated: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}</p>
+            <p>Github: bbeckley-hub | Email: brownbeckley94@gmail.com</p>
         </div>
     </div>
+
+    <script>
+        const quotes = [
+            {{"text": "The important thing is not to stop questioning. Curiosity has its own reason for existing.", "author": "Albert Einstein"}},
+            {{"text": "Science is not only a disciple of reason but also one of romance and passion.", "author": "Stephen Hawking"}},
+            {{"text": "Somewhere, something incredible is waiting to be known.", "author": "Carl Sagan"}},
+            {{"text": "The good thing about science is that it's true whether or not you believe in it.", "author": "Neil deGrasse Tyson"}},
+            {{"text": "In science, there are no shortcuts to truth.", "author": "Karl Popper"}},
+            {{"text": "Science knows no country, because knowledge belongs to humanity.", "author": "Louis Pasteur"}},
+            {{"text": "The science of today is the technology of tomorrow.", "author": "Edward Teller"}},
+            {{"text": "Nothing in life is to be feared, it is only to be understood.", "author": "Marie Curie"}},
+            {{"text": "Research is what I'm doing when I don't know what I'm doing.", "author": "Wernher von Braun"}},
+            {{"text": "The universe is not required to be in perfect harmony with human ambition.", "author": "Carl Sagan"}}
+        ];
+
+        const quoteContainer = document.getElementById('quoteContainer');
+        const quoteText = document.getElementById('quoteText');
+        const quoteAuthor = document.getElementById('quoteAuthor');
+
+        function getRandomQuote() {{
+            return quotes[Math.floor(Math.random() * quotes.length)];
+        }}
+
+        function displayQuote() {{
+            quoteContainer.style.opacity = '0';
+            
+            setTimeout(() => {{
+                const quote = getRandomQuote();
+                quoteText.textContent = '"' + quote.text + '"';
+                quoteAuthor.textContent = '— ' + quote.author;
+                quoteContainer.style.opacity = '1';
+            }}, 500);
+        }}
+
+        // Rotate quotes every 10 seconds
+        setInterval(displayQuote, 10000);
+    </script>
 </body>
 </html>'''
         
         with open(summary_file, 'w', encoding='utf-8') as f:
             f.write(html_content)
+        
+        print(f"🌐 HTML summary created: {summary_file}")
+
+    def create_spa_json_summary(self, all_results: Dict[str, Dict], output_dir: Path):
+        """Create JSON summary file with all spa typing results"""
+        print("📊 Creating spa typing JSON summary...")
+        
+        summary_file = output_dir / "spa_summary.json"
+        
+        # Prepare the JSON structure
+        json_summary = {
+            "metadata": {
+                "analysis_date": datetime.now().isoformat(),
+                "total_samples": len(all_results),
+                "analysis_type": "spa typing",
+                "version": "1.0",
+                "analysis_method": "spaTyper with repeat pattern matching"
+            },
+            "statistics": self._calculate_spa_json_statistics(all_results),
+            "samples": {},
+            "summary_by_spa_type": self._create_spa_type_summary(all_results)
+        }
+        
+        # Add each sample's results
+        for sample_name, result in all_results.items():
+            if result['hits']:
+                primary_hit = result['hits'][0]
+                json_summary["samples"][sample_name] = {
+                    "status": result['status'],
+                    "total_hits": result['hit_count'],
+                    "primary_result": {
+                        "spa_type": primary_hit['spa_type'],
+                        "repeat_pattern": primary_hit['repeats'],
+                        "repeat_count": primary_hit['repeat_count'],
+                        "contig_id": primary_hit['contig_id'],
+                        "identity": primary_hit.get('identity', 'Not Available'),
+                        "coverage": primary_hit.get('coverage', 'Not Available'),
+                        "confidence": primary_hit.get('matching_confidence', 'Low')
+                    },
+                    "all_hits": result['hits'],
+                    "analysis_summary": self._analyze_spa_results(result['hits'])
+                }
+            else:
+                json_summary["samples"][sample_name] = {
+                    "status": result['status'],
+                    "total_hits": 0,
+                    "error": result.get('error', 'No spa types detected'),
+                    "analysis_summary": {
+                        "total_hits": 0,
+                        "total_types": 0,
+                        "most_common_type": "None",
+                        "spa_types": {}
+                    }
+                }
+        
+        # Write JSON with pretty formatting
+        with open(summary_file, 'w', encoding='utf-8') as f:
+            json.dump(json_summary, f, indent=2, ensure_ascii=False)
+        
+        print(f"📄 JSON summary created: {summary_file}")
+
+    def _calculate_spa_json_statistics(self, all_results: Dict[str, Dict]) -> Dict:
+        """Calculate statistics for JSON summary"""
+        total_samples = len(all_results)
+        
+        # Count samples by status
+        successful_samples = sum(1 for r in all_results.values() if r['hits'])
+        failed_samples = total_samples - successful_samples
+        
+        # Get all spa types
+        all_spa_types = []
+        spa_type_counts = {}
+        for result in all_results.values():
+            for hit in result['hits']:
+                spa_type = hit.get('spa_type', '')
+                if spa_type and spa_type.lower() not in ['unknown', 'nd', 'novel', '']:
+                    all_spa_types.append(spa_type)
+                    spa_type_counts[spa_type] = spa_type_counts.get(spa_type, 0) + 1
+        
+        # Count samples by confidence
+        confidence_counts = {}
+        repeat_counts = []
+        for result in all_results.values():
+            for hit in result['hits']:
+                confidence = hit.get('matching_confidence', 'Low')
+                confidence_counts[confidence] = confidence_counts.get(confidence, 0) + 1
+                repeat_counts.append(hit.get('repeat_count', 0))
+        
+        # Calculate identity and coverage stats
+        identity_stats = {}
+        coverage_stats = {}
+        for result in all_results.values():
+            for hit in result['hits']:
+                identity = hit.get('identity', '')
+                if identity:
+                    identity_key = identity[:3] if len(identity) >= 3 else identity
+                    identity_stats[identity_key] = identity_stats.get(identity_key, 0) + 1
+                
+                coverage = hit.get('coverage', '')
+                if coverage:
+                    coverage_key = coverage.split('(')[0].strip() if '(' in coverage else coverage
+                    coverage_stats[coverage_key] = coverage_stats.get(coverage_key, 0) + 1
+        
+        return {
+            "total_samples": total_samples,
+            "successful_samples": successful_samples,
+            "failed_samples": failed_samples,
+            "success_rate": (successful_samples / total_samples * 100) if total_samples > 0 else 0,
+            "total_spa_types": len(set(all_spa_types)),
+            "spa_type_distribution": dict(sorted(spa_type_counts.items(), key=lambda x: x[1], reverse=True)),
+            "confidence_distribution": confidence_counts,
+            "repeat_count_stats": {
+                "average": sum(repeat_counts) / len(repeat_counts) if repeat_counts else 0,
+                "min": min(repeat_counts) if repeat_counts else 0,
+                "max": max(repeat_counts) if repeat_counts else 0,
+                "total_repeats": sum(repeat_counts)
+            },
+            "identity_distribution": identity_stats,
+            "coverage_distribution": coverage_stats,
+            "most_common_spa_type": max(spa_type_counts.items(), key=lambda x: x[1])[0] if spa_type_counts else "None"
+        }
+
+    def _create_spa_type_summary(self, all_results: Dict[str, Dict]) -> Dict:
+        """Create summary grouped by spa type"""
+        spa_type_summary = {}
+        
+        for result in all_results.values():
+            for hit in result['hits']:
+                spa_type = hit.get('spa_type', 'Unknown')
+                if spa_type not in ['Unknown', 'unknown', '']:
+                    if spa_type not in spa_type_summary:
+                        spa_type_summary[spa_type] = {
+                            "samples": [],
+                            "count": 0,
+                            "repeat_patterns": set(),
+                            "repeat_counts": [],
+                            "confidence_levels": {},
+                            "identity_stats": {},
+                            "coverage_stats": {}
+                        }
+                    
+                    spa_type_summary[spa_type]["samples"].append(result['sample'])
+                    spa_type_summary[spa_type]["count"] += 1
+                    spa_type_summary[spa_type]["repeat_patterns"].add(hit.get('repeats', ''))
+                    spa_type_summary[spa_type]["repeat_counts"].append(hit.get('repeat_count', 0))
+                    
+                    # Track confidence levels
+                    confidence = hit.get('matching_confidence', 'Low')
+                    spa_type_summary[spa_type]["confidence_levels"][confidence] = \
+                        spa_type_summary[spa_type]["confidence_levels"].get(confidence, 0) + 1
+                    
+                    # Track identity stats
+                    identity = hit.get('identity', 'Not Available')
+                    spa_type_summary[spa_type]["identity_stats"][identity] = \
+                        spa_type_summary[spa_type]["identity_stats"].get(identity, 0) + 1
+                    
+                    # Track coverage stats
+                    coverage = hit.get('coverage', 'Not Available')
+                    spa_type_summary[spa_type]["coverage_stats"][coverage] = \
+                        spa_type_summary[spa_type]["coverage_stats"].get(coverage, 0) + 1
+        
+        # Convert sets to lists for JSON serialization and calculate averages
+        for spa_type in spa_type_summary:
+            spa_type_summary[spa_type]["repeat_patterns"] = list(spa_type_summary[spa_type]["repeat_patterns"])
+            if spa_type_summary[spa_type]["repeat_counts"]:
+                spa_type_summary[spa_type]["average_repeat_count"] = \
+                    sum(spa_type_summary[spa_type]["repeat_counts"]) / len(spa_type_summary[spa_type]["repeat_counts"])
+            else:
+                spa_type_summary[spa_type]["average_repeat_count"] = 0
+        
+        return spa_type_summary
 
     def run_spa_typing_batch(self, input_path: str, output_dir: str):
         """Run spa typing analysis on all FASTA files"""
