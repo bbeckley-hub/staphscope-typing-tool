@@ -182,9 +182,8 @@ Please run abricate --setupdb for recent gene annotations!!!
 ⭐ Star us on GitHub if you find this tool useful!
 
 Transforming fragmented genomic data into coherent biological narratives 🧬✨
-```     
+   
 ---
-
 ## 🔧 **Installation**
 
 ### **System Requirements**
@@ -808,4 +807,3 @@ All dependencies are properly credited and their licenses respected.
 *StaphScope: Precision surveillance for the antibiotic resistance era.*
 
 </div>
-```
