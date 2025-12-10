@@ -130,7 +130,58 @@ staphscope -i genome.fasta -o results/
 staphscope -i "*.fna" -o batch_results --threads 16
 
 # Analysis complete in ~14 minutes! 🎉
+
 ```
+----
+##STAPHSCOPE TERMINAL DISPLAY
+----
+usage: staphscope [-h] -i INPUT -o OUTPUT [-t THREADS] [--skip-amr]
+                  [--skip-abricate] [--skip-mlst] [--skip-spa] [--skip-sccmec]
+                  [--skip-lineage] [--skip-comprehensive]
+
+StaphScope: Complete S. aureus Typing Pipeline
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -i INPUT, --input INPUT
+                        Input FASTA file(s) - can use glob patterns like
+                        "*.fna" or "*.fasta"
+  -o OUTPUT, --output OUTPUT
+                        Output directory for all results
+  -t THREADS, --threads THREADS
+                        Number of threads (default: 2)
+  --skip-amr            Skip AMR analysis (AMRfinderPlus)
+  --skip-abricate       Skip ABRicate analysis
+  --skip-mlst           Skip MLST analysis
+  --skip-spa            Skip spa typing analysis
+  --skip-sccmec         Skip SCCmec analysis
+  --skip-lineage        Skip lineage reference generation
+  --skip-comprehensive  Skip comprehensive report generation (MLST + spa +
+                        SCCmec)
+
+Examples:
+  staphscope -i genome.fna -o results/
+  staphscope -i "*.fna" -o batch_results --threads 8
+  staphscope -i "*.fasta" -o analysis --threads 16 --skip-lineage
+  staphscope -i "genome*.fa" -o results/ --threads 4 --skip-comprehensive
+
+Supported FASTA formats: .fna, .fasta, .fa, .fn
+
+Analysis Modules:
+  • MLST (Multi-Locus Sequence Typing)
+  • spa typing (Staphylococcal Protein A)  
+  • SCCmec typing (Methicillin Resistance Cassette)
+  • AMR profiling (Antimicrobial Resistance)
+  • ABRicate (Comprehensive resistance/Plasmid/virulence)
+  • Lineage reference database
+  • Comprehensive report (MLST + spa + SCCmec summary)
+
+Output: Comprehensive results for all analyses in organized directories
+Please run abricate --setupdb for recent gene annotations!!!
+⭐ Star us on GitHub if you find this tool useful!
+
+Transforming fragmented genomic data into coherent biological narratives 🧬✨
+        
 
 ---
 
