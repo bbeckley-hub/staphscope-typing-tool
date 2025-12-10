@@ -133,8 +133,9 @@ staphscope -i "*.fna" -o batch_results --threads 16
 
 ```
 ----
-##STAPHSCOPE TERMINAL DISPLAY
+STAPHSCOPE TERMINAL DISPLAY
 ----
+```
 usage: staphscope [-h] -i INPUT -o OUTPUT [-t THREADS] [--skip-amr]
                   [--skip-abricate] [--skip-mlst] [--skip-spa] [--skip-sccmec]
                   [--skip-lineage] [--skip-comprehensive]
@@ -164,7 +165,7 @@ Examples:
   staphscope -i "*.fna" -o batch_results --threads 8
   staphscope -i "*.fasta" -o analysis --threads 16 --skip-lineage
   staphscope -i "genome*.fa" -o results/ --threads 4 --skip-comprehensive
-
+```
 Supported FASTA formats: .fna, .fasta, .fa, .fn
 
 Analysis Modules:
@@ -175,14 +176,13 @@ Analysis Modules:
   • ABRicate (Comprehensive resistance/Plasmid/virulence)
   • Lineage reference database
   • Comprehensive report (MLST + spa + SCCmec summary)
-
+`
 Output: Comprehensive results for all analyses in organized directories
 Please run abricate --setupdb for recent gene annotations!!!
 ⭐ Star us on GitHub if you find this tool useful!
 
 Transforming fragmented genomic data into coherent biological narratives 🧬✨
-        
-
+```     
 ---
 
 ## 🔧 **Installation**
@@ -249,10 +249,10 @@ Bundles v4.24 (latest)
 staphscope -i /path/to/genome.fasta -o /path/to/results
 
 # Batch processing with wildcards
-staphscope -i "data/*.fna" -o results_2025 --threads 8
+staphscope -i "*.fna" -o results_2025 --threads 8
 
 # Specify custom number of threads
-staphscope -i isolates/*.fasta -o analysis -t 16
+staphscope -i "*.fasta" -o analysis -t 16
 
 # Skip specific modules (if already analyzed)
 staphscope -i sample.fna -o results --skip-spa --skip-lineage
