@@ -305,46 +305,90 @@ staphscope -i "outbreak/*.fasta" -o /tmp/urgent_analysis --skip-lineage
 # Expected: Results in ~4 minutes
 # Output: Immediate identification of shared SCCmec types and resistance profiles
 ```
-
 ---
 
-## 📊 **Output Structure**
+## 📁 **Output Structure/Directory Layout**
 
-### **Directory Layout**
-```
-results_directory/
-├── 📁 mlst_results/
-│   ├── mlst_summary.tsv           # ST, CC, allele profiles
-│   ├── mlst_detailed.json         # Full alignment metrics
-│   └── mlst_visualization.html    # Interactive phylogeny
-├── 📁 spa_results/
-│   ├── spa_types.tsv              # spa types, repeat patterns
-│   └── spa_alignments.json        # BLAST alignment details
-├── 📁 sccmec_results/
-│   ├── sccmec_types.tsv           # Types I-XIII with confidence
-│   ├── mec_ccr_detection.tsv      # Gene complex identification
-│   └── sccmec_html                # Interactive 
-├── 📁 amr_results/
-│   ├── amr_summary.tsv            # Resistance genes by category
-│   ├── risk_assessment.html        # Critical/High risk genes
-│   ├── amr_patterns.json          # Cross-sample gene frequencies
-│   └── amrfinderplus_report.txt   # Raw AMRFinderPlus output
-├── 📁 abricate_results/
-│   ├── virulence_summary.tsv      # VFDB hits
-│   ├── plasmid_replicons.tsv      # PlasmidFinder results
-│   ├── multi_db_summary.tsv html      # All 9 database hits
-│   └── clinical_flags.html         # PVL, enterotoxins, etc.
-├── 📁 lineage_results/
-│   ├── lineage_assignment.tsv     # Epidemiological classification
-│   ├── global_distribution.html   # Interactive map
-│   └── clone_reference.json       # Full lineage metadata
-├── 📄 Staphscope_final_report.html  # 🎯 MAIN INTERACTIVE REPORT
-├── 📄 consolidated_results.tsv    # All data in one table
-├── 📄 pipeline_summary.json       # Machine-readable summary
-└── 📄 execution_log.txt           # Complete run log
+Staphscope generates a comprehensive, organized output directory with results from each analysis module. Below is a typical directory tree (example from sample `MRSA252`):
 
-ALL MODULES PRODUCE HTML, TSV and JSON
 ```
+Staphscope/
+├── abricate_results/                    # Gene detection (ABRicate)
+│   ├── MRSA252/                         # Per-sample detailed results
+│   │   ├── abricate_*.txt               # Raw ABRicate outputs per database
+│   │   ├── abricate_*_report.html       # HTML reports per database
+│   │   └── MRSA252_comprehensive_abricate_report.html
+│   ├── staph_*_abricate_summary.tsv     # Combined TSV summaries per database
+│   ├── staph_*_summary.json             # JSON summaries per database
+│   ├── staph_*_summary_report.html      # HTML summary reports per database
+│   └── staph_abricate_master_summary.json  # Master summary across all DBs
+│
+├── amr_results/                         # AMR gene profiling (AMRFinder+)
+│   ├── MRSA252/
+│   │   ├── MRSA252_amrfinder.txt        # Raw AMRFinder output
+│   │   └── MRSA252_amrfinder_report.html
+│   ├── staph_amrfinder_summary.tsv      # Tabular summary
+│   ├── staph_amrfinder_summary.json     # JSON summary
+│   ├── staph_amrfinder_summary_report.html
+│   ├── staph_amrfinder_statistics_summary.tsv  # Statistical summary
+│   └── staph_amrfinder_master_summary.json     # Master JSON
+│
+├── mlst_results/                        # Multi-Locus Sequence Typing
+│   ├── MRSA252/
+│   │   ├── mlst_raw_output.txt          # Raw MLST output
+│   │   ├── mlst_report.txt/.tsv/.html   # Formatted reports
+│   ├── mlst_summary.tsv                 # Combined TSV summary
+│   ├── mlst_summary.json                # Combined JSON summary
+│   └── mlst_summary.html                # Combined HTML report
+│
+├── sccmec_results/                      # SCCmec typing (MyKmerFinder)
+│   ├── s_MRSA252/                       # Per-sample SCCmec results
+│   │   ├── results_MyKmerFinder.txt     # Kmer-based typing results
+│   │   ├── results_tab_MyDbFinder.txt   # Database matching results
+│   │   ├── sccmec_detailed_results.txt  # Detailed typing report
+│   │   ├── sccmec_enhanced_report.json  # Enhanced JSON report
+│   │   └── staphscope_comprehensive_report.html
+│   ├── staphscope_summary.tsv           # Combined SCCmec summary
+│   ├── staphscope_summary.html          # HTML summary
+│   └── staphscope_detailed_results.csv  # Detailed combined results
+│
+├── spa_results/                         # spa typing
+│   ├── MRSA252/
+│   │   ├── spa_typing_raw.txt           # Raw spa typing output
+│   │   ├── spa_typing_report.txt/.tsv/.html
+│   ├── spa_summary.tsv                  # Combined TSV summary
+│   ├── spa_summary.json                 # Combined JSON summary
+│   └── spa_summary.html                 # Combined HTML report
+│
+├── lineage_results/                     # Phylogenetic lineage assignment
+│   └── staphscope_lineage_reference.html  # Lineage reference report
+│
+└── Staphscope_final_report/             # Consolidated final reports
+    ├── staphscope_comprehensive_report.html/.json/.tsv  # Master reports
+    ├── staphscope_summary.html/.tsv                     # High-level summary
+    ├── staphscope_detailed_results.csv                  # Detailed CSV
+    ├── mlst_summary.*                                   # MLST summaries
+    ├── spa_summary.*                                    # spa summaries
+    ├── staph_amrfinder_*                                # AMR summaries
+    ├── staph_*_abricate_summary.tsv                    # ABRicate summaries
+    ├── staph_*_summary.json                            # JSON summaries
+    └── staph_*_summary_report.html                     # HTML summaries
+```
+
+### **Key File Types**
+- **`.txt` / `.tsv` / `.csv`**: Raw and tabulated data for downstream analysis
+- **`.json`**: Structured data for programmatic access and integration
+- **`.html`**: Interactive visual reports for manual inspection
+- **Per-sample directories**: Contain raw and detailed outputs for individual isolates
+- **Summary files**: Aggregated results across all processed samples
+
+### **Quick Access**
+- **Single-sample overview**: Check the sample-specific directory (e.g., `MRSA252/`) within each module
+- **Cross-sample summaries**: Look for `*_summary.tsv` or `*_summary.json` in each module's root
+- **Final consolidated report**: All key results merged in `Staphscope_final_report/`
+- **Visualization-ready data**: Most `.tsv` and `.json` files are optimized for the Automatic Visualization Module
+
+This organized structure ensures easy navigation, reproducibility, and integration with downstream bioinformatics workflows!!
 
 ### **Interactive HTML Report Features**
 - **Dashboard Overview**: Summary statistics at a glance
