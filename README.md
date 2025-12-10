@@ -168,6 +168,10 @@ conda install -c bbeckley-hub -c bioconda -c conda-forge staphscope
 # Verify installation
 staphscope --version
 ```
+---
+
+NB: ALWAYS CREATE A PYTHON ENV BEFORE INSTALLING STAPHSCOPE TO AVOID CONDA ISSUES!!!!!!
+--
 
 #### **3. Update Databases (Recommended)**
 ```bash
@@ -481,15 +485,45 @@ staphscope --raw-reads sample_R1.fastq sample_R2.fastq --assembler shovill
 
 
 ```
+---
+## 📊 **Automatic Visualization Module**
+---
+This module will automatically generates publication-quality visualizations from **Staphscope** analysis results using modern Python plotting libraries.
+
+### **Features**
+- **Multi-format Support**: Generate PNG, SVG, PDF, and interactive HTML visualizations
+- **Comprehensive Plot Types**:
+  - **Statistical Plots**: Box plots, violin plots, and distribution histograms
+  - **Comparison Charts**: Bar charts, grouped bars, and stacked plots
+  - **Trend Analysis**: Line graphs, scatter plots with regression lines
+  - **Composition Views**: Pie charts, donut charts, and treemaps
+  - **Correlation Insights**: Heatmaps, pair plots, and correlation matrices
+- **Smart Defaults**: Automatically selects appropriate plot types based on data structure
+- **Customizable Themes**: Built-in color palettes optimized for scientific publishing
+
+### **Supported Libraries**
+- **Seaborn**: Statistical visualizations with beautiful default styles
+- **Matplotlib**: Foundation layer for complete customization
+- **Plotly**: Interactive HTML plots for exploratory analysis
+- **Pandas**: Built-in plotting for quick data exploration
+
+
+### **Output Examples**
+- `sample_distribution.png` - Diversity metrics across samples
+- `variant_frequency_bar.svg` - Top mutations with confidence intervals
+- `correlation_heatmap.html` - Interactive sample similarity matrix
+- `time_series_trend.pdf` - Longitudinal tracking of key markers
+
+------
 
 ### **Machine Learning Module**
 - **Outbreak Prediction**: Identify emerging patterns and transmission networks
 - **Phenotype Inference**: Predict virulence, transmissibility from genotype
 - **Risk Scoring**: Automated risk assessment for clinical isolates
 - **Anomaly Detection**: Flag novel or unexpected genetic combinations
-
+  
 ### **Expansion Plans**
-1. **Raw Read Support**: Direct FASTQ analysis with integrated assembly
+1. **Raw Read Support**: Direct FASTQ analysis with integrated assembly(Snippy)
 2. **Real-Time Updates**: Live database synchronization
    
 ### **Community-Driven Development**
@@ -517,13 +551,13 @@ A: StaphScope is a research tool. While highly accurate, results should be valid
 A: We focused first on assembled genomes for speed and simplicity. Raw read support is our #1 priority for 2025 development.
 
 **Q: How often are databases updated?**  
-A: Core databases update automatically. The lineage database is manually curated every 6 months. Users can run `abricate --setupdb` anytime.
+A: We have planned sequential releases when databases updates are needed. The lineage database is manually curated every 6 months. Users can run `abricate --setupdb` anytime.
 
 **Q: Can I run StaphScope on Windows?**  
 A: Yes, via WSL2 (Windows Subsystem for Linux). Native Windows support is planned.
 
 **Q: How do I handle very large batches (1000+ genomes)?**  
-A: Split into batches of 100 and use parallel execution. HPC cluster support is in development.
+A: Just you use glob patterns and take a coffee break.
 
 ### **Analysis Questions**
 **Q: What does "Not Assigned" mean for SCCmec typing?**  
