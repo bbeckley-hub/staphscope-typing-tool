@@ -636,7 +636,7 @@ A: StaphScope is a research tool. While highly accurate, results should be valid
 
 ### **Technical Questions**
 **Q: Why only assembled genomes? When will raw read support be added?**  
-A: We focused first on assembled genomes for speed and simplicity. Raw read support is our #1 priority for 2025 development.
+A: We focused first on assembled genomes for speed and simplicity. Raw read support is our #1 priority for 2026 development.
 
 **Q: How often are databases updated?**  
 A: We have planned sequential releases when databases updates are needed. The lineage database is manually curated every 6 months. Users can run `abricate --setupdb` anytime.
