@@ -843,6 +843,11 @@ All dependencies are properly credited and their licenses respected.
 **From days to minutes. From fragmented to integrated. From data to insights.**
 
 *StaphScope: Precision surveillance for the antibiotic resistance era.*
-*Drop a star⭐ if you find this tool useful*
 
 </div>
+
+
+Found this tool useful? Drop a star ⭐ and follow th page for more exciting updates on planned modules!!
+
+---
+
