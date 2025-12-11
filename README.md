@@ -847,7 +847,7 @@ All dependencies are properly credited and their licenses respected.
 </div>
 
 
-Found this tool useful? Drop a star ⭐ and follow th page for more exciting updates on planned modules!!
+  Found this tool useful? Drop a star ⭐ and follow th page for more exciting updates on planned modules!!
 
 ---
 
