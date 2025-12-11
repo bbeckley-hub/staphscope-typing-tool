@@ -165,7 +165,7 @@ Examples:
   staphscope -i "*.fna" -o batch_results --threads 8
   staphscope -i "*.fasta" -o analysis --threads 16 --skip-lineage
   staphscope -i "genome*.fa" -o results/ --threads 4 --skip-comprehensive
-```
+
 Supported FASTA formats: .fna, .fasta, .fa, .fn
 
 Analysis Modules:
@@ -182,7 +182,7 @@ Please run abricate --setupdb for recent gene annotations!!!
 ⭐ Star us on GitHub if you find this tool useful!
 
 Transforming fragmented genomic data into coherent biological narratives 🧬✨
-   
+```   
 ---
 ## 🔧 **Installation**
 
@@ -225,11 +225,20 @@ NB: ALWAYS CREATE A PYTHON ENV BEFORE INSTALLING STAPHSCOPE TO AVOID CONDA ISSUE
 
 #### **3. Update Databases (Recommended)**
 ```bash
-# Update ABRicate databases
+# Update ABRicate databases(version ≥1.0.1)
 abricate --setupdb
 
 # AMRFinderPlus database
 Bundles v4.24 (latest)
+
+# All other Bundled Databases
+[https://pubmlst.org/organisms/staphylococcus-aureus]
+[https://github.com/tseemann/mlst]
+[http://spa.ridom.de/dynamic/sparepeats.fasta]
+[https://spa.ridom.de/dynamic/spatypes.txt]
+[https://bitbucket.org/genomicepidemiology/Sccmecfinder]
+[https://github.com/ncbi/amr]
+
 ```
 
 ### **Docker Installation (Alternative)**
@@ -256,21 +265,6 @@ staphscope -i "*.fasta" -o analysis -t 16
 # Skip specific modules (if already analyzed)
 staphscope -i sample.fna -o results --skip-spa --skip-lineage
 ```
-
-### **Advanced Options**
-```bash
-# Full command syntax
-staphscope [-h] -i INPUT -o OUTPUT_DIR [-t THREADS] [--skip-mlst] 
-           [--skip-spa] [--skip-sccmec] [--skip-amr] [--skip-abricate] 
-           [--skip-lineage] [--force] [--verbose]
-
-# Example: Outbreak investigation (prioritize speed)
-staphscope -i "outbreak_*.fasta" -o outbreak_analysis --threads max --skip-lineage
-
-# Example: Research publication (complete analysis)
-staphscope -i research_samples/*.fn -o publication_data -t 32 --verbose
-```
-
 ### **Input Formats**
 - **Accepted**: `.fna`, `.fasta`, `.fa`, `.fn`
 - **Required**: Assembled genomes (contigs or complete)
@@ -849,5 +843,6 @@ All dependencies are properly credited and their licenses respected.
 **From days to minutes. From fragmented to integrated. From data to insights.**
 
 *StaphScope: Precision surveillance for the antibiotic resistance era.*
+*Drop a star⭐ if you find this tool useful*
 
 </div>
