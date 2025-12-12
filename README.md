@@ -122,6 +122,8 @@ conda env create -f environment.yml
 conda activate staphscope
 pip install -e .
 ```
+Refer to [**Update Databases (Recommended)- Please refer to this resources for STAPHSCOPE's integrated databases.**]
+```
 
 ### **Run your first analysis**
 ```bash
@@ -228,8 +230,9 @@ NB: ALWAYS CREATE A PYTHON ENV BEFORE INSTALLING STAPHSCOPE TO AVOID CONDA ISSUE
 #### **3. Update Databases (Recommended)**
 ```bash
 # Update ABRicate databases(version ≥1.0.1)
-abricate --setupdb
 
+abricate --setupdb
+```
 # AMRFinderPlus database
 Bundles v4.24 (latest)
 
@@ -241,9 +244,8 @@ Bundles v4.24 (latest)
 [https://bitbucket.org/genomicepidemiology/Sccmecfinder]
 [https://github.com/ncbi/amr]
 
-```
-
 ### **Docker Installation (Alternative)**
+---
 ```dockerfile
 # Coming soon! Containerized version in development
 # docker pull bbeckley/staphscope:latest
