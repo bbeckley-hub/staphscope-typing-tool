@@ -816,6 +816,8 @@ We welcome collaborations on:
 - 🏥 Clinical validation projects
 - 💻 Bioinformatics tool development
 - 🌍 Global surveillance initiatives
+- 🏥 Bioinformatics application in Public Health
+- 🧬 Infectious disease& immunological studies etc.
   
 
 **Contact for collaboration**: brownbeckley94@gmail.com
