@@ -234,7 +234,7 @@ NB: ALWAYS CREATE A PYTHON ENV BEFORE INSTALLING STAPHSCOPE TO AVOID CONDA ISSUE
 abricate --setupdb
 ```
 ---
-# All other Bundled Databases
+### **4. All other Bundled Databases**
 [https://pubmlst.org/organisms/staphylococcus-aureus]
 [https://github.com/tseemann/mlst]
 [http://spa.ridom.de/dynamic/sparepeats.fasta]
