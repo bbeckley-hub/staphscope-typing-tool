@@ -219,6 +219,9 @@ conda activate staphscope
 # Install from conda-forge channel
 conda install -c bbeckley-hub -c bioconda -c conda-forge staphscope
 
+# Install using mamba (Rapid)
+mamba install -c bbeckley-hub -c bioconda -c conda-forge staphscope
+
 # Verify installation
 staphscope --version
 ```
