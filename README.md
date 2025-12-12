@@ -114,6 +114,9 @@ StaphScope delivers:
 ```bash
 # Method 1: Conda (Recommended - handles all dependencies)
 conda install -c bbeckley-hub -c bioconda -c conda-forge staphscope
+or
+# Install using mamba (Rapid)
+mamba install -c bbeckley-hub -c bioconda -c conda-forge staphscope
 
 # Method 2: From source
 git clone https://github.com/bbeckley-hub/staphscope-typing-tool.git
