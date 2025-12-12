@@ -243,8 +243,6 @@ abricate --setupdb
 [https://github.com/ncbi/amr]
 
 ---
-
----
 ### **Docker Installation (Alternative)**
 ---
 ```dockerfile
