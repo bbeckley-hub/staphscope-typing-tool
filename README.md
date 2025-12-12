@@ -233,9 +233,7 @@ NB: ALWAYS CREATE A PYTHON ENV BEFORE INSTALLING STAPHSCOPE TO AVOID CONDA ISSUE
 
 abricate --setupdb
 ```
-# AMRFinderPlus database
-Bundles v4.24 (latest)
-
+---
 # All other Bundled Databases
 [https://pubmlst.org/organisms/staphylococcus-aureus]
 [https://github.com/tseemann/mlst]
@@ -244,6 +242,9 @@ Bundles v4.24 (latest)
 [https://bitbucket.org/genomicepidemiology/Sccmecfinder]
 [https://github.com/ncbi/amr]
 
+---
+
+---
 ### **Docker Installation (Alternative)**
 ---
 ```dockerfile
