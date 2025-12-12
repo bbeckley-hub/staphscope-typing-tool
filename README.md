@@ -122,7 +122,7 @@ conda env create -f environment.yml
 conda activate staphscope
 pip install -e .
 ```
-Refer to [**Update Databases (Recommended)- Please refer to this resources for STAPHSCOPE's integrated databases.**]
+Refer to [**Update Databases (Recommended)- Please refer to these resources for STAPHSCOPE's integrated databases.**]
 ```
 
 ### **Run your first analysis**
