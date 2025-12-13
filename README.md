@@ -780,8 +780,7 @@ StaphScope stands on the shoulders of giants. We are deeply grateful to:
 - **Testing Community**: Early adopters who provided invaluable feedback
 
 ### **Special Thanks**
-- **Reviewers & Editors**: For strengthening this manuscript
-- **University of Ghana**: For institutional support
+- **Reviewers & Editors**: For strengthening this tool & its manuscript
 - **Open Science Community**: For making this work possible
 
 > "If we ever meet in person, the drinks are on me!" - Brown Beckley
