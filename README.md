@@ -117,12 +117,12 @@ StaphScope delivers:
 conda create -n staphscopee -c conda-forge -c bioconda -c bbeckley-hub staphscope -y
 
 or
-conda create -n staphscope -c bbeckley-hub -c conda-forge -c bioconda staphscope=1.0.0=py38_0 --yes
+conda create -n staphscope -c conda-forge -c bioconda -c bbeckley-hub staphscope=1.0.0=py38_0 --yes
 
 or
 
 # Install using mamba (Rapid)
-mamba install -c bbeckley-hub -c bioconda -c conda-forge staphscope
+mamba install -c conda-forge -c bioconda -c bbeckley-hub staphscope
 
 # Method 2: From source
 git clone https://github.com/bbeckley-hub/staphscope-typing-tool.git
@@ -226,10 +226,10 @@ conda create -n staphscope python=3.10 or 3.8 or 3.9 or 3.11 or 3.12
 conda activate staphscope
 
 # Install from conda-forge channel
-conda install -c bbeckley-hub -c bioconda -c conda-forge staphscope
+conda install -c conda-forge -c bioconda -c bbeckley-hub staphscope
 
 # Install using mamba (Rapid)
-mamba install -c bbeckley-hub -c bioconda -c conda-forge staphscope
+mamba install -c conda-forge -c bioconda -c bbeckley-hub staphscope
 
 # Verify installation
 staphscope --version
