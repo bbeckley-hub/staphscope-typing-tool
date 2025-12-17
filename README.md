@@ -113,7 +113,8 @@ StaphScope delivers:
 ### **Install in 60 seconds**
 ```bash
 # Method 1: Conda (Recommended - handles all dependencies)
-conda install -c bbeckley-hub -c bioconda -c conda-forge staphscope
+conda create -n staphscope -c bbeckley-hub -c bioconda -c conda-forge staphscope -y
+
 or
 # Install using mamba (Rapid)
 mamba install -c bbeckley-hub -c bioconda -c conda-forge staphscope
