@@ -116,6 +116,10 @@ StaphScope delivers:
 conda create -n staphscope -c bbeckley-hub -c bioconda -c conda-forge staphscope -y
 
 or
+conda create -n staphscope -c bbeckley-hub -c conda-forge -c bioconda staphscope=1.0.0=py38_0 --yes
+
+or
+
 # Install using mamba (Rapid)
 mamba install -c bbeckley-hub -c bioconda -c conda-forge staphscope
 
