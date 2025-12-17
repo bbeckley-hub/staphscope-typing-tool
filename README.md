@@ -113,7 +113,8 @@ StaphScope delivers:
 ### **Install in 60 seconds**
 ```bash
 # Method 1: Conda (Recommended - handles all dependencies)
-conda create -n staphscope -c bbeckley-hub -c bioconda -c conda-forge staphscope -y
+# Put conda-forge first (has newer biopython versions)
+conda create -n staphscopee -c conda-forge -c bioconda -c bbeckley-hub staphscope -y
 
 or
 conda create -n staphscope -c bbeckley-hub -c conda-forge -c bioconda staphscope=1.0.0=py38_0 --yes
@@ -233,9 +234,13 @@ mamba install -c bbeckley-hub -c bioconda -c conda-forge staphscope
 # Verify installation
 staphscope --version
 ```
----
 
 NB: ALWAYS CREATE A PYTHON ENV BEFORE INSTALLING STAPHSCOPE TO AVOID CONDA ISSUES!!!!!!
+    # Add channels in correct order
+conda config --add channels conda-forge
+conda config --add channels bioconda
+conda config --add channels bbeckley-hub
+
 --
 
 #### **3. Update Databases (Recommended)**
