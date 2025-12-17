@@ -564,7 +564,7 @@ ST425: 1 isolate (4.2%)
 | **Installation** | Single Conda package | Complex (Nextflow+Docker) | Conda + DB downloads | Single Conda |
 | **Execution** | Local CLI | Local/Cluster | Local | CLI + Web GUI |
 | **Parallelization** | Auto-resource detection | Pipeline-level | Sample-level | Single-threaded |
-| **MRSA Features** | Integrated classification + lineage DB | General typing | General typing | Resistance only |
+| **MRSA Features** | Integrated classification + lineage DB + S. areus specific typing | General typing | General typing | Resistance only |
 | **Critical Gene Flagging** | ✅ *mecA*, PVL, *van* genes | ❌ Absent | ❌ Absent | ❌ Absent |
 | **Resource Needs** | Low-moderate (2+ GB) | High (HPC recommended) | High (Cluster) | Low-moderate |
 | **Setup Ease** | Single command | Multiple steps | Multiple steps | Single command |
