@@ -114,7 +114,7 @@ StaphScope delivers:
 ```bash
 # Method 1: Conda (Recommended - handles all dependencies)
 # Put conda-forge first (has newer biopython versions)
-conda create -n staphscopee -c conda-forge -c bioconda -c bbeckley-hub staphscope -y
+conda create -n staphscope -c conda-forge -c bioconda -c bbeckley-hub staphscope -y
 
 or
 conda create -n staphscope -c conda-forge -c bioconda -c bbeckley-hub staphscope=1.0.0=py38_0 --yes
