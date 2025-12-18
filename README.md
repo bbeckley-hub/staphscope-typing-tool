@@ -378,7 +378,7 @@ Staphscope/
 │
 └── Staphscope_final_report/             # Consolidated final reports
     ├── staphscope_comprehensive_report.html/.json/.tsv  # Master reports
-    ├── staphscope_summary.html/.tsv                     # High-level summary
+    ├── STAPHSCOPE_ULTIMATE_REPORTS                      # High-level summary(NEW)
     ├── staphscope_detailed_results.csv                  # Detailed CSV
     ├── mlst_summary.*                                   # MLST summaries
     ├── spa_summary.*                                    # spa summaries
