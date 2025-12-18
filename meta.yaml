@@ -9,30 +9,40 @@ source:
   path: .
 
 build:
-  number: 1
+  number: 0
   script: "{{ PYTHON }} -m pip install . -vv"
-  
   entry_points:
     - staphscope = staphscope.staphscope:main
 
 requirements:
   host:
-    - python =3.10
+    - python =3.14
     - pip
     - setuptools
   run:
-    - python =3.10
-    - pip
-    - abricate >=1.0.1
-    - perl
-    - any2fasta
-    - blast >=2.13.0
+    - python =3.14
+    # Core Python packages from setup.py
     - pandas>=1.5.0
     - biopython>=1.80
     - psutil>=5.9.0
     - requests>=2.28.0
     - tqdm>=4.64.0
     - click>=8.0.0
+    # HTML parsing
+    - beautifulsoup4>=4.11.0
+    - lxml>=4.9.0
+    # Visualization 
+    - matplotlib>=3.5.0
+    - seaborn>=0.12.0
+    - scipy>=1.10.1
+    # Optional/extra (for full features)
+    - plotly>=5.10.0
+    # Bioinformatic tools
+    - abricate >=1.0.1
+    - perl
+    - any2fasta
+    - blast >=2.13.0
+    # Perl modules
     - perl-moo
     - perl-list-moreutils
     - perl-json
@@ -42,9 +52,6 @@ requirements:
     - perl-getopt-long
     - perl-file-which
     
-test:
-  imports:
-    - staphscope
   commands:
     - staphscope --help
     

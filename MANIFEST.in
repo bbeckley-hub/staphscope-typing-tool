@@ -1,4 +1,4 @@
-include README.md
+linclude README.md
 include LICENSE
 include requirements.txt
 include CITATION.cff
@@ -15,7 +15,8 @@ prune STAPHSCOPE_FINAL_RESULTS
 prune MRSA_genomes
 prune BROWN
 prune *_results
-
+abricate_results
+prune staphscope/modules/*/abricate_results
 # DO NOT exclude fasta files!
 # Remove or comment out:
 # exclude *.fna

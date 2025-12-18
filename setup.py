@@ -29,16 +29,35 @@ setup(
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
+        
     ],
-    python_requires="==3.10.*",
+    python_requires="==3.14.*",
     install_requires=[
         "pandas>=1.5.0",
         "biopython>=1.80",  
         "psutil>=5.9.0",
         "requests>=2.28.0",
         "tqdm>=4.64.0",
-        "click>=8.0.0"
+        "click>=8.0.0",
+        # HTML parsing for summary/visualization
+        "beautifulsoup4>=4.11.0",
+        "lxml>=4.9.0",
+        # Visualization
+        "matplotlib>=3.5.0",
+        "seaborn>=0.12.0",
+        "scipy>=1.10.1",
     ],
+    extras_require={
+        'full': [
+            "plotly>=5.10.0",
+            "scipy>=1.9.0",
+        ],
+        'visualization': [
+            "plotly>=5.10.0",
+            "scipy>=1.9.0",
+        ]
+    },   
     entry_points={
         "console_scripts": [
             "staphscope=staphscope.staphscope:main",

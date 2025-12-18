@@ -570,120 +570,56 @@ class StaphScopeOrchestrator:
             self.banner.display_error(f"Error copying files for comprehensive report: {str(e)}")
             return False
 
-    def copy_all_summary_files_to_final_report(self, output_dir: Path, final_report_dir: Path):
-        """Copy all summary files to the final report directory"""
+    def copy_html_reports_for_ultimate_reporter(self, output_dir: Path) -> bool:
+        """Copy HTML reports needed by ultimate reporter to summary_module"""
         try:
-            self.banner.display_info("Copying all summary files to final report directory...")
+            self.banner.display_info("Copying HTML reports for ultimate reporter...")
             
-            # Define all the summary files from each module
-            summary_files_by_module = {
-                "mlst_results": [
-                    "mlst_summary.html",
-                    "mlst_summary.json",
-                    "mlst_summary.tsv"
-                ],
-                "spa_results": [
-                    "spa_summary.html",
-                    "spa_summary.json",
-                    "spa_summary.tsv"
-                ],
-                "sccmec_results": [
-                    "staphscope_detailed_results.csv",
-                    "staphscope_summary.html",
-                    "staphscope_summary.tsv"
-                ],
-                "amr_results": [
-                    "staph_amrfinder_master_summary.json",
-                    "staph_amrfinder_statistics_summary.tsv",
-                    "staph_amrfinder_summary.json",
-                    "staph_amrfinder_summary_report.html",
-                    "staph_amrfinder_summary.tsv"
-                ],
-                "abricate_results": [
-                    "staph_abricate_master_summary.json",
-                    "staph_argannot_abricate_summary.tsv",
-                    "staph_argannot_summary.json",
-                    "staph_argannot_summary_report.html",
-                    "staph_card_abricate_summary.tsv",
-                    "staph_card_summary.json",
-                    "staph_card_summary_report.html",
-                    "staph_megares_abricate_summary.tsv",
-                    "staph_megares_summary.json",
-                    "staph_megares_summary_report.html",
-                    "staph_ncbi_abricate_summary.tsv",
-                    "staph_ncbi_summary.json",
-                    "staph_ncbi_summary_report.html",
-                    "staph_resfinder_abricate_summary.tsv",
-                    "staph_resfinder_summary.json",
-                    "staph_resfinder_summary_report.html",
-                    "staph_vfdb_abricate_summary.tsv",
-                    "staph_vfdb_summary.json",
-                    "staph_vfdb_summary_report.html"
-                    "staph_plasmidfinder_abricate_summary.tsv",
-                    "staph_plasmidfinder_summary.json",
-                    "staph_plasmidfinder_summary_report.html"
-                    "staph_ecoh_abricate_summary.tsv",
-                    "staph_ecoh_summary.json",
-                    "staph_ecoh_summary_report.html"
-                    "staph_ecoli_vf_abricate_summary.tsv",
-                    "staph_ecoli_vf_summary.json",
-                    "staph_ecoli_vf_summary_report.html"
-                ]
-            }
-            
-            total_copied = 0
-            
-            # Copy files from each module's results directory
-            for module_dir, files in summary_files_by_module.items():
-                source_path = output_dir / module_dir
-                if not source_path.exists():
-                    continue  # Skip if module wasn't run
-                    
-                for file in files:
-                    source_file = source_path / file
-                    if source_file.exists():
-                        target_file = final_report_dir / file
-                        shutil.copy2(source_file, target_file)
-                        total_copied += 1
-                    else:
-                        # Try to find the file in alternative locations
-                        # Some files might be in root of module directory
-                        alt_paths = [
-                            self.base_dir / "modules" / module_dir.replace("_results", "_module") / file,
-                            self.base_dir / "modules" / "summary_module" / file
-                        ]
-                        for alt_path in alt_paths:
-                            if alt_path.exists():
-                                target_file = final_report_dir / file
-                                shutil.copy2(alt_path, target_file)
-                                total_copied += 1
-                                break
-            
-            # Copy comprehensive reports from summary_module
             summary_module_path = self.base_dir / "modules" / "summary_module"
-            comprehensive_reports = [
-                "staphscope_comprehensive_report.html",
-                "staphscope_comprehensive_report.json",
-                "staphscope_comprehensive_report.tsv"
+            
+            # List of HTML reports needed by ultimate reporter
+            html_reports_needed = [
+                # AMR reports
+                ("amr_results", "staph_amrfinder_summary_report.html"),
+                # ABRicate reports
+                ("abricate_results", "staph_card_summary_report.html"),
+                ("abricate_results", "staph_plasmidfinder_summary_report.html"),
+                ("abricate_results", "staph_ncbi_summary_report.html"),
+                ("abricate_results", "staph_vfdb_summary_report.html"),
+                ("abricate_results", "staph_megares_summary_report.html"),
+                ("abricate_results", "staph_resfinder_summary_report.html"),
+                ("abricate_results", "staph_argannot_summary_report.html"),
             ]
             
-            for report in comprehensive_reports:
-                source_file = summary_module_path / report
-                if source_file.exists():
-                    target_file = final_report_dir / report
-                    shutil.copy2(source_file, target_file)
-                    total_copied += 1
-                    self.banner.display_info(f"  ✓ Copied: {report}")
+            copied_count = 0
             
-            self.banner.display_success(f"Copied {total_copied} files to final report directory")
+            for source_dir, html_file in html_reports_needed:
+                source_path = output_dir / source_dir / html_file
+                if source_path.exists():
+                    target_path = summary_module_path / html_file
+                    shutil.copy2(source_path, target_path)
+                    copied_count += 1
+                    self.banner.display_info(f"  ✓ Copied: {html_file}")
+                else:
+                    self.banner.display_warning(f"  ✗ Not found: {html_file}")
+            
+            # Also ensure comprehensive report is already there (it should be from previous step)
+            comprehensive_file = summary_module_path / "staphscope_comprehensive_report.html"
+            if comprehensive_file.exists():
+                self.banner.display_info(f"  ✓ Comprehensive report already exists")
+            else:
+                self.banner.display_error("Comprehensive report not found - required for ultimate reporter")
+                return False
+            
+            self.banner.display_success(f"Copied {copied_count} HTML reports to summary_module")
             return True
             
         except Exception as e:
-            self.banner.display_error(f"Error copying summary files: {str(e)}")
+            self.banner.display_error(f"Error copying HTML reports: {str(e)}")
             return False
 
     def run_comprehensive_report(self, output_dir: Path) -> bool:
-        """Run comprehensive report generation as final step - WITHOUT module header"""
+        """Run comprehensive report generation"""
         try:
             summary_module_path = self.base_dir / "modules" / "summary_module"
             comprehensive_script = summary_module_path / "comprehensive_report.py"
@@ -692,48 +628,122 @@ class StaphScopeOrchestrator:
                 self.banner.display_error(f"Comprehensive report script not found: {comprehensive_script}")
                 return False
             
-            # Step 1: Copy required files to summary_module
+            # Copy required files to summary_module
             if not self.copy_required_files_for_comprehensive_report(output_dir):
                 self.banner.display_warning("Skipping comprehensive report due to missing files")
                 return False
             
-            # Step 2: Run comprehensive report in summary_module
-            self.banner.display_info("Generating comprehensive report...")
+            # Run comprehensive report
+            self.banner.display_info("Running comprehensive report...")
             
             cmd = [sys.executable, str(comprehensive_script)]
             result = subprocess.run(cmd, capture_output=True, text=True, cwd=summary_module_path)
             
             if result.returncode == 0:
                 self.banner.display_success("Comprehensive report generated successfully!")
-                
-                # Step 3: Create final report directory
-                final_report_dir = output_dir / "Staphscope_final_report"
-                final_report_dir.mkdir(parents=True, exist_ok=True)
-                
-                # Step 4: Copy all summary files to final report directory
-                self.copy_all_summary_files_to_final_report(output_dir, final_report_dir)
-                
-                self.banner.display_success(f"✅ All reports consolidated in: {final_report_dir}")
-                
-                # Display the comprehensive report files
-                report_files = list(final_report_dir.glob("*.html")) + list(final_report_dir.glob("*.json")) + list(final_report_dir.glob("*.tsv"))
-                report_files = [f for f in report_files if "comprehensive" in f.name]
-                
-                if report_files:
-                    self.banner.display_info("Comprehensive Reports Generated:")
-                    for report in sorted(report_files):
-                        self.banner.display_info(f"  📄 {report.name}")
-                
                 return True
             else:
                 self.banner.display_warning("Comprehensive report generation had issues")
                 if result.stderr:
-                    print(f"Comprehensive report stderr: {result.stderr[:200]}...")
+                    error_lines = result.stderr.strip().split('\n')
+                    for line in error_lines:
+                        if "error" in line.lower() or "failed" in line.lower():
+                            print(f"  Comprehensive report error: {line}")
                 return True
                 
         except Exception as e:
             self.banner.display_error(f"Comprehensive report generation failed: {str(e)}")
             return False
+
+    def run_ultimate_reporter(self, output_dir: Path) -> bool:
+        """Run ultimate reporter"""
+        try:
+            summary_module_path = self.base_dir / "modules" / "summary_module"
+            ultimate_script = summary_module_path / "staphscope_ultimate_reporter.py"
+            
+            if not ultimate_script.exists():
+                self.banner.display_error(f"Ultimate reporter script not found: {ultimate_script}")
+                return False
+            
+            # Copy HTML reports needed by ultimate reporter
+            if not self.copy_html_reports_for_ultimate_reporter(output_dir):
+                self.banner.display_warning("Skipping ultimate reporter due to missing HTML reports")
+                return False
+            
+            # Run ultimate reporter silently
+            self.banner.display_info("Running ultimate reporter (silent mode)...")
+            
+            cmd = [sys.executable, str(ultimate_script), "-i", "."]
+            result = subprocess.run(cmd, capture_output=True, text=True, cwd=summary_module_path)
+            
+            if result.returncode == 0:
+                self.banner.display_success("Ultimate reporter completed successfully!")
+                return True
+            else:
+                self.banner.display_warning("Ultimate reporter had issues")
+                if result.stderr:
+                    error_lines = result.stderr.strip().split('\n')
+                    for line in error_lines:
+                        if "error" in line.lower() or "failed" in line.lower():
+                            print(f"  Ultimate reporter error: {line}")
+                return True
+                
+        except Exception as e:
+            self.banner.display_error(f"Ultimate reporter failed: {str(e)}")
+            return False
+
+    def copy_summary_results_to_final_directory(self, output_dir: Path):
+        """Copy only comprehensive report files and ultimate reporter directory to final location"""
+        try:
+            self.banner.display_info("Copying summary results to final directory...")
+            
+            summary_module_path = self.base_dir / "modules" / "summary_module"
+            final_report_dir = output_dir / "Staphscope_final_report"
+            final_report_dir.mkdir(parents=True, exist_ok=True)
+            
+            # Files to copy from comprehensive reporter
+            comprehensive_files = [
+                "staphscope_comprehensive_report.html",
+                "staphscope_comprehensive_report.json",
+                "staphscope_comprehensive_report.tsv"
+            ]
+            
+            # Copy comprehensive report files
+            for file_name in comprehensive_files:
+                source_file = summary_module_path / file_name
+                if source_file.exists():
+                    target_file = final_report_dir / file_name
+                    shutil.copy2(source_file, target_file)
+                    self.banner.display_info(f"  ✓ Copied: {file_name}")
+                else:
+                    self.banner.display_warning(f"  ✗ Not found: {file_name}")
+            
+            # Copy ultimate reporter directory
+            ultimate_reports_dir = summary_module_path / "STAPHSCOPE_ULTIMATE_REPORTS"
+            if ultimate_reports_dir.exists() and ultimate_reports_dir.is_dir():
+                target_ultimate_dir = final_report_dir / "STAPHSCOPE_ULTIMATE_REPORTS"
+                if target_ultimate_dir.exists():
+                    shutil.rmtree(target_ultimate_dir)
+                shutil.copytree(ultimate_reports_dir, target_ultimate_dir)
+                
+                # Count files in ultimate directory
+                ultimate_files = list(ultimate_reports_dir.glob("*"))
+                self.banner.display_info(f"  ✓ Copied: STAPHSCOPE_ULTIMATE_REPORTS directory ({len(ultimate_files)} files)")
+            
+            self.banner.display_success(f"✅ All summary results copied to: {final_report_dir}")
+            
+            # Display what was copied
+            self.banner.display_info("Summary Reports Generated:")
+            all_files = list(final_report_dir.glob("*"))
+            for file_path in sorted(all_files):
+                if file_path.is_dir():
+                    dir_files = list(file_path.glob("*"))
+                    self.banner.display_info(f"  📁 {file_path.name} ({len(dir_files)} files)")
+                else:
+                    self.banner.display_info(f"  📄 {file_path.name}")
+            
+        except Exception as e:
+            self.banner.display_error(f"Error copying summary results: {str(e)}")
 
     def run_sequential_analyses(self, fasta_files: List[Path], output_dir: Path, threads: int, 
                                skip_modules: Dict[str, bool]) -> Dict[str, bool]:
@@ -836,7 +846,8 @@ class StaphScopeOrchestrator:
                 ("AMRFinderPlus", not skip_modules.get('amr', False)),
                 ("ABRicate", not skip_modules.get('abricate', False)),
                 ("Lineage Reference", not skip_modules.get('lineage', False)),
-                ("Comprehensive Report", not skip_comprehensive)
+                ("Comprehensive Report", not skip_comprehensive),
+                ("Ultimate Reporter", not skip_comprehensive)
             ]
             
             for analysis, enabled in analyses_to_run:
@@ -854,14 +865,25 @@ class StaphScopeOrchestrator:
                 self.banner.display_module_header("Lineage Database", "S. aureus Lineage Reference Generation")
                 lineage_success = self.run_lineage_analysis(output_path)
                 analysis_results["Lineage Reference"] = lineage_success
-                print()  # Add spacing
+                print()
             
-            # Run comprehensive report if not skipped
+            # Run summary reports if not skipped
             if not skip_comprehensive:
                 self.banner.display_module_header("Comprehensive Report", "Unified MLST, spa & SCCmec Analysis")
                 comprehensive_success = self.run_comprehensive_report(output_path)
                 analysis_results["Comprehensive Report"] = comprehensive_success
-                print()  # Add spacing
+                
+                # Run ultimate reporter immediately after comprehensive report
+                if comprehensive_success:
+                    ultimate_success = self.run_ultimate_reporter(output_path)
+                    analysis_results["Ultimate Reporter"] = ultimate_success
+                    
+                    # Copy results to final directory
+                    self.copy_summary_results_to_final_directory(output_path)
+                else:
+                    self.banner.display_warning("Skipping ultimate reporter due to comprehensive report failure")
+                
+                print()
             
             # Calculate analysis time
             analysis_time = datetime.now() - start_time
@@ -914,6 +936,7 @@ Analysis Modules:
   • ABRicate (Comprehensive resistance/Plasmid/virulence)
   • Lineage reference database
   • Comprehensive report (MLST + spa + SCCmec summary)
+  • Ultimate reporter (Gene-centric integrated analysis) - runs with comprehensive report
 
 Output: Comprehensive results for all analyses in organized directories
 Please run abricate --setupdb for recent gene annotations!!!
@@ -944,7 +967,7 @@ Transforming fragmented genomic data into coherent biological narratives 🧬✨
     parser.add_argument('--skip-lineage', action='store_true',
                        help='Skip lineage reference generation')
     parser.add_argument('--skip-comprehensive', action='store_true',
-                       help='Skip comprehensive report generation (MLST + spa + SCCmec)')
+                       help='Skip comprehensive report generation (MLST + spa + SCCmec) AND ultimate reporter')
     
     args = parser.parse_args()
     
