@@ -1,4 +1,14 @@
 
+```bash
+███████╗████████╗ █████╗ ██████╗ ██╗  ██╗███████╗ ██████╗ ██████╗ ██████╗ ███████╗
+██╔════╝╚══██╔══╝██╔══██╗██╔══██╗██║  ██║██╔════╝██╔════╝██╔═══██╗██╔══██╗██╔════╝
+███████╗   ██║   ███████║██████╔╝███████║███████╗██║     ██║   ██║██████╔╝█████╗  
+╚════██║   ██║   ██╔══██║██╔═══╝ ██╔══██║╚════██║██║     ██║   ██║██╔═══╝ ██╔══╝  
+███████║   ██║   ██║  ██║██║     ██║  ██║███████║╚██████╗╚██████╔╝██║     ███████╗
+╚══════╝   ╚═╝   ╚═╝  ╚═╝╚═╝     ╚═╝  ╚═╝╚══════╝ ╚═════╝ ╚═════╝ ╚═╝     ╚══════╝
+```  
+
+
 <div align="center">
 
 # 🔬 StaphScope
@@ -25,14 +35,6 @@
 
 </div>
 
-```bash
-███████╗████████╗ █████╗ ██████╗ ██╗  ██╗███████╗ ██████╗ ██████╗ ██████╗ ███████╗
-██╔════╝╚══██╔══╝██╔══██╗██╔══██╗██║  ██║██╔════╝██╔════╝██╔═══██╗██╔══██╗██╔════╝
-███████╗   ██║   ███████║██████╔╝███████║███████╗██║     ██║   ██║██████╔╝█████╗  
-╚════██║   ██║   ██╔══██║██╔═══╝ ██╔══██║╚════██║██║     ██║   ██║██╔═══╝ ██╔══╝  
-███████║   ██║   ██║  ██║██║     ██║  ██║███████║╚██████╗╚██████╔╝██║     ███████╗
-╚══════╝   ╚═╝   ╚═╝  ╚═╝╚═╝     ╚═╝  ╚═╝╚══════╝ ╚═════╝ ╚═════╝ ╚═╝     ╚══════╝
-```  
 ---
 
 ## 📋 **Table of Contents**
@@ -110,8 +112,22 @@ StaphScope delivers:
 
 ### **Install in 60 seconds**
 ```bash
-# Method 1: Conda (Recommended - handles all dependencies)
-conda install -c bbeckley-hub -c bioconda -c conda-forge staphscope
+# Method 1: (A) Conda (Recommended - handles all dependencies)
+# Put conda-forge first (has newer biopython versions)
+conda create -n staphscope -c conda-forge -c bioconda -c bbeckley-hub staphscope -y
+
+
+(B) conda create -n staphscope -c conda-forge -c bioconda -c bbeckley-hub staphscope=1.0.0=py38_0 --yes
+
+(C) # Create environment with Python 3.9 and install staphscope
+conda create -n staphscope-env python=3.9 staphscope -c conda-forge -c bioconda
+
+conda activate staphscope-env
+
+or
+
+# Install using mamba (Rapid)
+mamba install -c conda-forge -c bioconda -c bbeckley-hub staphscope
 
 # Method 2: From source
 git clone https://github.com/bbeckley-hub/staphscope-typing-tool.git
@@ -119,6 +135,8 @@ cd staphscope-typing-tool
 conda env create -f environment.yml
 conda activate staphscope
 pip install -e .
+```
+Refer to [**Update Databases (Recommended)- Please refer to these resources for STAPHSCOPE's integrated databases.**]
 ```
 
 ### **Run your first analysis**
@@ -165,7 +183,7 @@ Examples:
   staphscope -i "*.fna" -o batch_results --threads 8
   staphscope -i "*.fasta" -o analysis --threads 16 --skip-lineage
   staphscope -i "genome*.fa" -o results/ --threads 4 --skip-comprehensive
-```
+
 Supported FASTA formats: .fna, .fasta, .fa, .fn
 
 Analysis Modules:
@@ -182,7 +200,7 @@ Please run abricate --setupdb for recent gene annotations!!!
 ⭐ Star us on GitHub if you find this tool useful!
 
 Transforming fragmented genomic data into coherent biological narratives 🧬✨
-   
+```   
 ---
 ## 🔧 **Installation**
 
@@ -209,30 +227,46 @@ source ~/.bashrc
 #### **2. Install StaphScope**
 ```bash
 # Create and activate environment
-conda create -n staphscope python=3.10 or 3.8 or 3.9 or 3.11 or 3.12
+conda create -n staphscope python=3.10 or 3.8 or 3.9 or 3.11 or 3.12 or (3.13 or 3.14)- New
 conda activate staphscope
 
 # Install from conda-forge channel
-conda install -c bbeckley-hub -c bioconda -c conda-forge staphscope
+conda install -c conda-forge -c bioconda -c bbeckley-hub staphscope
+
+# Install using mamba (Rapid)
+mamba install -c conda-forge -c bioconda -c bbeckley-hub staphscope
 
 # Verify installation
 staphscope --version
 ```
----
 
-NB: ALWAYS CREATE A PYTHON ENV BEFORE INSTALLING STAPHSCOPE TO AVOID CONDA ISSUES!!!!!!
+NB: ALWAYS CHECK THE ORDER OF YOUR CHANNELS BEFORE INSTALLING STAPHSCOPE TO AVOID CONDA ISSUES!!!!!!
+  ```
+    # Add channels in correct order
+conda config --add channels conda-forge
+conda config --add channels bioconda
+conda config --add channels bbeckley-hub
+```
 --
 
 #### **3. Update Databases (Recommended)**
 ```bash
-# Update ABRicate databases
+# Update ABRicate databases(version ≥1.0.1)
+
 abricate --setupdb
-
-# AMRFinderPlus database
-Bundles v4.24 (latest)
 ```
+---
+### **4. All other Bundled Databases**
+[https://pubmlst.org/organisms/staphylococcus-aureus]
+[https://github.com/tseemann/mlst]
+[http://spa.ridom.de/dynamic/sparepeats.fasta]
+[https://spa.ridom.de/dynamic/spatypes.txt]
+[https://bitbucket.org/genomicepidemiology/Sccmecfinder]
+[https://github.com/ncbi/amr]
 
+---
 ### **Docker Installation (Alternative)**
+---
 ```dockerfile
 # Coming soon! Containerized version in development
 # docker pull bbeckley/staphscope:latest
@@ -256,21 +290,6 @@ staphscope -i "*.fasta" -o analysis -t 16
 # Skip specific modules (if already analyzed)
 staphscope -i sample.fna -o results --skip-spa --skip-lineage
 ```
-
-### **Advanced Options**
-```bash
-# Full command syntax
-staphscope [-h] -i INPUT -o OUTPUT_DIR [-t THREADS] [--skip-mlst] 
-           [--skip-spa] [--skip-sccmec] [--skip-amr] [--skip-abricate] 
-           [--skip-lineage] [--force] [--verbose]
-
-# Example: Outbreak investigation (prioritize speed)
-staphscope -i "outbreak_*.fasta" -o outbreak_analysis --threads max --skip-lineage
-
-# Example: Research publication (complete analysis)
-staphscope -i research_samples/*.fn -o publication_data -t 32 --verbose
-```
-
 ### **Input Formats**
 - **Accepted**: `.fna`, `.fasta`, `.fa`, `.fn`
 - **Required**: Assembled genomes (contigs or complete)
@@ -365,7 +384,7 @@ Staphscope/
 │
 └── Staphscope_final_report/             # Consolidated final reports
     ├── staphscope_comprehensive_report.html/.json/.tsv  # Master reports
-    ├── staphscope_summary.html/.tsv                     # High-level summary
+    ├── STAPHSCOPE_ULTIMATE_REPORTS                      # High-level summary(NEW)
     ├── staphscope_detailed_results.csv                  # Detailed CSV
     ├── mlst_summary.*                                   # MLST summaries
     ├── spa_summary.*                                    # spa summaries
@@ -551,7 +570,7 @@ ST425: 1 isolate (4.2%)
 | **Installation** | Single Conda package | Complex (Nextflow+Docker) | Conda + DB downloads | Single Conda |
 | **Execution** | Local CLI | Local/Cluster | Local | CLI + Web GUI |
 | **Parallelization** | Auto-resource detection | Pipeline-level | Sample-level | Single-threaded |
-| **MRSA Features** | Integrated classification + lineage DB | General typing | General typing | Resistance only |
+| **MRSA Features** | Integrated classification + lineage DB + S. areus specific typing | General typing | General typing | Resistance only |
 | **Critical Gene Flagging** | ✅ *mecA*, PVL, *van* genes | ❌ Absent | ❌ Absent | ❌ Absent |
 | **Resource Needs** | Low-moderate (2+ GB) | High (HPC recommended) | High (Cluster) | Low-moderate |
 | **Setup Ease** | Single command | Multiple steps | Multiple steps | Single command |
@@ -642,7 +661,7 @@ A: StaphScope is a research tool. While highly accurate, results should be valid
 
 ### **Technical Questions**
 **Q: Why only assembled genomes? When will raw read support be added?**  
-A: We focused first on assembled genomes for speed and simplicity. Raw read support is our #1 priority for 2025 development.
+A: We focused first on assembled genomes for speed and simplicity. Raw read support is our #1 priority for 2026 development.
 
 **Q: How often are databases updated?**  
 A: We have planned sequential releases when databases updates are needed. The lineage database is manually curated every 6 months. Users can run `abricate --setupdb` anytime.
@@ -777,8 +796,7 @@ StaphScope stands on the shoulders of giants. We are deeply grateful to:
 - **Testing Community**: Early adopters who provided invaluable feedback
 
 ### **Special Thanks**
-- **Reviewers & Editors**: For strengthening this manuscript
-- **University of Ghana**: For institutional support
+- **Reviewers & Editors**: For strengthening this tool & its manuscript
 - **Open Science Community**: For making this work possible
 
 > "If we ever meet in person, the drinks are on me!" - Brown Beckley
@@ -813,6 +831,8 @@ We welcome collaborations on:
 - 🏥 Clinical validation projects
 - 💻 Bioinformatics tool development
 - 🌍 Global surveillance initiatives
+- 🏥 Bioinformatics application in Public Health
+- 🧬 Infectious disease& immunological studies etc.
   
 
 **Contact for collaboration**: brownbeckley94@gmail.com
@@ -851,3 +871,9 @@ All dependencies are properly credited and their licenses respected.
 *StaphScope: Precision surveillance for the antibiotic resistance era.*
 
 </div>
+
+
+  Found this tool useful? Drop a star ⭐ and follow the page for more exciting updates on planned modules!!
+
+---
+
