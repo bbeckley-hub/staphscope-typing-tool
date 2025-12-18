@@ -227,7 +227,7 @@ source ~/.bashrc
 #### **2. Install StaphScope**
 ```bash
 # Create and activate environment
-conda create -n staphscope python=3.10 or 3.8 or 3.9 or 3.11 or 3.12 or 3.13
+conda create -n staphscope python=3.10 or 3.8 or 3.9 or 3.11 or 3.12 or (3.13 or 3.14)- New
 conda activate staphscope
 
 # Install from conda-forge channel
