@@ -127,6 +127,8 @@ conda activate staphscope-env
 or
 
 # Install using mamba (Rapid)
+mamba create -n staphscope -c conda-forge -c bioconda -c bbeckley-hub staphscope -y
+
 mamba install -c conda-forge -c bioconda -c bbeckley-hub staphscope
 
 # Method 2: From source
