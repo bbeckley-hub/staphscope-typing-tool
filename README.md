@@ -876,6 +876,18 @@ All dependencies are properly credited and their licenses respected.
 
 
   Found this tool useful? Drop a star ⭐ and follow the page for more exciting updates on planned modules!!
+*Join the Fight Against Antimicrobial Resistance**
 
----
+Antimicrobial resistance (AMR) represents one of the most significant global health threats of our time. We invite researchers, clinicians, and public health professionals to collaborate with us in:
+
+- Expanding and validating our *S. areus* database
+- Sharing regional epidemiological data
+- Developing standardized typing methodologies
+- Advancing AMR surveillance and intervention strategies
+- Feature suggestions to improve practical utility
+
+**Together, we can enhance global AMR monitoring and develop more effective treatment strategies.**
+
+
+
 
