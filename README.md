@@ -654,7 +654,6 @@ STAPHSCOPE reports are structured with clear tables and organized data that AI c
 ---
 
 *AI provides powerful insights but always verify critical findings with domain experts.*
-``
 
 ## ⚡ Instant Start
 1. Install AI extension (ChatGPT/Claude/Gemini)
@@ -687,8 +686,7 @@ STAPHSCOPE reports are structured with clear tables and organized data that AI c
 • "Concerning patterns?"
 ```
 ---
-AI assists, experts decide.
-"""
+Food for thought: "AI assists, experts decide"
 
 ## 🔮 **Future Development**
 
