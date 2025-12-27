@@ -587,7 +587,7 @@ ST425: 1 isolate (4.2%)
 - ⚠️ **Use Mykrobe**: Quick resistance profiling only, web interface preferred
 
 ---
-# **STAPHSCOPE AI FEATURE INTEGRATION-A COMPREHENSIVE GUIDEd**
+# **STAPHSCOPE AI FEATURE INTEGRATION--- A COMPREHENSIVE GUIDE**
 
 # Using AI with STAPHSCOPE HTML Reports
 
