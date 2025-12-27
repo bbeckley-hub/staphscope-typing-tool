@@ -587,6 +587,101 @@ ST425: 1 isolate (4.2%)
 - ⚠️ **Use Mykrobe**: Quick resistance profiling only, web interface preferred
 
 ---
+# **STAPHSCOPE AI FEATURE INTEGRATION-A COMPREHENSIVE GUIDEd**
+
+# Using AI with STAPHSCOPE HTML Reports
+
+STAPHSCOPE generates comprehensive HTML reports that are **perfect for AI analysis**. Here's how to use AI tools to get the most from your data.
+
+## 🚀 Quick Start
+
+1. **Install any AI browser extension**:
+   - [ChatGPT for Chrome/Edge](https://chrome.google.com/webstore/detail/chatgpt-for-google/jgjaeacdkonaoafenlfkkkmbaopkbilf)
+   - [Claude for Chrome](https://chrome.google.com/webstore/detail/claude-ai-web-assistant/fkhjcgjacbnkakjlcaobebgdlhcdcbnn)
+   - [Google AI (Gemini)](https://chrome.google.com/webstore/detail/google-ai-for-chrome/hgifkpegdnfpkihjiolcpmgohpbnfldk)
+
+2. **Open your report**: `staphscope_ultimate_report.html`
+
+3. **Select & Ask**:
+   - Navigate to any section (AMR Genes, MLST Analysis, etc.)
+   - Select the text/data you're interested in
+   - Right-click → Choose your AI extension → Ask your question
+
+## 🤖 Example Questions
+
+### For MLST Analysis:
+```text
+"What is the clinical significance of ST5 vs ST8?"
+"Which samples are MRSA and what ST are they?"
+```
+
+### For AMR Genes:
+```text
+"Explain the mecA gene and its importance"
+"Which samples have multiple resistance genes?"
+"What treatment implications do these genes have?"
+```
+
+### For Virulence Factors:
+```text
+"Which samples carry PVL toxin?"
+"Are there any high-risk virulence combinations?"
+```
+
+### For Pattern Discovery:
+```text
+"Are there correlations between ST and specific genes?"
+"Identify any concerning patterns in this dataset"
+```
+
+## 📊 Pro Tips
+
+1. **Provide context**: Start with "I'm analyzing S. aureus genomics data..."
+2. **Be specific**: Instead of "tell me about this", ask "what does SCCmec type IV indicate?"
+3. **Ask for interpretations**: "What are the clinical implications of these findings?"
+4. **Request summaries**: "Summarize the resistance profile of sample XYZ"
+
+## 💡 Why This Works
+
+STAPHSCOPE reports are structured with clear tables and organized data that AI can easily understand. Each gene is shown with ALL genomes that contain it, making pattern analysis straightforward.
+
+## 📞 Need Help?
+
+- GitHub Issues: [bbeckley-hub/staphscope-typing-tool](https://github.com/bbeckley-hub/staphscope-typing-tool)
+- Email: brownbeckley94@gmail.com
+- University of Ghana Medical School
+
+---
+
+*AI provides powerful insights but always verify critical findings with domain experts.*
+``
+
+## ⚡ Instant Start
+1. Install AI extension (ChatGPT/Claude/Gemini)
+2. Open staphscope_ultimate_report.html
+3. Select text → Right-click → Ask AI
+
+## 🎯 Top Questions to Ask
+
+### MLST Analysis
+• "Most common sequence types?"
+• "Clinical significance of [ST]?"
+
+### AMR Genes
+• "Samples with [gene]?"
+• "Treatment implications?"
+
+### Virulence Factors
+• "PVL toxin carriers?"
+• "High-risk combinations?"
+
+### Pattern Discovery
+• "Correlations between ST and resistance?"
+• "Concerning patterns?"
+
+---
+AI assists, experts decide.
+"""
 
 ## 🔮 **Future Development**
 
