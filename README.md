@@ -664,21 +664,28 @@ STAPHSCOPE reports are structured with clear tables and organized data that AI c
 ## 🎯 Top Questions to Ask
 
 ### MLST Analysis
+```text
 • "Most common sequence types?"
 • "Clinical significance of [ST]?"
+```
 
 ### AMR Genes
+```text
 • "Samples with [gene]?"
 • "Treatment implications?"
+```
 
 ### Virulence Factors
+```text
 • "PVL toxin carriers?"
 • "High-risk combinations?"
+```
 
 ### Pattern Discovery
+```text
 • "Correlations between ST and resistance?"
 • "Concerning patterns?"
-
+```
 ---
 AI assists, experts decide.
 """
