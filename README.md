@@ -21,6 +21,10 @@
 ![License](https://anaconda.org/bbeckley-hub/staphscope/badges/license.svg)
 ![Downloads](https://anaconda.org/bbeckley-hub/staphscope/badges/downloads.svg)
 
+![Docker Pulls](https://img.shields.io/docker/pulls/bbeckley/staphscope)
+![Docker Image Size](https://img.shields.io/docker/image-size/bbeckley/staphscope/latest)
+![Docker Version](https://img.shields.io/docker/v/bbeckley/staphscope)
+
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![Conda](https://img.shields.io/badge/conda-✓-green.svg)](https://docs.conda.io/en/latest/)
 [![MIT License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
@@ -251,14 +255,14 @@ conda config --add channels bbeckley-hub
 ```
 --
 
-#### **3. Update Databases (Recommended)**
+#### Update Databases (Recommended)**
 ```bash
 # Update ABRicate databases(version ≥1.0.1)
 
 abricate --setupdb
 ```
 ---
-### **4. All other Bundled Databases**
+### ** All other Bundled Databases**
 [https://pubmlst.org/organisms/staphylococcus-aureus]
 [https://github.com/tseemann/mlst]
 [http://spa.ridom.de/dynamic/sparepeats.fasta]
@@ -267,11 +271,161 @@ abricate --setupdb
 [https://github.com/ncbi/amr]
 
 ---
-### **Docker Installation (Alternative)**
+###  **3. Docker Installation (Alternative)**
 ---
-```dockerfile
-# Coming soon! Containerized version in development
-# docker pull bbeckley/staphscope:latest
+```markdown
+# 🐳 Docker Installation & Usage
+
+StaphScope is available as a Docker container for easy, reproducible, and portable analysis.
+
+## Quick Start
+
+### Option 1: Pull from Docker Hub (Recommended)
+```bash
+# Pull the latest image
+docker pull bbeckley/staphscope:latest
+
+# Run a quick test
+docker run --rm bbeckley/staphscope:latest --help
+```
+
+### Build from Source
+```bash
+# Clone the repository
+git clone https://github.com/bbeckley-hub/staphscope-typing-tool
+cd staphscope-typing-tool
+
+# Build the Docker image
+docker build -t staphscope:latest .
+
+# Test the image
+docker run --rm staphscope:latest --help
+```
+
+## 📦 Docker Hub
+The official Docker image is available on [Docker Hub](https://hub.docker.com/r/bbeckley/staphscope):
+```bash
+docker pull bbeckley/staphscope:latest
+docker pull bbeckley/staphscope:1.0.0  # Specific version
+```
+
+## 🚀 Basic Usage
+
+### Single Genome Analysis
+```bash
+# Prepare directories
+mkdir -p data/input data/output
+
+# Add your FASTA file
+cp your_genome.fasta data/input/
+
+# Run analysis
+docker run --rm \
+  -v $(pwd)/data/input:/data/input \
+  -v $(pwd)/data/output:/data/output \
+  bbeckley/staphscope:latest \
+  -i "your_genome.fasta" \
+  -o /data/output \
+  -t 4
+```
+
+### Batch Analysis (Multiple Genomes)
+```bash
+# Prepare batch input
+mkdir -p batch_analysis/input batch_analysis/output
+cp *.fasta batch_analysis/input/
+
+# Run batch analysis with 8 threads
+docker run --rm \
+  -v $(pwd)/batch_analysis/input:/data/input \
+  -v $(pwd)/batch_analysis/output:/data/output \
+  bbeckley/staphscope:latest \
+  -i "*.fasta" \
+  -o /data/output \
+  -t 8
+```
+
+### Quick Test
+```bash
+# Test with minimal data
+mkdir -p test/input test/output
+echo ">test" > test/input/test.fasta
+echo "ATCG" >> test/input/test.fasta
+
+docker run --rm \
+  -v $(pwd)/test/input:/data/input \
+  -v $(pwd)/test/output:/data/output \
+  bbeckley/staphscope:latest \
+  -i "*.fasta" -o /data/output \
+  --skip-amr --skip-abricate --skip-mlst \
+  --skip-spa --skip-sccmec --skip-lineage --skip-comprehensive
+```
+
+## 📁 Directory Structure for Mounting
+
+When running the container, mount these directories:
+
+| Host Directory | Container Path | Purpose |
+|----------------|----------------|---------|
+| `./input/` | `/data/input` | Input FASTA files (.fasta, .fna, .fa) |
+| `./output/` | `/data/output` | All analysis results |
+
+## 🔧 Available Commands
+
+```bash
+# Show help
+docker run --rm bbeckley/staphscope:latest --help
+
+# Show version
+docker run --rm bbeckley/staphscope:latest --version
+```
+## 🛠️ Troubleshooting
+
+### Permission Issues
+```bash
+# Add user to docker group (Linux)
+sudo usermod -aG docker $USER
+newgrp docker
+
+# Or run with sudo
+sudo docker run --rm bbeckley/staphscope:latest --help
+```
+
+### Out of Memory
+```bash
+# Limit memory usage
+docker run --memory="8g" --rm bbeckley/staphscope:latest ...
+```
+
+## 📋 System Requirements
+
+- **Docker Engine** 20.10+ or **Docker Desktop** 4.0+
+- **Minimum RAM**: 4GB (8GB recommended for large datasets)
+- **Disk Space**: 2GB for image + space for input/output
+- **CPU**: 2+ cores (4+ recommended)
+
+## 🔄 Updating
+
+```bash
+# Pull latest version
+docker pull bbeckley/staphscope:latest
+
+# Remove old versions
+docker image prune
+```
+---
+
+**✨ Pro Tip:** For production use, consider using Docker volumes for persistent storage:
+```bash
+docker volume create staphscope_data
+docker run -v staphscope_data:/data/output bbeckley/staphscope:latest ...
+```
+## Image Details
+
+### Layers
+```
+IMAGE               SIZE
+staphscope:latest   ~1.2GB
 ```
 
 ---
