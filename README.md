@@ -21,9 +21,10 @@
 ![License](https://anaconda.org/bbeckley-hub/staphscope/badges/license.svg)
 ![Downloads](https://anaconda.org/bbeckley-hub/staphscope/badges/downloads.svg)
 
-![Docker Pulls](https://img.shields.io/docker/pulls/bbeckley/staphscope)
-![Docker Image Size](https://img.shields.io/docker/image-size/bbeckley/staphscope/latest)
-![Docker Version](https://img.shields.io/docker/v/bbeckley/staphscope)
+
+[![Docker Pulls](https://img.shields.io/docker/pulls/bbeckleyhub/staphscope)](https://hub.docker.com/r/bbeckleyhub/staphscope)
+[![Docker Image Size](https://img.shields.io/docker/image-size/bbeckleyhub/staphscope/latest)](https://hub.docker.com/r/bbeckleyhub/staphscope)
+[![Docker Version](https://img.shields.io/docker/v/bbeckleyhub/staphscope?sort=semver)](https://hub.docker.com/r/bbeckleyhub/staphscope)
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![Conda](https://img.shields.io/badge/conda-✓-green.svg)](https://docs.conda.io/en/latest/)
@@ -283,10 +284,10 @@ StaphScope is available as a Docker container for easy, reproducible, and portab
 ### Option 1: Pull from Docker Hub (Recommended)
 ```bash
 # Pull the latest image
-docker pull bbeckley/staphscope:latest
+docker pull bbeckleyhub/staphscope:latest
 
 # Run a quick test
-docker run --rm bbeckley/staphscope:latest --help
+docker run --rm bbeckleyhub/staphscope:latest --help
 ```
 
 ### Build from Source
@@ -303,10 +304,10 @@ docker run --rm staphscope:latest --help
 ```
 
 ## 📦 Docker Hub
-The official Docker image is available on [Docker Hub](https://hub.docker.com/r/bbeckley/staphscope):
+The official Docker image is available on [Docker Hub](https://hub.docker.com/r/bbeckleyhub/staphscope):
 ```bash
-docker pull bbeckley/staphscope:latest
-docker pull bbeckley/staphscope:1.0.0  # Specific version
+docker pull bbeckleyhub/staphscope:latest
+docker pull bbeckleyhub/staphscope:1.0.0  # Specific version
 ```
 
 ## 🚀 Basic Usage
@@ -339,7 +340,7 @@ cp *.fasta batch_analysis/input/
 docker run --rm \
   -v $(pwd)/batch_analysis/input:/data/input \
   -v $(pwd)/batch_analysis/output:/data/output \
-  bbeckley/staphscope:latest \
+  bbeckleyhub/staphscope:latest \
   -i "*.fasta" \
   -o /data/output \
   -t 8
@@ -374,10 +375,10 @@ When running the container, mount these directories:
 
 ```bash
 # Show help
-docker run --rm bbeckley/staphscope:latest --help
+docker run --rm bbeckleyhub/staphscope:latest --help
 
 # Show version
-docker run --rm bbeckley/staphscope:latest --version
+docker run --rm bbeckleyhub/staphscope:latest --version
 ```
 ## 🛠️ Troubleshooting
 
@@ -388,13 +389,13 @@ sudo usermod -aG docker $USER
 newgrp docker
 
 # Or run with sudo
-sudo docker run --rm bbeckley/staphscope:latest --help
+sudo docker run --rm bbeckleyhub/staphscope:latest --help
 ```
 
 ### Out of Memory
 ```bash
 # Limit memory usage
-docker run --memory="8g" --rm bbeckley/staphscope:latest ...
+docker run --memory="8g" --rm bbeckleyhub/staphscope:latest ...
 ```
 
 ## 📋 System Requirements
@@ -408,7 +409,7 @@ docker run --memory="8g" --rm bbeckley/staphscope:latest ...
 
 ```bash
 # Pull latest version
-docker pull bbeckley/staphscope:latest
+docker pull bbeckleyhub/staphscope:latest
 
 # Remove old versions
 docker image prune
@@ -418,7 +419,7 @@ docker image prune
 **✨ Pro Tip:** For production use, consider using Docker volumes for persistent storage:
 ```bash
 docker volume create staphscope_data
-docker run -v staphscope_data:/data/output bbeckley/staphscope:latest ...
+docker run -v staphscope_data:/data/output bbeckleyhub/staphscope:latest ...
 ```
 ## Image Details
 
