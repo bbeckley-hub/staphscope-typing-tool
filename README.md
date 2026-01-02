@@ -117,14 +117,11 @@ StaphScope delivers:
 
 ### **Install in 60 seconds**
 ```bash
-# Method 1: (A) Conda (Recommended - handles all dependencies)
+# Method 1:Conda (Recommended - handles all dependencies)
 # Put conda-forge first (has newer biopython versions)
 conda create -n staphscope -c conda-forge -c bioconda -c bbeckley-hub staphscope -y
 
-
-(B) conda create -n staphscope -c conda-forge -c bioconda -c bbeckley-hub staphscope=1.0.0=py38_0 --yes
-
-(C) # Create environment with Python 3.9 and install staphscope
+# Create environment with Python 3.9 and install staphscope
 conda create -n staphscope-env python=3.9 staphscope -c conda-forge -c bioconda
 
 conda activate staphscope-env
@@ -234,7 +231,7 @@ source ~/.bashrc
 #### **2. Install StaphScope**
 ```bash
 # Create and activate environment
-conda create -n staphscope python=3.10 or 3.8 or 3.9 or 3.11 or 3.12 or (3.13 or 3.14)- New
+conda create -n staphscope python=3.10 or 3.8 or 3.9 or 3.11 or 3.12 or 3.13 or 3.14
 conda activate staphscope
 
 # Install from conda-forge channel
