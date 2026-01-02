@@ -426,7 +426,7 @@ docker run -v staphscope_data:/data/output bbeckleyhub/staphscope:latest ...
 ### Layers
 ```
 IMAGE               SIZE
-staphscope:latest   ~1.2GB
+staphscope:latest   ~500MB
 ```
 
 ---
@@ -541,14 +541,8 @@ Staphscope/
 │
 └── Staphscope_final_report/             # Consolidated final reports
     ├── staphscope_comprehensive_report.html/.json/.tsv  # Master reports
-    ├── STAPHSCOPE_ULTIMATE_REPORTS                      # High-level summary(NEW)
-    ├── staphscope_detailed_results.csv                  # Detailed CSV
-    ├── mlst_summary.*                                   # MLST summaries
-    ├── spa_summary.*                                    # spa summaries
-    ├── staph_amrfinder_*                                # AMR summaries
-    ├── staph_*_abricate_summary.tsv                    # ABRicate summaries
-    ├── staph_*_summary.json                            # JSON summaries
-    └── staph_*_summary_report.html                     # HTML summaries
+    ├── STAPHSCOPE_ULTIMATE_REPORTS                      # High-level summary( Gene-centric analysis)
+    
 ```
 
 ### **Key File Types**
