@@ -279,9 +279,7 @@ abricate --setupdb
 
 StaphScope is available as a Docker container for easy, reproducible, and portable analysis.
 
-## Quick Start
-
-### Option 1: Pull from Docker Hub (Recommended)
+### Option 1: Pull from Docker Hub 
 ```bash
 # Pull the latest image
 docker pull bbeckleyhub/staphscope:latest
@@ -379,9 +377,6 @@ When running the container, mount these directories:
 ```bash
 # Show help
 docker run --rm bbeckleyhub/staphscope:latest --help
-
-# Show version
-docker run --rm bbeckleyhub/staphscope:latest --version
 ```
 ## 🛠️ Troubleshooting
 
