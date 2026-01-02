@@ -302,9 +302,12 @@ docker build -t staphscope:latest .
 # Test the image
 docker run --rm staphscope:latest --help
 ```
-
+--
 ## 📦 Docker Hub
+
 The official Docker image is available on [Docker Hub](https://hub.docker.com/r/bbeckleyhub/staphscope):
+---
+
 ```bash
 docker pull bbeckleyhub/staphscope:latest
 docker pull bbeckleyhub/staphscope:1.0.0  # Specific version
