@@ -978,7 +978,7 @@ If you use StaphScope in your research, please cite our manuscript:
 ### **Software Citation**
 ```bibtex
 @software{staphscope2025,
-  title = {StaphScope: Comprehensive Staphylococcus aureus Genotyping Pipeline},
+  title = {StaphScope: A species-optimized computational pipeline for rapid and accessible Staphylococcus aureus genotyping and surveillance},
   author = {Brown Beckley},
   year = {2025},
   publisher = {GitHub},
