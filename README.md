@@ -421,7 +421,7 @@ docker run -v staphscope_data:/data/output bbeckleyhub/staphscope:latest ...
 ### Layers
 ```
 IMAGE               SIZE
-staphscope:latest   ~500MB
+staphscope:latest   ~2GB
 ```
 
 ---
@@ -969,9 +969,9 @@ If you use StaphScope in your research, please cite our manuscript:
 @article{beckley2025staphscope,
   title={StaphScope: A species-optimized computational pipeline for rapid and accessible Staphylococcus aureus genotyping and surveillance},
   author={Beckley, Brown and Vincent, Amarh},
-  journal={In preparation},
-  year={2025},
-  note={Manuscript submitted for publication}
+  journal={BMC Genomics},
+  year={2026},
+  note={Manuscript accepted for publication}
 }
 ```
 
