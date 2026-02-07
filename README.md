@@ -241,7 +241,7 @@ conda install -c conda-forge -c bioconda -c bbeckley-hub staphscope
 mamba install -c conda-forge -c bioconda -c bbeckley-hub staphscope
 
 # Verify installation
-staphscope --version
+staphscope --help
 ```
 
 NB: ALWAYS CHECK THE ORDER OF YOUR CHANNELS BEFORE INSTALLING STAPHSCOPE TO AVOID CONDA ISSUES!!!!!!
