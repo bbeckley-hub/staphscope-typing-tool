@@ -964,7 +964,10 @@ conda install -c bbeckley-hub staphscope  # Fresh install
 
 ### **Primary Citation**
 If you use StaphScope in your research, please cite our manuscript:
+```
+Beckley B, Amarh V. StaphScope: a species-optimized computational pipeline for rapid and accessible Staphylococcus aureus genotyping and surveillance. BMC Genomics. 2026 Feb 6. doi: 10.1186/s12864-026-12609-x. Epub ahead of print. PMID: 41645058.
 
+```
 ```bibtex
 @article{beckley2025staphscope,
   title={StaphScope: A species-optimized computational pipeline for rapid and accessible Staphylococcus aureus genotyping and surveillance},
