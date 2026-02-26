@@ -23,6 +23,7 @@ from datetime import datetime
 import psutil
 import math
 import json
+import random
 from collections import defaultdict, Counter
 
 class AMRfinderPlusExecutor:
@@ -47,7 +48,7 @@ class AMRfinderPlusExecutor:
         
         self.metadata = {
             "tool_name": "StaphScope AMRfinderPlus (BUNDLED)",
-            "version": "1.0.0", 
+            "version": "1.1.0", 
             "authors": ["Brown Beckley"],
             "email": "brownbeckley94@gmail.com",
             "github": "https://github.com/bbeckley-hub",
@@ -94,15 +95,29 @@ class AMRfinderPlusExecutor:
             'mecA', 'mecC', 'vanA', 'vanB', 'cfr', 'optrA', 'poxtA'
         }
         
+        # SAME SCIENCE QUOTES AS ABRICATE FOR CONSISTENCY
         self.science_quotes = [
-            "“The important thing is not to stop questioning. Curiosity has its own reason for existence.” - Albert Einstein",
-            "“Nothing in life is to be feared, it is only to be understood.” - Marie Curie", 
-            "“The microscope opens a new world to the investigator.” - Robert Koch",
-            "“In science, the credit goes to the man who convinces the world, not to the man to whom the idea first occurs.” - Francis Darwin",
-            "“The good thing about science is that it's true whether or not you believe in it.” - Neil deGrasse Tyson",
-            "“Science knows no country, because knowledge belongs to humanity.” - Louis Pasteur"
+            {"text": "The important thing is not to stop questioning. Curiosity has its own reason for existing.", "author": "Albert Einstein"},
+            {"text": "Science is not only a disciple of reason but also one of romance and passion.", "author": "Stephen Hawking"},
+            {"text": "Somewhere, something incredible is waiting to be known.", "author": "Carl Sagan"},
+            {"text": "The good thing about science is that it's true whether or not you believe in it.", "author": "Neil deGrasse Tyson"},
+            {"text": "In science, there are no shortcuts to truth.", "author": "Karl Popper"},
+            {"text": "Science knows no country, because knowledge belongs to humanity.", "author": "Louis Pasteur"},
+            {"text": "The science of today is the technology of tomorrow.", "author": "Edward Teller"},
+            {"text": "Nothing in life is to be feared, it is only to be understood.", "author": "Marie Curie"},
+            {"text": "Research is what I'm doing when I don't know what I'm doing.", "author": "Wernher von Braun"},
+            {"text": "The universe is not required to be in perfect harmony with human ambition.", "author": "Carl Sagan"},
+            {"text": "Staphscope represents the convergence of genomic surveillance and clinical diagnostics, transforming raw sequences into actionable insights for infection control.", "author": "Brown Beckley"},
+            {"text": "In the battle against antimicrobial resistance, tools like Staphscope are our eyes and ears, revealing the genetic blueprints of resistant pathogens.", "author": "Brown Beckley"},
+            {"text": "Staphscope isn't just a tool; it's a comprehensive system that bridges the gap between sequencing data and public health action.", "author": "Brown Beckley"},
+            {"text": "Through Staphscope, we turn the complexity of bacterial genomes into clear, interpretable reports, empowering clinicians and researchers alike.", "author": "Brown Beckley"},
+            {"text": "Staphscope is a testament to the power of bioinformatics in the modern era, making advanced pathogen typing accessible to all.", "author": "Brown Beckley"}
         ]
-        
+    
+    def get_random_quote(self):
+        """Get a random science quote - SAME AS IN ABRICATE CODE"""
+        return random.choice(self.science_quotes)
+    
     def _setup_logging(self):
         """Setup logging - must be called first in __init__"""
         logging.basicConfig(
@@ -136,11 +151,11 @@ class AMRfinderPlusExecutor:
             elif total_physical_cores <= 8:
                 optimal_cpus = total_physical_cores - 1  # Use 7/8, 6/7, etc.
             elif total_physical_cores <= 16:
-                optimal_cpus = max(8, total_physical_cores - 2)  # Use 14/16, 13/15, etc.
+                optimal_cpus = max(8, total_physical_cores - 1)  # Use 14/16, 13/15, etc.
             elif total_physical_cores <= 32:
-                optimal_cpus = max(16, total_physical_cores - 4)  # Use 28/32, 27/31, etc.
+                optimal_cpus = max(16, total_physical_cores - 3)  # Use 29/32, 27/31, etc.
             else:
-                optimal_cpus = min(32, int(total_physical_cores * 0.85))  # Use 85% on huge systems
+                optimal_cpus = min(32, int(total_physical_cores * 0.95))  # Use 95% on huge systems
             
             # Ensure at least 1 CPU and not more than available cores
             optimal_cpus = max(1, min(optimal_cpus, total_physical_cores))
@@ -355,253 +370,398 @@ class AMRfinderPlusExecutor:
         # Analyze AMR results for S. aureus
         analysis = self._analyze_saureus_amr_results(hits)
         
-        # JavaScript for rotating quotes
-        quotes_js = f"""
-        <script>
-            let quotes = {json.dumps(self.science_quotes)};
-            let currentQuote = 0;
-            
-            function rotateQuote() {{
-                document.getElementById('science-quote').innerHTML = quotes[currentQuote];
-                currentQuote = (currentQuote + 1) % quotes.length;
-            }}
-            
-            // Rotate every 10 seconds
-            setInterval(rotateQuote, 10000);
-            
-            // Initial display
-            document.addEventListener('DOMContentLoaded', function() {{
-                rotateQuote();
-            }});
-        </script>
-        """
+        # Get initial random quote
+        random_quote = self.get_random_quote()
+        
+        # Get current timestamp
+        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         
         html_content = f"""
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>StaphScope AMRfinderPlus Analysis Report</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STAPHSCOPE - AMRfinderPlus Analysis Report</title>
     <style>
-        body {{ 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            margin: 0; 
-            padding: 0; 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        * {{
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }}
+        
+        body {{
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #7e22ce 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #ffffff;
+            padding: 20px;
             min-height: 100vh;
         }}
-        .container {{ 
-            max-width: 1200px; 
-            margin: 0 auto; 
-            padding: 20px; 
+        
+        .container {{
+            max-width: 1400px;
+            margin: 0 auto;
         }}
-        .header {{ 
-            background: rgba(255, 255, 255, 0.95); 
-            padding: 30px; 
-            border-radius: 15px; 
-            margin-bottom: 30px; 
-            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-            backdrop-filter: blur(10px);
+        
+        .header {{
+            text-align: center;
+            margin-bottom: 30px;
         }}
-        .card {{ 
-            background: rgba(255, 255, 255, 0.95); 
-            padding: 25px; 
-            margin: 20px 0; 
-            border-radius: 12px; 
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-            backdrop-filter: blur(10px);
+        
+        .ascii-container {{
+            background: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            border: 2px solid rgba(0, 255, 0, 0.3);
         }}
-        .gene-table, .class-table {{ 
-            width: 100%; 
-            border-collapse: collapse; 
-            margin: 20px 0; 
-            background: white;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        
+        .ascii-art {{
+            font-family: 'Courier New', monospace;
+            font-size: 10px;
+            line-height: 1.1;
+            white-space: pre;
+            color: #00ff00;
+            text-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+            overflow-x: auto;
         }}
-        .gene-table th, .gene-table td, .class-table th, .class-table td {{ 
-            padding: 15px; 
-            text-align: left; 
-            border-bottom: 1px solid #e0e0e0; 
-        }}
-        .gene-table th, .class-table th {{ 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            font-weight: 600;
-        }}
-        tr:hover {{ background-color: #f8f9fa; }}
-        .success {{ color: #28a745; font-weight: 600; }}
-        .warning {{ color: #ffc107; font-weight: 600; }}
-        .error {{ color: #dc3545; font-weight: 600; }}
-        .summary-stats {{ 
-            display: flex; 
-            justify-content: space-around; 
-            margin: 20px 0; 
-            flex-wrap: wrap;
-        }}
-        .stat-card {{ 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 20px; 
-            border-radius: 12px; 
-            text-align: center; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            margin: 10px;
-            flex: 1;
-            min-width: 200px;
-        }}
-        .critical-stat-card {{
-            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
-            color: white;
-            padding: 20px; 
-            border-radius: 12px; 
-            text-align: center; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            margin: 10px;
-            flex: 1;
-            min-width: 200px;
-        }}
+        
         .quote-container {{
             background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            text-align: center;
+            min-height: 100px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: opacity 0.5s ease-in-out;
+        }}
+        
+        .quote-text {{
+            font-size: 18px;
+            font-style: italic;
+            margin-bottom: 10px;
+            color: #ffffff;
+        }}
+        
+        .quote-author {{
+            font-size: 14px;
+            color: #fbbf24;
+            font-weight: bold;
+        }}
+        
+        .report-section {{
+            background: rgba(255, 255, 255, 0.95);
+            color: #1f2937;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }}
+        
+        .report-section h2 {{
+            color: #1e3a8a;
+            border-bottom: 3px solid #3b82f6;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }}
+        
+        .report-section h3 {{
+            color: #1e40af;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }}
+        
+        .metrics-grid {{
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 15px;
+        }}
+        
+        .metric-card {{
+            background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
             color: white;
             padding: 20px;
-            border-radius: 12px;
-            margin: 20px 0;
-            text-align: center;
-            font-style: italic;
-            border-left: 4px solid #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         }}
-        .footer {{
-            background: rgba(0, 0, 0, 0.8);
+        
+        .metric-label {{
+            font-size: 14px;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }}
+        
+        .metric-value {{
+            font-size: 24px;
+            font-weight: bold;
+        }}
+        
+        .summary-table {{
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 14px;
+        }}
+        
+        .summary-table th {{
+            background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
             color: white;
-            padding: 30px;
-            border-radius: 12px;
-            margin-top: 40px;
+            padding: 12px;
+            text-align: left;
+            font-weight: bold;
         }}
-        .footer a {{
-            color: #667eea;
-            text-decoration: none;
+        
+        .summary-table td {{
+            padding: 12px;
+            border-bottom: 1px solid #e5e7eb;
         }}
-        .footer a:hover {{
-            text-decoration: underline;
+        
+        .summary-table tr:nth-child(even) {{
+            background-color: #f8fafc;
         }}
-        .resistance-badge {{
+        
+        .summary-table tr:hover {{
+            background-color: #e0f2fe;
+        }}
+        
+        .detail-table {{
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 13px;
+        }}
+        
+        .detail-table th {{
+            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+            color: white;
+            padding: 10px;
+            text-align: left;
+            font-weight: bold;
+        }}
+        
+        .detail-table td {{
+            padding: 10px;
+            border-bottom: 1px solid #e5e7eb;
+        }}
+        
+        .detail-table tr:nth-child(even) {{
+            background-color: #f8fafc;
+        }}
+        
+        .success {{
+            color: #16a34a;
+            font-weight: 600;
+        }}
+        
+        .warning {{
+            color: #f59e0b;
+            font-weight: 600;
+        }}
+        
+        .error {{
+            color: #dc2626;
+            font-weight: 600;
+        }}
+        
+        .critical {{ background-color: #fee2e2; font-weight: bold; }}
+        .high-risk {{ background-color: #fef3c7; }}
+        .present {{ background-color: #d1fae5; }}
+        
+        .stats-grid {{
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }}
+        
+        .stat-card {{
+            background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }}
+        
+        .stat-value {{
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }}
+        
+        .stat-label {{
+            font-size: 12px;
+            opacity: 0.9;
+        }}
+        
+        .footer {{
+            text-align: center;
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            font-size: 14px;
+        }}
+        
+        .timestamp {{
+            color: #fbbf24;
+            font-weight: bold;
+        }}
+        
+        .authorship {{
+            margin-top: 15px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            font-size: 12px;
+        }}
+        
+        .risk-badge {{
             display: inline-block;
-            background: #667eea;
+            background: #dc2626;
             color: white;
             padding: 5px 10px;
             border-radius: 15px;
             margin: 2px;
             font-size: 0.9em;
         }}
-        .high-risk {{ background: #dc3545; }}
-        .critical-risk {{ background: #8b0000; font-weight: bold; }}
-        .medium-risk {{ background: #ffc107; color: black; }}
-        .low-risk {{ background: #28a745; }}
-        .present {{ background-color: #d4edda; }}
-        .critical-row {{ background-color: #f8d7da; font-weight: bold; border-left: 4px solid #dc3545; }}
-        .high-risk-row {{ background-color: #fff3cd; border-left: 4px solid #ffc107; }}
-        /* Make sequence name column responsive with word wrapping */
-        .sequence-cell {{
+        
+        .warning-badge {{
+            display: inline-block;
+            background: #f59e0b;
+            color: black;
+            padding: 5px 10px;
+            border-radius: 15px;
+            margin: 2px;
+            font-size: 0.9em;
+        }}
+        
+        .safe-badge {{
+            display: inline-block;
+            background: #16a34a;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            margin: 2px;
+            font-size: 0.9em;
+        }}
+        
+        /* FIX FOR REVIEWER: Make product column responsive with word wrapping */
+        .product-cell {{
             white-space: normal !important;
             word-wrap: break-word;
-            max-width: 400px;
+            max-width: 500px;
             min-width: 200px;
         }}
-        /* Make tables responsive */
+        
+        /* FIX FOR REVIEWER: Make tables responsive */
         .table-responsive {{
             width: 100%;
             overflow-x: auto;
             margin: 20px 0;
         }}
-        .gene-table, .class-table {{
+        
+        .summary-table {{
             min-width: 900px;
         }}
-        /* Tool info box */
-        .tool-info {{
-            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
-            color: white;
-            padding: 15px;
-            border-radius: 8px;
-            margin: 10px 0;
-            font-size: 0.9em;
+        
+        @media (max-width: 768px) {{
+            .ascii-art {{
+                font-size: 6px;
+            }}
+            .metrics-grid {{
+                grid-template-columns: 1fr;
+            }}
+            .summary-table {{
+                font-size: 12px;
+            }}
+            .summary-table th,
+            .summary-table td {{
+                padding: 6px;
+            }}
         }}
     </style>
-    {quotes_js}
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1 style="color: #333; margin: 0; font-size: 2.5em;">🧫 StaphScope AMRfinderPlus Analysis Report</h1>
-            <p style="color: #666; font-size: 1.2em;">Comprehensive S. aureus Antimicrobial Resistance Analysis</p>
-            <div class="tool-info">
-                <strong>Tool Info:</strong> Bundled AMRfinderPlus {self.metadata['amrfinder_version']} | 
-                Database: {self.metadata['database_version']} | 
-                Analysis includes AMR genes and virulence factors (--plus mode)
+            <div class="ascii-container">
+                <div class="ascii-art">███████╗████████╗ █████╗ ██████╗ ██╗  ██╗███████╗ ██████╗ ██████╗ ██████╗ ███████╗
+██╔════╝╚══██╔══╝██╔══██╗██╔══██╗██║  ██║██╔════╝██╔════╝██╔═══██╗██╔══██╗██╔════╝
+███████╗   ██║   ███████║██████╔╝███████║███████╗██║     ██║   ██║██████╔╝█████╗  
+╚════██║   ██║   ██╔══██║██╔═══╝ ██╔══██║╚════██║██║     ██║   ██║██╔═══╝ ██╔══╝  
+███████║   ██║   ██║  ██║██║     ██║  ██║███████║╚██████╗╚██████╔╝██║     ███████╗
+╚══════╝   ╚═╝   ╚═╝  ╚═╝╚═╝     ╚═╝  ╚═╝╚══════╝ ╚═════╝ ╚═════╝ ╚═╝     ╚══════╝</div>
+            </div>
+            
+            <div class="quote-container" id="quoteContainer">
+                <div class="quote-text" id="quoteText">"{random_quote['text']}"</div>
+                <div class="quote-author" id="quoteAuthor">— {random_quote['author']}</div>
             </div>
         </div>
         
-        <div class="quote-container">
-            <div id="science-quote" style="font-size: 1.1em;"></div>
-        </div>
-"""
-        
-        # CRITICAL RISK ALERT - Show first if critical genes detected
-        if analysis['critical_risk_genes'] > 0:
-            html_content += f"""
-        <div class="card" style="border-left: 4px solid #dc3545; background: #f8d7da;">
-            <h2 style="color: #dc3545;">🚨 CRITICAL RISK AMR GENES DETECTED</h2>
-            <p><strong>{analysis['critical_risk_genes']} CRITICAL RISK antimicrobial resistance genes found:</strong></p>
-            <div style="margin: 10px 0;">
-                <p style="color: #721c24; font-weight: bold;">
-                    ⚠️ These genes confer resistance to last-resort antibiotics and represent 
-                    a serious public health concern requiring immediate attention.
-                </p>
-"""
-            for gene in analysis['critical_risk_list']:
-                html_content += f'<span class="resistance-badge critical-risk" style="font-size: 1.1em;">🚨 {gene}</span>'
-            html_content += """
-            </div>
-        </div>
-"""
-        
-        html_content += f"""
-        <div class="card">
-            <h2 style="color: #333; border-bottom: 2px solid #667eea; padding-bottom: 10px;">📊 S. aureus AMR Summary</h2>
-            <div class="summary-stats">
-                <div class="stat-card">
-                    <h3>Total AMR Genes</h3>
-                    <p style="font-size: 2em; margin: 0;">{analysis['total_genes']}</p>
+        <div class="report-section">
+            <h2>📊 S. aureus AMR Summary</h2>
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-label">Total AMR Genes</div>
+                    <div class="metric-value">{analysis['total_genes']}</div>
                 </div>
-                <div class="stat-card">
-                    <h3>High Risk Genes</h3>
-                    <p style="font-size: 2em; margin: 0;">{analysis['high_risk_genes']}</p>
+                <div class="metric-card">
+                    <div class="metric-label">High Risk Genes</div>
+                    <div class="metric-value">{analysis['high_risk_genes']}</div>
                 </div>
-                <div class="critical-stat-card">
-                    <h3>Critical Risk</h3>
-                    <p style="font-size: 2em; margin: 0;">{analysis['critical_risk_genes']}</p>
+                <div class="metric-card" style="background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);">
+                    <div class="metric-label">Critical Risk</div>
+                    <div class="metric-value">{analysis['critical_risk_genes']}</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Analysis Date</div>
+                    <div class="metric-value">{datetime.now().strftime('%Y-%m-%d')}</div>
                 </div>
             </div>
             <p><strong>Genome:</strong> {genome_name}</p>
-            <p><strong>Date:</strong> {self.metadata['analysis_date']}</p>
             <p><strong>Tool Version:</strong> {self.metadata['version']}</p>
             <p><strong>AMRfinderPlus:</strong> {self.metadata['amrfinder_version']}</p>
             <p><strong>Database:</strong> {self.metadata['database_version']}</p>
         </div>
 """
         
-        # High-risk genes warning (non-critical)
+        # Critical resistance alerts
+        if analysis['critical_risk_genes'] > 0:
+            html_content += f"""
+        <div class="report-section" style="border-left: 4px solid #dc2626;">
+            <h2 style="color: #dc2626;">⚠️ CRITICAL RISK AMR GENES DETECTED</h2>
+            <div style="margin: 10px 0;">
+                <p><strong>{analysis['critical_risk_genes']} critical risk antimicrobial resistance genes found:</strong></p>
+"""
+            for gene in analysis['critical_risk_list']:
+                html_content += f'<span class="risk-badge">🚨 {gene}</span>'
+            html_content += """
+            </div>
+        </div>
+"""
+        
+        # High-risk genes warning
         if analysis['high_risk_genes'] > 0 and analysis['critical_risk_genes'] == 0:
             html_content += f"""
-        <div class="card" style="border-left: 4px solid #ffc107;">
-            <h2 style="color: #856404;">⚠️ High-Risk AMR Genes Detected</h2>
-            <p><strong>{analysis['high_risk_genes']} high-risk antimicrobial resistance genes found:</strong></p>
+        <div class="report-section" style="border-left: 4px solid #f59e0b;">
+            <h2 style="color: #f59e0b;">⚠️ High-Risk AMR Genes Detected</h2>
             <div style="margin: 10px 0;">
+                <p><strong>{analysis['high_risk_genes']} high-risk antimicrobial resistance genes found:</strong></p>
 """
             for gene in analysis['high_risk_list']:
-                html_content += f'<span class="resistance-badge high-risk">{gene}</span>'
+                html_content += f'<span class="warning-badge">{gene}</span>'
             html_content += """
             </div>
         </div>
@@ -610,45 +770,39 @@ class AMRfinderPlusExecutor:
         # Resistance Mechanism Breakdown
         if any(analysis['resistance_mechanisms'].values()):
             html_content += """
-        <div class="card">
-            <h2 style="color: #333; border-bottom: 2px solid #667eea; padding-bottom: 10px;">🔬 Resistance Mechanism Breakdown</h2>
+        <div class="report-section">
+            <h2 style="color: #1e3a8a; border-bottom: 3px solid #3b82f6; padding-bottom: 10px;">🔬 Resistance Mechanism Breakdown</h2>
 """
             
             mechanisms = analysis['resistance_mechanisms']
             if mechanisms['mrsa']:
                 html_content += f"""
-            <div style="margin: 10px 0; padding: 10px; background: #f8d7da; border-radius: 5px;">
+            <div style="margin: 10px 0; padding: 10px; background: #fee2e2; border-radius: 5px;">
                 <strong>MRSA Markers (CRITICAL):</strong> {', '.join(mechanisms['mrsa'])}
             </div>
 """
             if mechanisms['glycopeptide_resistance']:
                 html_content += f"""
-            <div style="margin: 10px 0; padding: 10px; background: #f8d7da; border-radius: 5px;">
+            <div style="margin: 10px 0; padding: 10px; background: #fee2e2; border-radius: 5px;">
                 <strong>Glycopeptide Resistance (VISA/VRSA - CRITICAL):</strong> {', '.join(mechanisms['glycopeptide_resistance'])}
             </div>
 """
             if mechanisms['oxazolidinone_resistance']:
                 html_content += f"""
-            <div style="margin: 10px 0; padding: 10px; background: #f8d7da; border-radius: 5px;">
+            <div style="margin: 10px 0; padding: 10px; background: #fee2e2; border-radius: 5px;">
                 <strong>Oxazolidinone Resistance (Linezolid - CRITICAL):</strong> {', '.join(mechanisms['oxazolidinone_resistance'])}
             </div>
 """
             if mechanisms['mlsb_resistance']:
                 html_content += f"""
-            <div style="margin: 10px 0; padding: 10px; background: #d1ecf1; border-radius: 5px;">
+            <div style="margin: 10px 0; padding: 10px; background: #fef3c7; border-radius: 5px;">
                 <strong>MLS⸰B Resistance:</strong> {', '.join(mechanisms['mlsb_resistance'])}
             </div>
 """
             if mechanisms['aminoglycoside_resistance']:
                 html_content += f"""
-            <div style="margin: 10px 0; padding: 10px; background: #d1ecf1; border-radius: 5px;">
+            <div style="margin: 10px 0; padding: 10px; background: #fef3c7; border-radius: 5px;">
                 <strong>Aminoglycoside Resistance:</strong> {', '.join(mechanisms['aminoglycoside_resistance'])}
-            </div>
-"""
-            if mechanisms['efflux_pumps']:
-                html_content += f"""
-            <div style="margin: 10px 0; padding: 10px; background: #e2e3e5; border-radius: 5px;">
-                <strong>Efflux Pumps:</strong> {', '.join(mechanisms['efflux_pumps'])}
             </div>
 """
             
@@ -659,10 +813,10 @@ class AMRfinderPlusExecutor:
         # Resistance classes summary
         if analysis['resistance_classes']:
             html_content += """
-        <div class="card">
-            <h2 style="color: #333; border-bottom: 2px solid #667eea; padding-bottom: 10px;">🧪 Resistance Classes Detected</h2>
+        <div class="report-section">
+            <h2 style="color: #1e3a8a; border-bottom: 3px solid #3b82f6; padding-bottom: 10px;">🧪 Resistance Classes Detected</h2>
             <div class="table-responsive">
-                <table class="class-table">
+                <table class="summary-table">
                     <thead>
                         <tr>
                             <th>Resistance Class</th>
@@ -679,7 +833,7 @@ class AMRfinderPlusExecutor:
                     <tr>
                         <td><strong>{class_name}</strong></td>
                         <td>{len(genes)}</td>
-                        <td class="sequence-cell">{gene_list}</td>
+                        <td class="product-cell">{gene_list}</td>
                     </tr>
 """
             
@@ -693,10 +847,10 @@ class AMRfinderPlusExecutor:
         # Detailed AMR genes table
         if hits:
             html_content += """
-        <div class="card">
-            <h2 style="color: #333; border-bottom: 2px solid #667eea; padding-bottom: 10px;">🔬 Detailed AMR Genes Detected</h2>
+        <div class="report-section">
+            <h2 style="color: #1e3a8a; border-bottom: 3px solid #3b82f6; padding-bottom: 10px;">🔬 Detailed AMR Genes Detected</h2>
             <div class="table-responsive">
-                <table class="gene-table">
+                <table class="summary-table">
                     <thead>
                         <tr>
                             <th>Gene Symbol</th>
@@ -716,9 +870,9 @@ class AMRfinderPlusExecutor:
                 row_class = "present"
                 gene_symbol = hit.get('gene_symbol', '')
                 if gene_symbol in analysis['critical_risk_list']:
-                    row_class = "critical-row"
+                    row_class = "critical"
                 elif gene_symbol in analysis['high_risk_list']:
-                    row_class = "high-risk-row"
+                    row_class = "high-risk"
                 
                 # Show full sequence name without truncation
                 sequence_display = hit.get('sequence_name', '')
@@ -726,7 +880,7 @@ class AMRfinderPlusExecutor:
                 html_content += f"""
                     <tr class="{row_class}">
                         <td><strong>{gene_symbol}</strong></td>
-                        <td class="sequence-cell">{sequence_display}</td>
+                        <td class="product-cell">{sequence_display}</td>
                         <td>{hit.get('class', '')}</td>
                         <td>{hit.get('subclass', '')}</td>
                         <td>{hit.get('coverage', '')}%</td>
@@ -743,8 +897,8 @@ class AMRfinderPlusExecutor:
 """
         else:
             html_content += """
-        <div class="card">
-            <h2 style="color: #333; border-bottom: 2px solid #667eea; padding-bottom: 10px;">✅ No AMR Genes Detected</h2>
+        <div class="report-section">
+            <h2 style="color: #1e3a8a; border-bottom: 3px solid #3b82f6; padding-bottom: 10px;">✅ No AMR Genes Detected</h2>
             <p>No antimicrobial resistance genes found in this S. aureus genome.</p>
         </div>
 """
@@ -752,20 +906,44 @@ class AMRfinderPlusExecutor:
         # Footer
         html_content += f"""
         <div class="footer">
-            <h3 style="color: #fff; border-bottom: 2px solid #667eea; padding-bottom: 10px;">👥 Contact Information</h3>
-            <p><strong>Author:</strong> Brown Beckley</p>
-            <p><strong>Email:</strong> brownbeckley94@gmail.com</p>
-            <p><strong>GitHub:</strong> <a href="https://github.com/bbeckley-hub" target="_blank">https://github.com/bbeckley-hub</a></p>
-            <p><strong>Affiliation:</strong> University of Ghana Medical School</p>
-            <p style="margin-top: 20px; font-size: 0.9em; color: #ccc;">
-                Analysis performed using StaphScope AMRfinderPlus v1.0.1<br>
-                Bundled AMRfinderPlus {self.metadata['amrfinder_version']} with database {self.metadata['database_version']}
-            </p>
+            <p><strong>STAPHSCOPE</strong> - AMRfinderPlus Analysis Module</p>
+            <p class="timestamp">Generated: {current_time}</p>
+            <div class="authorship">
+                <p><strong>Technical Support & Inquiries:</strong></p>
+                <p>Author: Brown Beckley | GitHub: bbeckley-hub</p>
+                <p>Email: brownbeckley94@gmail.com</p>
+                <p>Affiliation: University of Ghana Medical School - Department of Medical Biochemistry</p>
+            </div>
         </div>
     </div>
+
+    <script>
+        const quotes = {json.dumps(self.science_quotes)};
+
+        const quoteContainer = document.getElementById('quoteContainer');
+        const quoteText = document.getElementById('quoteText');
+        const quoteAuthor = document.getElementById('quoteAuthor');
+
+        function getRandomQuote() {{
+            return quotes[Math.floor(Math.random() * quotes.length)];
+        }}
+
+        function displayQuote() {{
+            quoteContainer.style.opacity = '0';
+            
+            setTimeout(() => {{
+                const quote = getRandomQuote();
+                quoteText.textContent = '"' + quote.text + '"';
+                quoteAuthor.textContent = '— ' + quote.author;
+                quoteContainer.style.opacity = '1';
+            }}, 500);
+        }}
+
+        // Rotate quotes every 10 seconds
+        setInterval(displayQuote, 10000);
+    </script>
 </body>
-</html>
-"""
+</html>"""
         
         # Write HTML report
         html_file = os.path.join(output_dir, f"{genome_name}_amrfinder_report.html")
@@ -1003,7 +1181,7 @@ class AMRfinderPlusExecutor:
             },
             'gene_frequency': gene_frequency,
             'summary_by_genome': self._create_amr_genome_summary(all_results),
-            'hits': all_hits[:100]  # Include first 100 hits to keep file manageable
+            'hits': all_hits[:1000]  # Include first 1000 hits to keep file manageable
         }
         
         # Write JSON file
@@ -1231,228 +1409,360 @@ class AMRfinderPlusExecutor:
                 genomes_with_high_risk += 1
                 high_risk_genes_found.update(genome_genes.intersection(self.high_risk_genes))
         
-        # JavaScript for rotating quotes
-        quotes_js = f"""
-        <script>
-            let quotes = {json.dumps(self.science_quotes)};
-            let currentQuote = 0;
-            
-            function rotateQuote() {{
-                document.getElementById('science-quote').innerHTML = quotes[currentQuote];
-                currentQuote = (currentQuote + 1) % quotes.length;
-            }}
-            
-            // Rotate every 10 seconds
-            setInterval(rotateQuote, 10000);
-            
-            // Initial display
-            document.addEventListener('DOMContentLoaded', function() {{
-                rotateQuote();
-            }});
-        </script>
-        """
+        # Get initial random quote
+        random_quote = self.get_random_quote()
+        
+        # Get current timestamp
+        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         
         html_content = f"""
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>StaphScope AMRfinderPlus - Summary Report (BUNDLED)</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STAPHSCOPE - AMRfinderPlus Batch Analysis Report</title>
     <style>
-        body {{ 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            margin: 0; 
-            padding: 0; 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        * {{
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }}
+        
+        body {{
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #7e22ce 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #ffffff;
+            padding: 20px;
             min-height: 100vh;
         }}
-        .container {{ 
-            max-width: 1400px; 
-            margin: 0 auto; 
-            padding: 20px; 
+        
+        .container {{
+            max-width: 1400px;
+            margin: 0 auto;
         }}
-        .header {{ 
-            background: rgba(255, 255, 255, 0.95); 
-            padding: 30px; 
-            border-radius: 15px; 
-            margin-bottom: 30px; 
-            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-            backdrop-filter: blur(10px);
+        
+        .header {{
+            text-align: center;
+            margin-bottom: 30px;
         }}
-        .card {{ 
-            background: rgba(255, 255, 255, 0.95); 
-            padding: 25px; 
-            margin: 20px 0; 
-            border-radius: 12px; 
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-            backdrop-filter: blur(10px);
+        
+        .ascii-container {{
+            background: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            border: 2px solid rgba(0, 255, 0, 0.3);
         }}
-        .gene-table {{ 
-            width: 100%; 
-            border-collapse: collapse; 
-            margin: 20px 0; 
-            background: white;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        
+        .ascii-art {{
+            font-family: 'Courier New', monospace;
+            font-size: 10px;
+            line-height: 1.1;
+            white-space: pre;
+            color: #00ff00;
+            text-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+            overflow-x: auto;
         }}
-        .gene-table th, .gene-table td {{ 
-            padding: 12px; 
-            text-align: left; 
-            border-bottom: 1px solid #e0e0e0; 
-        }}
-        .gene-table th {{ 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            font-weight: 600;
-        }}
-        tr:hover {{ background-color: #f8f9fa; }}
-        .summary-stats {{ 
-            display: flex; 
-            justify-content: space-around; 
-            margin: 20px 0; 
-            flex-wrap: wrap;
-        }}
-        .stat-card {{ 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 20px; 
-            border-radius: 12px; 
-            text-align: center; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            margin: 10px;
-            flex: 1;
-            min-width: 200px;
-        }}
-        .critical-stat-card {{
-            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
-            color: white;
-            padding: 20px; 
-            border-radius: 12px; 
-            text-align: center; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            margin: 10px;
-            flex: 1;
-            min-width: 200px;
-        }}
+        
         .quote-container {{
             background: rgba(255, 255, 255, 0.1);
-            color: white;
+            backdrop-filter: blur(10px);
             padding: 20px;
-            border-radius: 12px;
-            margin: 20px 0;
+            border-radius: 10px;
+            margin-bottom: 30px;
             text-align: center;
+            min-height: 100px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: opacity 0.5s ease-in-out;
+        }}
+        
+        .quote-text {{
+            font-size: 18px;
             font-style: italic;
-            border-left: 4px solid #fff;
+            margin-bottom: 10px;
+            color: #ffffff;
         }}
-        .footer {{
-            background: rgba(0, 0, 0, 0.8);
-            color: white;
-            padding: 30px;
-            border-radius: 12px;
-            margin-top: 40px;
-        }}
-        .footer a {{
-            color: #667eea;
-            text-decoration: none;
-        }}
-        .footer a:hover {{
-            text-decoration: underline;
-        }}
-        .resistance-badge {{
-            display: inline-block;
-            background: #dc3545;
-            color: white;
-            padding: 5px 10px;
-            border-radius: 15px;
-            margin: 2px;
-            font-size: 0.9em;
-        }}
-        .critical-resistance-badge {{
-            display: inline-block;
-            background: #8b0000;
-            color: white;
-            padding: 5px 10px;
-            border-radius: 15px;
-            margin: 2px;
-            font-size: 0.9em;
+        
+        .quote-author {{
+            font-size: 14px;
+            color: #fbbf24;
             font-weight: bold;
         }}
+        
+        .report-section {{
+            background: rgba(255, 255, 255, 0.95);
+            color: #1f2937;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }}
+        
+        .report-section h2 {{
+            color: #1e3a8a;
+            border-bottom: 3px solid #3b82f6;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }}
+        
+        .report-section h3 {{
+            color: #1e40af;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }}
+        
+        .metrics-grid {{
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 15px;
+        }}
+        
+        .metric-card {{
+            background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }}
+        
+        .metric-label {{
+            font-size: 14px;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }}
+        
+        .metric-value {{
+            font-size: 24px;
+            font-weight: bold;
+        }}
+        
+        .summary-table {{
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 14px;
+        }}
+        
+        .summary-table th {{
+            background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: bold;
+        }}
+        
+        .summary-table td {{
+            padding: 12px;
+            border-bottom: 1px solid #e5e7eb;
+        }}
+        
+        .summary-table tr:nth-child(even) {{
+            background-color: #f8fafc;
+        }}
+        
+        .summary-table tr:hover {{
+            background-color: #e0f2fe;
+        }}
+        
+        .spa-type-cell {{
+            font-weight: bold;
+            color: #1e40af;
+        }}
+        
+        .repeat-cell {{
+            font-family: 'Courier New', monospace;
+            background-color: #f0f9ff;
+            color: #0369a1;
+            font-weight: bold;
+        }}
+        
+        .success {{
+            color: #16a34a;
+            font-weight: bold;
+        }}
+        
+        .failed {{
+            color: #dc2626;
+            font-weight: bold;
+        }}
+        
+        .stats-grid {{
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }}
+        
+        .stat-card {{
+            background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }}
+        
+        .stat-value {{
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }}
+        
+        .stat-label {{
+            font-size: 12px;
+            opacity: 0.9;
+        }}
+        
+        .footer {{
+            text-align: center;
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            font-size: 14px;
+        }}
+        
+        .timestamp {{
+            color: #fbbf24;
+            font-weight: bold;
+        }}
+        
+        .authorship {{
+            margin-top: 15px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            font-size: 12px;
+        }}
+        
+        @media (max-width: 768px) {{
+            .ascii-art {{
+                font-size: 6px;
+            }}
+            .summary-table {{
+                font-size: 12px;
+            }}
+            .summary-table th,
+            .summary-table td {{
+                padding: 6px;
+            }}
+        }}
+        
+        .risk-badge {{
+            display: inline-block;
+            background: #dc2626;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            margin: 2px;
+            font-size: 0.9em;
+        }}
+        
         .warning-badge {{
             display: inline-block;
-            background: #ffc107;
+            background: #f59e0b;
             color: black;
             padding: 5px 10px;
             border-radius: 15px;
             margin: 2px;
             font-size: 0.9em;
         }}
+        
         .success-badge {{
             display: inline-block;
-            background: #28a745;
+            background: #16a34a;
             color: white;
             padding: 5px 10px;
             border-radius: 15px;
             margin: 2px;
             font-size: 0.9em;
         }}
-        /* Make sequence name column responsive with word wrapping */
+        
+        /* FIX FOR REVIEWER: Make sequence column responsive with word wrapping */
         .sequence-cell {{
             white-space: normal !important;
             word-wrap: break-word;
             max-width: 400px;
             min-width: 200px;
         }}
-        /* Make tables responsive */
+        
+        /* FIX FOR REVIEWER: Make tables responsive */
         .table-responsive {{
             width: 100%;
             overflow-x: auto;
             margin: 20px 0;
         }}
-        .gene-table {{
-            min-width: 1000px;
+        
+        .summary-table {{
+            min-width: 800px;
         }}
-        /* IMPROVED GENE FREQUENCY COLOR SCHEME */
-        .frequency-high {{ background-color: #f8d7da; font-weight: bold; border-left: 4px solid #dc3545; }}
-        .frequency-medium-high {{ background-color: #ffeaa7; border-left: 4px solid #fdcb6e; }}
-        .frequency-medium {{ background-color: #fff3cd; border-left: 4px solid #ffc107; }}
-        .frequency-low-medium {{ background-color: #d1ecf1; border-left: 4px solid #17a2b8; }}
-        .frequency-low {{ background-color: #d4edda; border-left: 4px solid #28a745; }}
-        /* Tool info box */
-        .tool-info {{
-            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
-            color: white;
-            padding: 15px;
-            border-radius: 8px;
-            margin: 10px 0;
-            font-size: 0.9em;
-        }}
+        
+        /* Frequency classes for gene prevalence */
+        .frequency-high {{ background-color: #fee2e2; font-weight: bold; border-left: 4px solid #dc2626; }}
+        .frequency-medium-high {{ background-color: #fef3c7; border-left: 4px solid #f59e0b; }}
+        .frequency-medium {{ background-color: #d1fae5; border-left: 4px solid #10b981; }}
+        .frequency-low-medium {{ background-color: #dbeafe; border-left: 4px solid #3b82f6; }}
+        .frequency-low {{ background-color: #f0f9ff; border-left: 4px solid #0ea5e9; }}
     </style>
-    {quotes_js}
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1 style="color: #333; margin: 0; font-size: 2.5em;">🧫 StaphScope AMRfinderPlus - Summary Report </h1>
-            <p style="color: #666; font-size: 1.2em;">Comprehensive S. aureus Antimicrobial Resistance Analysis Across All Genomes</p>
-            <div class="tool-info">
-                <strong>Tool Info:</strong> Bundled AMRfinderPlus {self.metadata['amrfinder_version']} | 
-                Database: {self.metadata['database_version']} | 
-                Analysis includes AMR genes and virulence factors (--plus mode)
+            <div class="ascii-container">
+                <div class="ascii-art">███████╗████████╗ █████╗ ██████╗ ██╗  ██╗███████╗ ██████╗ ██████╗ ██████╗ ███████╗
+██╔════╝╚══██╔══╝██╔══██╗██╔══██╗██║  ██║██╔════╝██╔════╝██╔═══██╗██╔══██╗██╔════╝
+███████╗   ██║   ███████║██████╔╝███████║███████╗██║     ██║   ██║██████╔╝█████╗  
+╚════██║   ██║   ██╔══██║██╔═══╝ ██╔══██║╚════██║██║     ██║   ██║██╔═══╝ ██╔══╝  
+███████║   ██║   ██║  ██║██║     ██║  ██║███████║╚██████╗╚██████╔╝██║     ███████╗
+╚══════╝   ╚═╝   ╚═╝  ╚═╝╚═╝     ╚═╝  ╚═╝╚══════╝ ╚═════╝ ╚═════╝ ╚═╝     ╚══════╝</div>
+            </div>
+            
+            <div class="quote-container" id="quoteContainer">
+                <div class="quote-text" id="quoteText">"{random_quote['text']}"</div>
+                <div class="quote-author" id="quoteAuthor">— {random_quote['author']}</div>
             </div>
         </div>
         
-        <div class="quote-container">
-            <div id="science-quote" style="font-size: 1.1em;"></div>
+        <div class="report-section">
+            <h2>📊 Batch AMRfinderPlus Summary</h2>
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-label">Total Genomes</div>
+                    <div class="metric-value">{total_genomes}</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Total AMR Genes</div>
+                    <div class="metric-value">{total_hits}</div>
+                </div>
+                <div class="metric-card" style="background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);">
+                    <div class="metric-label">Critical Risk Genomes</div>
+                    <div class="metric-value">{genomes_with_critical}</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Analysis Date</div>
+                    <div class="metric-value">{datetime.now().strftime('%Y-%m-%d')}</div>
+                </div>
+            </div>
+            <p><strong>Tool Version:</strong> {self.metadata['version']}</p>
+            <p><strong>AMRfinderPlus:</strong> {self.metadata['amrfinder_version']}</p>
+            <p><strong>Database:</strong> {self.metadata['database_version']}</p>
         </div>
 """
         
-        # CRITICAL RISK ALERT - Show first if critical genes detected
+        # CRITICAL RISK ALERT
         if critical_genes_found:
             html_content += f"""
-        <div class="card" style="border-left: 4px solid #dc3545; background: #f8d7da;">
-            <h2 style="color: #dc3545;">🚨 CRITICAL RISK AMR GENES ACROSS ALL GENOMES</h2>
+        <div class="report-section" style="border-left: 4px solid #dc2626;">
+            <h2 style="color: #dc2626;">🚨 CRITICAL RISK AMR GENES ACROSS ALL GENOMES</h2>
             <p><strong>{len(critical_genes_found)} unique critical risk genes found in {genomes_with_critical} genomes:</strong></p>
             <div style="margin: 10px 0;">
                 <p style="color: #721c24; font-weight: bold;">
@@ -1460,57 +1770,33 @@ class AMRfinderPlusExecutor:
                 </p>
 """
             for gene in sorted(critical_genes_found):
-                html_content += f'<span class="critical-resistance-badge">🚨 {gene}</span>'
+                html_content += f'<span class="risk-badge">🚨 {gene}</span>'
             html_content += """
             </div>
         </div>
 """
         
-        html_content += f"""
-        <div class="card">
-            <h2 style="color: #333; border-bottom: 2px solid #667eea; padding-bottom: 10px;">📊 Overall Summary</h2>
-            <div class="summary-stats">
-                <div class="stat-card">
-                    <h3>Total Genomes</h3>
-                    <p style="font-size: 2em; margin: 0;">{total_genomes}</p>
-                </div>
-                <div class="stat-card">
-                    <h3>Total AMR Genes</h3>
-                    <p style="font-size: 2em; margin: 0;">{total_hits}</p>
-                </div>
-                <div class="critical-stat-card">
-                    <h3>Critical Risk Genomes</h3>
-                    <p style="font-size: 2em; margin: 0;">{genomes_with_critical}</p>
-                </div>
-            </div>
-            <p><strong>Date:</strong> {self.metadata['analysis_date']}</p>
-            <p><strong>Tool Version:</strong> {self.metadata['version']}</p>
-            <p><strong>AMRfinderPlus:</strong> {self.metadata['amrfinder_version']} </p>
-            <p><strong>Database:</strong> {self.metadata['database_version']} </p>
-        </div>
-"""
-        
-        # High-risk genes summary (non-critical)
+        # High-risk genes summary
         if high_risk_genes_found and not critical_genes_found:
             html_content += f"""
-        <div class="card" style="border-left: 4px solid #ffc107;">
+        <div class="report-section" style="border-left: 4px solid #f59e0b;">
             <h2 style="color: #856404;">⚠️ High-Risk AMR Genes Detected</h2>
             <p><strong>{len(high_risk_genes_found)} unique high-risk genes found across {genomes_with_high_risk} genomes:</strong></p>
             <div style="margin: 10px 0;">
 """
             for gene in sorted(high_risk_genes_found):
-                html_content += f'<span class="resistance-badge">{gene}</span>'
+                html_content += f'<span class="warning-badge">{gene}</span>'
             html_content += """
             </div>
         </div>
 """
         
-        # Genes by Genome table (Pattern Discovery)
+        # Genes by Genome table
         html_content += """
-        <div class="card">
-            <h2 style="color: #333; border-bottom: 2px solid #667eea; padding-bottom: 10px;">🔍 Genes by Genome</h2>
+        <div class="report-section">
+            <h2 style="color: #1e3a8a; border-bottom: 3px solid #3b82f6; padding-bottom: 10px;">🔍 Genes by Genome</h2>
             <div class="table-responsive">
-                <table class="gene-table">
+                <table class="summary-table">
                     <thead>
                         <tr>
                             <th>Genome</th>
@@ -1530,11 +1816,8 @@ class AMRfinderPlusExecutor:
             critical_display = ", ".join(critical_genes) if critical_genes else "None"
             high_risk_display = ", ".join(high_risk_genes) if high_risk_genes else "None"
             
-            # Highlight rows with critical genes
-            row_class = "critical-row" if critical_genes else "high-risk-row" if high_risk_genes else ""
-            
             html_content += f"""
-                    <tr class="{row_class}">
+                    <tr>
                         <td><strong>{genome}</strong></td>
                         <td>{len(genes)}</td>
                         <td class="sequence-cell">{critical_display}</td>
@@ -1548,10 +1831,10 @@ class AMRfinderPlusExecutor:
             </div>
         </div>
         
-        <div class="card">
-            <h2 style="color: #333; border-bottom: 2px solid #667eea; padding-bottom: 10px;">📈 Gene Frequency</h2>
+        <div class="report-section">
+            <h2 style="color: #1e3a8a; border-bottom: 3px solid #3b82f6; padding-bottom: 10px;">📈 Gene Frequency</h2>
             <div class="table-responsive">
-                <table class="gene-table">
+                <table class="summary-table">
                     <thead>
                         <tr>
                             <th>Gene</th>
@@ -1564,7 +1847,7 @@ class AMRfinderPlusExecutor:
                     <tbody>
 """
         
-        # Calculate gene frequency with IMPROVED color highlighting
+        # Calculate gene frequency
         for gene, genomes in sorted(gene_frequency.items(), key=lambda x: len(x[1]), reverse=True):
             frequency = len(genomes)
             genome_list = ", ".join(sorted(genomes))
@@ -1572,22 +1855,22 @@ class AMRfinderPlusExecutor:
             
             # Determine risk level
             if gene in self.critical_risk_genes:
-                risk_level = '<span class="critical-resistance-badge">CRITICAL</span>'
+                risk_level = '<span class="risk-badge">CRITICAL</span>'
             elif gene in self.high_risk_genes:
-                risk_level = '<span class="resistance-badge">HIGH</span>'
+                risk_level = '<span class="warning-badge">HIGH</span>'
             else:
                 risk_level = '<span class="success-badge">Standard</span>'
             
-            # IMPROVED COLOR SCHEME: Better visual distinction
+            # Color coding based on frequency
             if frequency_percent >= 75:
                 frequency_class = "frequency-high"
-                prevalence_badge = '<span class="resistance-badge">Very High</span>'
+                prevalence_badge = '<span class="risk-badge">Very High</span>'
             elif frequency_percent >= 50:
                 frequency_class = "frequency-medium-high"
                 prevalence_badge = '<span class="warning-badge">High</span>'
             elif frequency_percent >= 25:
                 frequency_class = "frequency-medium"
-                prevalence_badge = '<span class="warning-badge">Medium</span>'
+                prevalence_badge = '<span class="success-badge">Medium</span>'
             elif frequency_percent >= 10:
                 frequency_class = "frequency-low-medium"
                 prevalence_badge = '<span class="success-badge">Low</span>'
@@ -1605,37 +1888,51 @@ class AMRfinderPlusExecutor:
                     </tr>
 """
         
-        html_content += """
+        html_content += f"""
                     </tbody>
                 </table>
             </div>
         </div>
         
-        <div class="card">
-            <h2 style="color: #333; border-bottom: 2px solid #667eea; padding-bottom: 10px;">📁 Generated Files</h2>
-            <ul style="color: #666; font-size: 1.1em;">
-                <li><strong>staph_amrfinder_summary.tsv</strong> - Complete AMR data for all genomes</li>
-                <li><strong>staph_amrfinder_statistics_summary.tsv</strong> - Statistical summary</li>
-                <li><strong>staph_amrfinder_summary.json</strong> - JSON summary with gene frequencies</li>
-                <li><strong>staph_amrfinder_master_summary.json</strong> - Master JSON with cross-genome patterns</li>
-                <li><strong>Individual genome HTML reports</strong> - Detailed analysis per genome</li>
-                <li><strong>This summary report</strong> - Cross-genome analysis with pattern discovery</li>
-            </ul>
-        </div>
-        
         <div class="footer">
-            <h3 style="color: #fff; border-bottom: 2px solid #667eea; padding-bottom: 10px;">👥 Contact Information</h3>
-            <p><strong>Author:</strong> Brown Beckley</p>
-            <p><strong>Email:</strong> brownbeckley94@gmail.com</p>
-            <p><strong>GitHub:</strong> <a href="https://github.com/bbeckley-hub" target="_blank">https://github.com/bbeckley-hub</a></p>
-            <p><strong>Affiliation:</strong> University of Ghana Medical School</p>
-            <p style="margin-top: 20px; font-size: 0.9em; color: #ccc;">
-                Analysis performed using StaphScope AMRfinderPlus v1.0.1<br></p>
+            <p><strong>STAPHSCOPE</strong> - AMRfinderPlus Batch Analysis Module</p>
+            <p class="timestamp">Generated: {current_time}</p>
+            <div class="authorship">
+                <p><strong>Technical Support & Inquiries:</strong></p>
+                <p>Author: Brown Beckley | GitHub: bbeckley-hub</p>
+                <p>Email: brownbeckley94@gmail.com</p>
+                <p>Affiliation: University of Ghana Medical School - Department of Medical Biochemistry</p>
+            </div>
         </div>
     </div>
+
+    <script>
+        const quotes = {json.dumps(self.science_quotes)};
+
+        const quoteContainer = document.getElementById('quoteContainer');
+        const quoteText = document.getElementById('quoteText');
+        const quoteAuthor = document.getElementById('quoteAuthor');
+
+        function getRandomQuote() {{
+            return quotes[Math.floor(Math.random() * quotes.length)];
+        }}
+
+        function displayQuote() {{
+            quoteContainer.style.opacity = '0';
+            
+            setTimeout(() => {{
+                const quote = getRandomQuote();
+                quoteText.textContent = '"' + quote.text + '"';
+                quoteAuthor.textContent = '— ' + quote.author;
+                quoteContainer.style.opacity = '1';
+            }}, 500);
+        }}
+
+        // Rotate quotes every 10 seconds
+        setInterval(displayQuote, 10000);
+    </script>
 </body>
-</html>
-"""
+</html>"""
         
         # Write summary HTML report
         html_file = os.path.join(output_base, "staph_amrfinder_summary_report.html")
@@ -1692,7 +1989,6 @@ class AMRfinderPlusExecutor:
         all_results = {}
         
         # Calculate optimal concurrent genomes - BE AGGRESSIVE FOR SPEED
-        # Use all available CPU cores for concurrent processing
         max_concurrent = max(1, min(self.cpus, len(genome_files), int(self.available_ram / 1.5)))  # 1.5GB per genome
         
         self.logger.info(f"🚀 MAXIMUM SPEED: Using {max_concurrent} concurrent genome processing jobs")
@@ -1820,8 +2116,8 @@ Supported FASTA extensions: .fasta, .fa, .fna, .faa
             executor.logger.info("\n🚨 CRITICAL RISK ALERT: Last-resort antibiotic resistance genes detected!")
             executor.logger.info("   Immediate clinical attention and infection control measures required.")
         
-        import random
-        executor.logger.info(f"\n💡 {random.choice(executor.science_quotes)}")
+        random_quote = random.choice(executor.science_quotes)
+        executor.logger.info(f"\n💡 \"{random_quote['text']}\" - {random_quote['author']}")
         
     except Exception as e:
         executor.logger.error(f"S. aureus AMR analysis failed: {e}")

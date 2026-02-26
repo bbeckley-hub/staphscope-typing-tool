@@ -10,7 +10,7 @@ except FileNotFoundError:
 
 setup(
     name="staphscope",
-    version="1.0.0",
+    version="1.1.0",
     author="Brown Beckley",
     author_email="brownbeckley94@gmail.com",
     description="Advanced Staphylococcus aureus Typing & Lineage Analysis Platform",
@@ -30,9 +30,9 @@ setup(
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
         "Programming Language :: Python :: 3.13",
-        
+        "Programming Language :: Python :: 3.14",
     ],
-    python_requires="==3.14.*",
+    python_requires=">=3.8",
     install_requires=[
         "pandas>=1.5.0",
         "biopython>=1.80",  
@@ -66,7 +66,7 @@ setup(
     include_package_data=True,
     package_data={
         'staphscope': [
-            '**/*',
+            '**/*',  # Include everything recursively
         ]
     },
     zip_safe=False,
