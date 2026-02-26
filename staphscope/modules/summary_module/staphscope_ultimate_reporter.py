@@ -40,7 +40,7 @@ class StaphHTMLParser:
     def __init__(self):
         self.abricate_databases = [
             'card', 'resfinder', 'vfdb', 'argannot',
-            'plasmidfinder', 'megares', 'ncbi'
+            'plasmidfinder', 'megares', 'ncbi', 'bacmet2'
         ]
     
     def normalize_sample_id(self, sample_id: str) -> str:
@@ -195,7 +195,7 @@ class StaphHTMLParser:
             return {}
     
     def parse_amrfinder_report(self, file_path: Path) -> Tuple[Dict[str, List], Dict[str, Dict]]:
-        """Parse AMRfinder HTML report for S. aureus"""
+        """Parse AMRfinder HTML report for S. aureus - UPDATED FOR STAPH_AMRFINDER_SUMMARY_REPORT.HTML"""
         print(f"  🧬 Parsing AMRfinder: {file_path.name}")
         
         try:
@@ -205,140 +205,273 @@ class StaphHTMLParser:
             soup = BeautifulSoup(html_content, 'html.parser')
             tables = soup.find_all('table')
             
-            if len(tables) < 3:
-                return {}, {}
+            print(f"    Found {len(tables)} tables in the HTML")
             
-            # Parse table 1: Genes by Genome (index 0 or 1)
             genes_by_genome = {}
-            df1 = self.parse_html_table(html_content, 1)  # Usually second table
-            if not df1.empty:
-                df1.columns = [col.strip() for col in df1.columns]
-                
-                # Find genome column
-                genome_col = None
-                for col in df1.columns:
-                    if 'genome' in col.lower() or 'sample' in col.lower():
-                        genome_col = col
-                        break
-                
-                if not genome_col and len(df1.columns) > 0:
-                    genome_col = df1.columns[0]
-                
-                if genome_col:
-                    for _, row in df1.iterrows():
-                        sample = self.normalize_sample_id(row[genome_col])
-                        
-                        critical_genes = []
-                        high_risk_genes = []
-                        all_genes = []
-                        
-                        # Extract critical genes
-                        if 'Critical Genes' in df1.columns and pd.notna(row.get('Critical Genes')):
-                            crit_str = str(row['Critical Genes'])
-                            critical_genes = [g.strip() for g in crit_str.split(',') if g.strip()]
-                        
-                        # Extract high risk genes
-                        if 'High Risk Genes' in df1.columns and pd.notna(row.get('High Risk Genes')):
-                            high_str = str(row['High Risk Genes'])
-                            high_risk_genes = [g.strip() for g in high_str.split(',') if g.strip()]
-                        
-                        # Also look for gene column
-                        if 'Gene' in df1.columns and pd.notna(row.get('Gene')):
-                            gene_str = str(row['Gene'])
-                            gene_list = [g.strip() for g in gene_str.split(',') if g.strip()]
-                            all_genes.extend(gene_list)
-                        
-                        # Combine all genes
-                        all_genes = list(set(critical_genes + high_risk_genes + all_genes))
-                        
-                        genes_by_genome[sample] = {
-                            'critical_genes': critical_genes,
-                            'high_risk_genes': high_risk_genes,
-                            'all_genes': all_genes
-                        }
-            
-            # Parse table 2: Gene Frequency (usually third table)
             gene_frequencies = {}
-            df2 = self.parse_html_table(html_content, 2)  # Usually third table
-            if not df2.empty:
-                df2.columns = [col.strip() for col in df2.columns]
-                
-                # Look for Gene column with different possible names
-                gene_column = None
-                for col in df2.columns:
-                    if 'gene' in col.lower():
-                        gene_column = col
-                        break
-                
-                if gene_column is None and 'Gene' in df2.columns:
-                    gene_column = 'Gene'
-                
-                if gene_column:
-                    for _, row in df2.iterrows():
-                        if pd.isna(row[gene_column]):
-                            continue
+            
+            # Look for the "Genes by Genome" table
+            genes_by_genome_table = None
+            gene_frequency_table = None
+            
+            # Find tables by their content
+            for i, table in enumerate(tables):
+                table_text = table.get_text()
+                # Check if this is the "Genes by Genome" table
+                if 'Genome' in table_text and 'Critical Genes' in table_text:
+                    genes_by_genome_table = table
+                    print(f"    Found 'Genes by Genome' table at index {i}")
+                # Check if this is the "Gene Frequency" table
+                elif 'Gene' in table_text and 'Frequency' in table_text and 'Prevalence' in table_text:
+                    gene_frequency_table = table
+                    print(f"    Found 'Gene Frequency' table at index {i}")
+            
+            # Parse "Genes by Genome" table
+            if genes_by_genome_table:
+                print(f"    Parsing 'Genes by Genome' table...")
+                # Parse the table using pandas
+                try:
+                    # Extract table HTML and parse with pandas
+                    table_html = str(genes_by_genome_table)
+                    df_genomes = pd.read_html(table_html)[0]
+                    
+                    # Check column names
+                    print(f"    Table columns: {list(df_genomes.columns)}")
+                    
+                    # Find the genome column
+                    genome_col = None
+                    for col in df_genomes.columns:
+                        if 'genome' in col.lower() or 'Genome' in col:
+                            genome_col = col
+                            break
+                    
+                    if not genome_col and len(df_genomes.columns) > 0:
+                        genome_col = df_genomes.columns[0]
+                    
+                    if genome_col:
+                        for _, row in df_genomes.iterrows():
+                            sample = self.normalize_sample_id(row[genome_col])
+                            
+                            # Extract critical genes
+                            critical_genes = []
+                            crit_col = None
+                            for col in df_genomes.columns:
+                                if 'critical' in col.lower():
+                                    crit_col = col
+                                    break
+                            
+                            if crit_col and pd.notna(row.get(crit_col)):
+                                crit_val = str(row[crit_col]).strip()
+                                if crit_val.lower() not in ['none', 'nan', '']:
+                                    critical_genes = [g.strip() for g in crit_val.split(',') if g.strip()]
+                            
+                            # Extract high risk genes
+                            high_risk_genes = []
+                            high_risk_col = None
+                            for col in df_genomes.columns:
+                                if 'high risk' in col.lower() or 'high' in col.lower():
+                                    high_risk_col = col
+                                    break
+                            
+                            if high_risk_col and pd.notna(row.get(high_risk_col)):
+                                high_val = str(row[high_risk_col]).strip()
+                                if high_val.lower() not in ['none', 'nan', '']:
+                                    high_risk_genes = [g.strip() for g in high_val.split(',') if g.strip()]
+                            
+                            genes_by_genome[sample] = {
+                                'critical_genes': critical_genes,
+                                'high_risk_genes': high_risk_genes,
+                                'all_genes': []  # Will be filled from gene frequency table
+                            }
                         
-                        gene = str(row[gene_column]).strip()
-                        
-                        # Look for frequency column
-                        frequency_col = None
-                        for col in df2.columns:
-                            if 'freq' in col.lower() or 'count' in col.lower():
-                                frequency_col = col
-                                break
-                        
-                        frequency = '0'
-                        count = 0
-                        if frequency_col and pd.notna(row.get(frequency_col)):
-                            frequency = str(row[frequency_col]).strip()
-                            # Extract count from frequency string like "24 (100.0%)"
-                            match = re.search(r'(\d+)\s*\(', frequency)
+                        print(f"    Parsed {len(genes_by_genome)} samples from 'Genes by Genome' table")
+                except Exception as e:
+                    print(f"    Error parsing 'Genes by Genome' table with pandas: {e}")
+            
+            # Parse "Gene Frequency" table
+            if gene_frequency_table:
+                print(f"    Parsing 'Gene Frequency' table...")
+                try:
+                    # Extract table HTML and parse with pandas
+                    table_html = str(gene_frequency_table)
+                    df_genes = pd.read_html(table_html)[0]
+                    
+                    # Check column names
+                    print(f"    Gene table columns: {list(df_genes.columns)}")
+                    
+                    # Find the gene column
+                    gene_col = None
+                    for col in df_genes.columns:
+                        if 'gene' in col.lower() or 'Gene' in col:
+                            gene_col = col
+                            break
+                    
+                    if gene_col:
+                        for _, row in df_genes.iterrows():
+                            if pd.isna(row[gene_col]):
+                                continue
+                            
+                            gene = str(row[gene_col]).strip()
+                            
+                            # Extract frequency
+                            frequency = '0'
+                            freq_col = None
+                            for col in df_genes.columns:
+                                if 'freq' in col.lower():
+                                    freq_col = col
+                                    break
+                            
+                            if freq_col and pd.notna(row.get(freq_col)):
+                                frequency = str(row[freq_col]).strip()
+                            
+                            # Extract count from frequency
+                            count = 0
+                            match = re.search(r'(\d+)', frequency)
                             if match:
                                 count = int(match.group(1))
+                            
+                            # Extract prevalence
+                            prevalence = 'ND'
+                            prev_col = None
+                            for col in df_genes.columns:
+                                if 'prev' in col.lower():
+                                    prev_col = col
+                                    break
+                            
+                            if prev_col and pd.notna(row.get(prev_col)):
+                                prevalence = str(row[prev_col]).strip()
+                            
+                            # Extract risk level
+                            risk_level = 'STANDARD'
+                            risk_col = None
+                            for col in df_genes.columns:
+                                if 'risk' in col.lower():
+                                    risk_col = col
+                                    break
+                            
+                            if risk_col and pd.notna(row.get(risk_col)):
+                                risk_level = str(row[risk_col]).strip()
+                            
+                            # Extract genomes
+                            genomes = []
+                            genomes_col = None
+                            for col in df_genes.columns:
+                                if 'genome' in col.lower() or 'Genomes' in col:
+                                    genomes_col = col
+                                    break
+                            
+                            if genomes_col and pd.notna(row.get(genomes_col)):
+                                genomes_str = str(row[genomes_col])
+                                # Clean up the genomes string - remove commas in gene names like tet(38)
+                                genomes_str = genomes_str.replace('tet(38)', 'tet38')
+                                genomes_str = genomes_str.replace('tet(38)', 'tet38')
+                                genomes_list = [g.strip() for g in genomes_str.split(',') if g.strip()]
+                                # Convert back tet38 to tet(38)
+                                genomes = [self.normalize_sample_id(g.replace('tet38', 'tet(38)')) for g in genomes_list]
+                            
+                            gene_frequencies[gene] = {
+                                'frequency': frequency,
+                                'count': count,
+                                'prevalence': prevalence,
+                                'risk_level': risk_level,
+                                'genomes': genomes,
+                                'database': 'amrfinder'
+                            }
+                            
+                            # Also add this gene to each genome's all_genes list
+                            for genome in genomes:
+                                if genome in genes_by_genome:
+                                    if gene not in genes_by_genome[genome]['all_genes']:
+                                        genes_by_genome[genome]['all_genes'].append(gene)
+                                else:
+                                    # Create entry for genome if it doesn't exist
+                                    genes_by_genome[genome] = {
+                                        'critical_genes': [],
+                                        'high_risk_genes': [],
+                                        'all_genes': [gene]
+                                    }
                         
-                        # Try to find count directly
-                        count_col = None
-                        for col in df2.columns:
-                            if 'count' in col.lower() and col != frequency_col:
-                                count_col = col
-                                break
-                        
-                        if count_col and pd.notna(row.get(count_col)):
-                            try:
-                                count = int(float(str(row[count_col])))
-                            except:
-                                pass
-                        
-                        prevalence = 'ND'
-                        if 'Prevalence' in df2.columns and pd.notna(row.get('Prevalence')):
-                            prevalence = str(row['Prevalence']).strip()
-                        
-                        risk_level = 'STANDARD'
-                        if 'Risk Level' in df2.columns and pd.notna(row.get('Risk Level')):
-                            risk_level = str(row['Risk Level']).strip()
-                        
-                        genomes = []
-                        # Extract genomes from samples if available
-                        for col in df2.columns:
-                            if 'sample' in col.lower() or 'genome' in col.lower():
-                                if pd.notna(row.get(col)):
-                                    genomes_str = str(row[col])
-                                    genomes = [self.normalize_sample_id(g.strip()) 
-                                              for g in genomes_str.split(',') if g.strip()]
-                                break
-                        
-                        # If no genomes found but we have count, create dummy list
-                        if not genomes and count > 0:
-                            genomes = [f"sample_{i+1}" for i in range(count)]
-                        
-                        gene_frequencies[gene] = {
-                            'frequency': frequency,
-                            'count': count,
-                            'prevalence': prevalence,
-                            'risk_level': risk_level,
-                            'genomes': genomes,
-                            'database': 'amrfinder'
-                        }
+                        print(f"    Parsed {len(gene_frequencies)} genes from 'Gene Frequency' table")
+                except Exception as e:
+                    print(f"    Error parsing 'Gene Frequency' table with pandas: {e}")
+                    import traceback
+                    traceback.print_exc()
+            
+            # If pandas failed, try alternative parsing
+            if not gene_frequencies and gene_frequency_table:
+                print(f"    Trying alternative parsing for gene frequency table...")
+                rows = gene_frequency_table.find_all('tr')
+                
+                if len(rows) > 1:
+                    # Get headers
+                    headers = []
+                    header_cells = rows[0].find_all(['th', 'td'])
+                    for cell in header_cells:
+                        headers.append(cell.get_text().strip())
+                    
+                    print(f"    Headers found: {headers}")
+                    
+                    # Find column indices
+                    gene_idx = -1
+                    freq_idx = -1
+                    prev_idx = -1
+                    risk_idx = -1
+                    genomes_idx = -1
+                    
+                    for i, header in enumerate(headers):
+                        if 'gene' in header.lower():
+                            gene_idx = i
+                        elif 'freq' in header.lower():
+                            freq_idx = i
+                        elif 'prev' in header.lower():
+                            prev_idx = i
+                        elif 'risk' in header.lower():
+                            risk_idx = i
+                        elif 'genome' in header.lower():
+                            genomes_idx = i
+                    
+                    # Parse rows
+                    for row in rows[1:]:
+                        cols = row.find_all(['td', 'th'])
+                        if cols and len(cols) >= len(headers):
+                            row_data = [col.get_text().strip() for col in cols]
+                            
+                            if gene_idx >= 0 and gene_idx < len(row_data):
+                                gene = row_data[gene_idx]
+                                
+                                frequency = '0'
+                                if freq_idx >= 0 and freq_idx < len(row_data):
+                                    frequency = row_data[freq_idx]
+                                
+                                count = 0
+                                match = re.search(r'(\d+)', frequency)
+                                if match:
+                                    count = int(match.group(1))
+                                
+                                prevalence = 'ND'
+                                if prev_idx >= 0 and prev_idx < len(row_data):
+                                    prevalence = row_data[prev_idx]
+                                
+                                risk_level = 'STANDARD'
+                                if risk_idx >= 0 and risk_idx < len(row_data):
+                                    risk_level = row_data[risk_idx]
+                                
+                                genomes = []
+                                if genomes_idx >= 0 and genomes_idx < len(row_data):
+                                    genomes_str = row_data[genomes_idx]
+                                    genomes_list = [g.strip() for g in genomes_str.split(',') if g.strip()]
+                                    genomes = [self.normalize_sample_id(g) for g in genomes_list]
+                                
+                                gene_frequencies[gene] = {
+                                    'frequency': frequency,
+                                    'count': count,
+                                    'prevalence': prevalence,
+                                    'risk_level': risk_level,
+                                    'genomes': genomes,
+                                    'database': 'amrfinder'
+                                }
+                    
+                    print(f"    Alternative parsing found {len(gene_frequencies)} genes")
             
             print(f"    ✓ Found {len(genes_by_genome)} samples, {len(gene_frequencies)} genes")
             return genes_by_genome, gene_frequencies
@@ -347,7 +480,7 @@ class StaphHTMLParser:
             print(f"    ❌ Error parsing AMRfinder: {e}")
             import traceback
             traceback.print_exc()
-            return {}, {}
+            return {}, {}    
     
     def parse_abricate_report(self, file_path: Path) -> Tuple[str, Dict[str, List], Dict[str, Dict]]:
         """Parse ANY ABRicate database HTML report"""
@@ -1837,9 +1970,9 @@ class StaphHTMLGenerator:
         """
         
         for combo, samples in sorted(mlst_spa_combos.items(), key=lambda x: len(x[1]), reverse=True):
-            sample_list = ', '.join(samples[:10])  # Show first 10 samples
-            if len(samples) > 10:
-                sample_list += f" ... and {len(samples) - 10} more"
+            sample_list = ', '.join(samples[:1000])  # Show first 1000 samples
+            if len(samples) > 1000:
+                sample_list += f" ... and {len(samples) - 1000} more"
             
             html += f"""
                     <tr>
@@ -2531,7 +2664,7 @@ class StaphHTMLGenerator:
         
         cooccurrence_list.sort(key=lambda x: x[2], reverse=True)
         
-        for gene1, gene2, count in cooccurrence_list[:30]:
+        for gene1, gene2, count in cooccurrence_list[:1000]:
             html += f"""
                     <tr>
                         <td><strong>{gene1}</strong></td>
@@ -2689,7 +2822,12 @@ class StaphUltimateReporter:
             
             if 'comprehensive' in filename:
                 html_files['comprehensive'].append(html_file)
-            elif 'amrfinder' in filename:
+            # Look for exact AMRfinder filename first
+            elif 'staph_amrfinder_summary_report.html' in filename:
+                html_files['amrfinder'].append(html_file)
+                print(f"    🎯 Found exact AMRfinder file: {html_file.name}")
+            # Fallback to any file with 'amrfinder' in the name
+            elif 'amrfinder' in filename and html_file not in html_files['amrfinder']:
                 html_files['amrfinder'].append(html_file)
             elif any(db in filename for db in self.parser.abricate_databases + ['abricate']):
                 html_files['abricate'].append(html_file)
@@ -2697,7 +2835,16 @@ class StaphUltimateReporter:
         # Print findings
         for file_type, files in html_files.items():
             if files:
-                print(f"  📁 {file_type.upper()}: {len(files)} files found")
+                if file_type == 'amrfinder' and len(files) > 1:
+                    # Show which file will be used (first one with exact name takes priority)
+                    for i, f in enumerate(files):
+                        if 'staph_amrfinder_summary_report.html' in f.name.lower():
+                            print(f"  📁 {file_type.upper()}: {len(files)} files found (Using: {f.name})")
+                            break
+                    else:
+                        print(f"  📁 {file_type.upper()}: {len(files)} files found (Using: {files[0].name})")
+                else:
+                    print(f"  📁 {file_type.upper()}: {len(files)} files found")
         
         return html_files
     
@@ -2870,8 +3017,6 @@ class StaphUltimateReporter:
                     'Count': gene_info['count'],
                     'Frequency': gene_info['frequency'],
                     'Percentage': f"{(gene_info['count']/len(integrated_data['samples']))*100:.1f}%" if len(integrated_data['samples']) > 0 else "0%",
-                    # REMOVED: 'Risk_Level': gene_info.get('risk_level', ''),
-                    # REMOVED: 'Prevalence': gene_info.get('prevalence', ''),
                     'Genomes': ';'.join(gene_info.get('genomes', []))
                 })
         

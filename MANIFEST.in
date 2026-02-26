@@ -1,30 +1,29 @@
-linclude README.md
+# Include all Python source files
+include staphscope/*.py
+recursive-include staphscope *.py
+
+# Include ALL module files - especially AMR data
+recursive-include staphscope/modules **
+
+# Include configuration files
+include *.md
+include *.txt
+include *.yml
+include *.yaml
 include LICENSE
-include requirements.txt
 include CITATION.cff
-include environment.yml
 include setup.py
-include meta.yaml
-include conda_build_config.yaml
+include requirements.txt
 
-# Include EVERYTHING in staphscope directory
-recursive-include staphscope *
+# Include scripts
+include scripts/*
+include cleanup.sh
 
-# ONLY exclude things OUTSIDE staphscope/ directory
-prune STAPHSCOPE_FINAL_RESULTS
-prune MRSA_genomes
-prune BROWN
-prune *_results
-abricate_results
-prune staphscope/modules/*/abricate_results
-# DO NOT exclude fasta files!
-# Remove or comment out:
-# exclude *.fna
-# exclude *.fasta
-
-# Standard exclusions
+# Exclude unnecessary files
 global-exclude __pycache__
-global-exclude *.pyc
-global-exclude *.pyo
+global-exclude *.py[co]
 global-exclude *~
-global-exclude .DS_Store
+global-exclude .*
+global-exclude *.bak
+global-exclude *.log
+global-exclude *.tmp

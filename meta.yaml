@@ -1,5 +1,5 @@
 {% set name = "staphscope" %}
-{% set version = "1.0.0" %}
+{% set version = "1.1.0" %}
 
 package:
   name: {{ name|lower }}
@@ -9,6 +9,7 @@ source:
   path: .
 
 build:
+  noarch: python
   number: 0
   script: "{{ PYTHON }} -m pip install . -vv"
   entry_points:
@@ -16,11 +17,11 @@ build:
 
 requirements:
   host:
-    - python =3.14
+    - python >=3.8
     - pip
     - setuptools
   run:
-    - python =3.14
+    - python >=3.8
     # Core Python packages from setup.py
     - pandas>=1.5.0
     - biopython>=1.80

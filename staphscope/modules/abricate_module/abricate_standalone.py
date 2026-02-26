@@ -6,6 +6,7 @@ Author: Beckley Brown <brownbeckley94@gmail.com>
 Affiliation: University of Ghana Medical School-Department of Medical Biochemistry
 Date: 2025
 Send a quick mail for any issues or further explanations.
+version-1.1.0
 """
 
 import subprocess
@@ -22,6 +23,7 @@ from datetime import datetime
 import psutil
 import math
 import json
+import random 
 from collections import defaultdict, Counter
 
 class AbricateExecutor:
@@ -40,7 +42,7 @@ class AbricateExecutor:
         # All databases to be used - including the ones you specified
         self.required_databases = [
             'ncbi', 'card', 'resfinder', 'vfdb', 'argannot', 
-            'plasmidfinder', 'megares', 'ecoh', 'ecoli_vf'
+            'plasmidfinder', 'megares', 'ecoh', 'ecoli_vf', 'bacmet2'
         ]
         
         # S. aureus specific genes for filtering
@@ -62,7 +64,7 @@ class AbricateExecutor:
         
         self.metadata = {
             "tool_name": "StaphScope ABRicate",
-            "version": "1.0.0", 
+            "version": "1.1.0", 
             "authors": ["Brown Beckley"],
             "email": "brownbeckley94@gmail.com",
             "github": "https://github.com/bbeckley-hub",
@@ -71,13 +73,26 @@ class AbricateExecutor:
         }
         
         self.science_quotes = [
-            "“The important thing is not to stop questioning. Curiosity has its own reason for existence.” - Albert Einstein",
-            "“Nothing in life is to be feared, it is only to be understood.” - Marie Curie", 
-            "“The microscope opens a new world to the investigator.” - Robert Koch",
-            "“In science, the credit goes to the man who convinces the world, not to the man to whom the idea first occurs.” - Francis Darwin",
-            "“The good thing about science is that it's true whether or not you believe in it.” - Neil deGrasse Tyson",
-            "“Science knows no country, because knowledge belongs to humanity.” - Louis Pasteur"
+            {"text": "The important thing is not to stop questioning. Curiosity has its own reason for existing.", "author": "Albert Einstein"},
+            {"text": "Science is not only a disciple of reason but also one of romance and passion.", "author": "Stephen Hawking"},
+            {"text": "Somewhere, something incredible is waiting to be known.", "author": "Carl Sagan"},
+            {"text": "The good thing about science is that it's true whether or not you believe in it.", "author": "Neil deGrasse Tyson"},
+            {"text": "In science, there are no shortcuts to truth.", "author": "Karl Popper"},
+            {"text": "Science knows no country, because knowledge belongs to humanity.", "author": "Louis Pasteur"},
+            {"text": "The science of today is the technology of tomorrow.", "author": "Edward Teller"},
+            {"text": "Nothing in life is to be feared, it is only to be understood.", "author": "Marie Curie"},
+            {"text": "Research is what I'm doing when I don't know what I'm doing.", "author": "Wernher von Braun"},
+            {"text": "The universe is not required to be in perfect harmony with human ambition.", "author": "Carl Sagan"},
+            {"text": "Staphscope represents the convergence of genomic surveillance and clinical diagnostics, transforming raw sequences into actionable insights for infection control.", "author": "Brown Beckley"},
+            {"text": "In the battle against antimicrobial resistance, tools like Staphscope are our eyes and ears, revealing the genetic blueprints of resistant pathogens.", "author": "Brown Beckley"},
+            {"text": "Staphscope isn't just a tool; it's a comprehensive system that bridges the gap between sequencing data and public health action.", "author": "Brown Beckley"},
+            {"text": "Through Staphscope, we turn the complexity of bacterial genomes into clear, interpretable reports, empowering clinicians and researchers alike.", "author": "Brown Beckley"},
+            {"text": "Staphscope is a testament to the power of bioinformatics in the modern era, making advanced pathogen typing accessible to all.", "author": "Brown Beckley"}
         ]
+    
+    def get_random_quote(self):
+        """Get a random science quote - SAME AS IN SPA TYPING CODE"""
+        return random.choice(self.science_quotes)
     
     def _setup_logging(self):
         """Setup logging - must be called first in __init__"""
@@ -114,9 +129,9 @@ class AbricateExecutor:
             elif total_physical_cores <= 16:
                 optimal_cpus = max(8, total_physical_cores - 2)  # Use 14/16, 13/15, etc.
             elif total_physical_cores <= 32:
-                optimal_cpus = max(16, total_physical_cores - 4)  # Use 28/32, 27/31, etc.
+                optimal_cpus = max(16, total_physical_cores - 3)  # Use 28/32, 27/31, etc.
             else:
-                optimal_cpus = min(32, int(total_physical_cores * 0.85))  # Use 85% on huge systems
+                optimal_cpus = min(32, int(total_physical_cores * 0.95))  # Use 95% on huge systems
             
             # Ensure at least 1 CPU and not more than available cores
             optimal_cpus = max(1, min(optimal_cpus, total_physical_cores))
@@ -341,127 +356,269 @@ class AbricateExecutor:
     def _create_database_html_report(self, genome_name: str, database: str, hits: List[Dict], output_dir: str):
         """Create individual HTML report for each database with beautiful styling"""
         
-        # JavaScript for rotating quotes
-        quotes_js = f"""
-        <script>
-            let quotes = {json.dumps(self.science_quotes)};
-            let currentQuote = 0;
-            
-            function rotateQuote() {{
-                document.getElementById('science-quote').innerHTML = quotes[currentQuote];
-                currentQuote = (currentQuote + 1) % quotes.length;
-            }}
-            
-            // Rotate every 10 seconds
-            setInterval(rotateQuote, 10000);
-            
-            // Initial display
-            document.addEventListener('DOMContentLoaded', function() {{
-                rotateQuote();
-            }});
-        </script>
-        """
+        # Get initial random quote
+        random_quote = self.get_random_quote()
         
-        html_content = f"""
-<!DOCTYPE html>
-<html>
+        # Get current timestamp
+        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        
+        html_content = f"""<!DOCTYPE html>
+<html lang="en">
 <head>
-    <title>StaphScope ABRicate - {database.upper()} Database</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STAPHSCOPE - ABRicate {database.upper()} Database Report</title>
     <style>
-        body {{ 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            margin: 0; 
-            padding: 0; 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        * {{
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }}
+        
+        body {{
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #7e22ce 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #ffffff;
+            padding: 20px;
             min-height: 100vh;
         }}
-        .container {{ 
-            max-width: 1200px; 
-            margin: 0 auto; 
-            padding: 20px; 
+        
+        .container {{
+            max-width: 1400px;
+            margin: 0 auto;
         }}
-        .header {{ 
-            background: rgba(255, 255, 255, 0.95); 
-            padding: 30px; 
-            border-radius: 15px; 
-            margin-bottom: 30px; 
-            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-            backdrop-filter: blur(10px);
+        
+        .header {{
+            text-align: center;
+            margin-bottom: 30px;
         }}
-        .card {{ 
-            background: rgba(255, 255, 255, 0.95); 
-            padding: 25px; 
-            margin: 20px 0; 
-            border-radius: 12px; 
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-            backdrop-filter: blur(10px);
+        
+        .ascii-container {{
+            background: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            border: 2px solid rgba(0, 255, 0, 0.3);
         }}
-        .gene-table {{ 
-            width: 100%; 
-            border-collapse: collapse; 
-            margin: 20px 0; 
-            background: white;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        
+        .ascii-art {{
+            font-family: 'Courier New', monospace;
+            font-size: 10px;
+            line-height: 1.1;
+            white-space: pre;
+            color: #00ff00;
+            text-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+            overflow-x: auto;
         }}
-        .gene-table th, .gene-table td {{ 
-            padding: 15px; 
-            text-align: left; 
-            border-bottom: 1px solid #e0e0e0; 
-        }}
-        .gene-table th {{ 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            font-weight: 600;
-        }}
-        tr:hover {{ background-color: #f8f9fa; }}
-        .summary-stats {{ 
-            display: flex; 
-            justify-content: space-around; 
-            margin: 20px 0; 
-            flex-wrap: wrap;
-        }}
-        .stat-card {{ 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 20px; 
-            border-radius: 12px; 
-            text-align: center; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            margin: 10px;
-            flex: 1;
-            min-width: 200px;
-        }}
+        
         .quote-container {{
             background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            text-align: center;
+            min-height: 100px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: opacity 0.5s ease-in-out;
+        }}
+        
+        .quote-text {{
+            font-size: 18px;
+            font-style: italic;
+            margin-bottom: 10px;
+            color: #ffffff;
+        }}
+        
+        .quote-author {{
+            font-size: 14px;
+            color: #fbbf24;
+            font-weight: bold;
+        }}
+        
+        .report-section {{
+            background: rgba(255, 255, 255, 0.95);
+            color: #1f2937;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }}
+        
+        .report-section h2 {{
+            color: #1e3a8a;
+            border-bottom: 3px solid #3b82f6;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }}
+        
+        .report-section h3 {{
+            color: #1e40af;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }}
+        
+        .metrics-grid {{
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 15px;
+        }}
+        
+        .metric-card {{
+            background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
             color: white;
             padding: 20px;
-            border-radius: 12px;
-            margin: 20px 0;
-            text-align: center;
-            font-style: italic;
-            border-left: 4px solid #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         }}
-        .footer {{
-            background: rgba(0, 0, 0, 0.8);
+        
+        .metric-label {{
+            font-size: 14px;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }}
+        
+        .metric-value {{
+            font-size: 24px;
+            font-weight: bold;
+        }}
+        
+        .summary-table {{
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 14px;
+        }}
+        
+        .summary-table th {{
+            background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
             color: white;
-            padding: 30px;
-            border-radius: 12px;
-            margin-top: 40px;
+            padding: 12px;
+            text-align: left;
+            font-weight: bold;
         }}
+        
+        .summary-table td {{
+            padding: 12px;
+            border-bottom: 1px solid #e5e7eb;
+        }}
+        
+        .summary-table tr:nth-child(even) {{
+            background-color: #f8fafc;
+        }}
+        
+        .summary-table tr:hover {{
+            background-color: #e0f2fe;
+        }}
+        
+        .detail-table {{
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 13px;
+        }}
+        
+        .detail-table th {{
+            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+            color: white;
+            padding: 10px;
+            text-align: left;
+            font-weight: bold;
+        }}
+        
+        .detail-table td {{
+            padding: 10px;
+            border-bottom: 1px solid #e5e7eb;
+        }}
+        
+        .detail-table tr:nth-child(even) {{
+            background-color: #f8fafc;
+        }}
+        
+        .spa-type-cell {{
+            font-weight: bold;
+            color: #1e40af;
+        }}
+        
+        .repeat-cell {{
+            font-family: 'Courier New', monospace;
+            background-color: #f0f9ff;
+            color: #0369a1;
+            font-weight: bold;
+        }}
+        
+        .footer {{
+            text-align: center;
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            font-size: 14px;
+        }}
+        
         .footer a {{
-            color: #667eea;
+            color: #3b82f6;
             text-decoration: none;
         }}
+        
         .footer a:hover {{
             text-decoration: underline;
         }}
-        .present {{ background-color: #d4edda; }}
-        .high-risk {{ background-color: #fff3cd; }}
-        .critical {{ background-color: #f8d7da; font-weight: bold; }}
+        
+        .timestamp {{
+            color: #fbbf24;
+            font-weight: bold;
+        }}
+        
+        .authorship {{
+            margin-top: 15px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            font-size: 12px;
+        }}
+        
+        .present {{ background-color: #d1fae5; }}
+        .high-risk {{ background-color: #fef3c7; }}
+        .critical {{ background-color: #fee2e2; font-weight: bold; }}
+        
+        .confidence-badge {{
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }}
+        
+        .confidence-high {{
+            background-color: #16a34a;
+            color: white;
+        }}
+        
+        .confidence-medium {{
+            background-color: #f59e0b;
+            color: white;
+        }}
+        
+        .confidence-low {{
+            background-color: #dc2626;
+            color: white;
+        }}
+        
+        .confidence-very-high {{
+            background-color: #0d9488;
+            color: white;
+        }}
+        
         /* FIX FOR REVIEWER: Make product column responsive with word wrapping */
         .product-cell {{
             white-space: normal !important;
@@ -469,50 +626,75 @@ class AbricateExecutor:
             max-width: 400px;
             min-width: 200px;
         }}
+        
         /* FIX FOR REVIEWER: Make tables responsive */
         .table-responsive {{
             width: 100%;
             overflow-x: auto;
             margin: 20px 0;
         }}
-        .gene-table {{
-            min-width: 800px; /* Ensure table has minimum width */
+        
+        .summary-table {{
+            min-width: 800px;
+        }}
+        
+        @media (max-width: 768px) {{
+            .ascii-art {{
+                font-size: 6px;
+            }}
+            .metrics-grid {{
+                grid-template-columns: 1fr;
+            }}
         }}
     </style>
-    {quotes_js}
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1 style="color: #333; margin: 0; font-size: 2.5em;">🧫 StaphScope ABRicate - {database.upper()} Database</h1>
-            <p style="color: #666; font-size: 1.2em;">Genome: {genome_name} | Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M')}</p>
+            <div class="ascii-container">
+                <div class="ascii-art">███████╗████████╗ █████╗ ██████╗ ██╗  ██╗███████╗ ██████╗ ██████╗ ██████╗ ███████╗
+██╔════╝╚══██╔══╝██╔══██╗██╔══██╗██║  ██║██╔════╝██╔════╝██╔═══██╗██╔══██╗██╔════╝
+███████╗   ██║   ███████║██████╔╝███████║███████╗██║     ██║   ██║██████╔╝█████╗  
+╚════██║   ██║   ██╔══██║██╔═══╝ ██╔══██║╚════██║██║     ██║   ██║██╔═══╝ ██╔══╝  
+███████║   ██║   ██║  ██║██║     ██║  ██║███████║╚██████╗╚██████╔╝██║     ███████╗
+╚══════╝   ╚═╝   ╚═╝  ╚═╝╚═╝     ╚═╝  ╚═╝╚══════╝ ╚═════╝ ╚═════╝ ╚═╝     ╚══════╝</div>
+            </div>
+            
+            <div class="quote-container" id="quoteContainer">
+                <div class="quote-text" id="quoteText">"{random_quote['text']}"</div>
+                <div class="quote-author" id="quoteAuthor">— {random_quote['author']}</div>
+            </div>
         </div>
         
-        <div class="quote-container">
-            <div id="science-quote" style="font-size: 1.1em;"></div>
-        </div>
-        
-        <div class="card">
-            <h2 style="color: #333; border-bottom: 2px solid #667eea; padding-bottom: 10px;">📊 Database Summary</h2>
-            <div class="summary-stats">
-                <div class="stat-card">
-                    <h3>Total Genes</h3>
-                    <p style="font-size: 2em; margin: 0;">{len(hits)}</p>
+        <div class="report-section">
+            <h2>📊 Database Information</h2>
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-label">Database Name</div>
+                    <div class="metric-value">{database.upper()}</div>
                 </div>
-                <div class="stat-card">
-                    <h3>Database</h3>
-                    <p style="font-size: 1.5em; margin: 0;">{database.upper()}</p>
+                <div class="metric-card">
+                    <div class="metric-label">Genome</div>
+                    <div class="metric-value">{genome_name}</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Analysis Date</div>
+                    <div class="metric-value">{datetime.now().strftime('%Y-%m-%d %H:%M')}</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Total Hits</div>
+                    <div class="metric-value">{len(hits)}</div>
                 </div>
             </div>
         </div>
 """
         
         if hits:
-            html_content += """
-        <div class="card">
-            <h2 style="color: #333; border-bottom: 2px solid #667eea; padding-bottom: 10px;">🔍 Genes Detected</h2>
+            html_content += f"""
+        <div class="report-section">
+            <h2>🔍 Genes Detected</h2>
             <div class="table-responsive">
-                <table class="gene-table">
+                <table class="summary-table">
                     <thead>
                         <tr>
                             <th>Gene</th>
@@ -555,28 +737,53 @@ class AbricateExecutor:
         </div>
 """
         else:
-            html_content += """
-        <div class="card">
-            <h2 style="color: #333; border-bottom: 2px solid #667eea; padding-bottom: 10px;">✅ No Genes Detected</h2>
+            html_content += f"""
+        <div class="report-section">
+            <h2>✅ No Genes Detected</h2>
             <p>No significant hits found in the {database.upper()} database.</p>
         </div>
 """
         
         html_content += f"""
         <div class="footer">
-            <h3 style="color: #fff; border-bottom: 2px solid #667eea; padding-bottom: 10px;">👥 Contact Information</h3>
-            <p><strong>Author:</strong> Brown Beckley</p>
-            <p><strong>Email:</strong> brownbeckley94@gmail.com</p>
-            <p><strong>GitHub:</strong> <a href="https://github.com/bbeckley-hub" target="_blank">https://github.com/bbeckley-hub</a></p>
-            <p><strong>Affiliation:</strong> University of Ghana Medical School</p>
-            <p style="margin-top: 20px; font-size: 0.9em; color: #ccc;">
-                Analysis performed using StaphScope ABRicate v1.0.1
-            </p>
+            <p><strong>STAPHSCOPE</strong> - ABRicate Analysis Module</p>
+            <p class="timestamp">Generated: {current_time}</p>
+            <div class="authorship">
+                <p><strong>Technical Support & Inquiries:</strong></p>
+                <p>Author: Brown Beckley | GitHub: bbeckley-hub</p>
+                <p>Email: brownbeckley94@gmail.com</p>
+                <p>Affiliation: University of Ghana Medical School - Department of Medical Biochemistry</p>
+            </div>
         </div>
     </div>
+
+    <script>
+        const quotes = {json.dumps(self.science_quotes)};
+
+        const quoteContainer = document.getElementById('quoteContainer');
+        const quoteText = document.getElementById('quoteText');
+        const quoteAuthor = document.getElementById('quoteAuthor');
+
+        function getRandomQuote() {{
+            return quotes[Math.floor(Math.random() * quotes.length)];
+        }}
+
+        function displayQuote() {{
+            quoteContainer.style.opacity = '0';
+            
+            setTimeout(() => {{
+                const quote = getRandomQuote();
+                quoteText.textContent = '"' + quote.text + '"';
+                quoteAuthor.textContent = '— ' + quote.author;
+                quoteContainer.style.opacity = '1';
+            }}, 500);
+        }}
+
+        // Rotate quotes every 10 seconds
+        setInterval(displayQuote, 10000);
+    </script>
 </body>
-</html>
-"""
+</html>"""
         
         # Write individual database HTML report
         html_file = os.path.join(output_dir, f"abricate_{database}_report.html")
@@ -734,156 +941,399 @@ class AbricateExecutor:
         # Analyze S. aureus genes
         analysis = self.analyze_saureus_genes(all_hits)
         
-        # JavaScript for rotating quotes
-        quotes_js = f"""
-        <script>
-            let quotes = {json.dumps(self.science_quotes)};
-            let currentQuote = 0;
-            
-            function rotateQuote() {{
-                document.getElementById('science-quote').innerHTML = quotes[currentQuote];
-                currentQuote = (currentQuote + 1) % quotes.length;
-            }}
-            
-            // Rotate every 10 seconds
-            setInterval(rotateQuote, 10000);
-            
-            // Initial display
-            document.addEventListener('DOMContentLoaded', function() {{
-                rotateQuote();
-            }});
-        </script>
-        """
+        # Get initial random quote
+        random_quote = self.get_random_quote()
         
-        html_content = f"""
-<!DOCTYPE html>
-<html>
+        # Get current timestamp
+        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        
+        html_content = f"""<!DOCTYPE html>
+<html lang="en">
 <head>
-    <title>StaphScope ABRicate Analysis Report</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STAPHSCOPE - ABRicate Analysis Report</title>
     <style>
-        body {{ 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            margin: 0; 
-            padding: 0; 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        * {{
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }}
+        
+        body {{
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #7e22ce 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #ffffff;
+            padding: 20px;
             min-height: 100vh;
         }}
-        .container {{ 
-            max-width: 1200px; 
-            margin: 0 auto; 
-            padding: 20px; 
+        
+        .container {{
+            max-width: 1400px;
+            margin: 0 auto;
         }}
-        .header {{ 
-            background: rgba(255, 255, 255, 0.95); 
-            padding: 30px; 
-            border-radius: 15px; 
-            margin-bottom: 30px; 
-            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-            backdrop-filter: blur(10px);
+        
+        .header {{
+            text-align: center;
+            margin-bottom: 30px;
         }}
-        .card {{ 
-            background: rgba(255, 255, 255, 0.95); 
-            padding: 25px; 
-            margin: 20px 0; 
-            border-radius: 12px; 
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-            backdrop-filter: blur(10px);
+        
+        .ascii-container {{
+            background: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            border: 2px solid rgba(0, 255, 0, 0.3);
         }}
-        .gene-table {{ 
-            width: 100%; 
-            border-collapse: collapse; 
-            margin: 20px 0; 
-            background: white;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        
+        .ascii-art {{
+            font-family: 'Courier New', monospace;
+            font-size: 10px;
+            line-height: 1.1;
+            white-space: pre;
+            color: #00ff00;
+            text-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+            overflow-x: auto;
         }}
-        .gene-table th, .gene-table td {{ 
-            padding: 15px; 
-            text-align: left; 
-            border-bottom: 1px solid #e0e0e0; 
-        }}
-        .gene-table th {{ 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            font-weight: 600;
-        }}
-        tr:hover {{ background-color: #f8f9fa; }}
-        .success {{ color: #28a745; font-weight: 600; }}
-        .warning {{ color: #ffc107; font-weight: 600; }}
-        .error {{ color: #dc3545; font-weight: 600; }}
-        .critical {{ background-color: #f8d7da; font-weight: bold; }}
-        .high-risk {{ background-color: #fff3cd; }}
-        .summary-stats {{ 
-            display: flex; 
-            justify-content: space-around; 
-            margin: 20px 0; 
-            flex-wrap: wrap;
-        }}
-        .stat-card {{ 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 20px; 
-            border-radius: 12px; 
-            text-align: center; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            margin: 10px;
-            flex: 1;
-            min-width: 200px;
-        }}
+        
         .quote-container {{
             background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            text-align: center;
+            min-height: 100px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: opacity 0.5s ease-in-out;
+        }}
+        
+        .quote-text {{
+            font-size: 18px;
+            font-style: italic;
+            margin-bottom: 10px;
+            color: #ffffff;
+        }}
+        
+        .quote-author {{
+            font-size: 14px;
+            color: #fbbf24;
+            font-weight: bold;
+        }}
+        
+        .report-section {{
+            background: rgba(255, 255, 255, 0.95);
+            color: #1f2937;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }}
+        
+        .report-section h2 {{
+            color: #1e3a8a;
+            border-bottom: 3px solid #3b82f6;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }}
+        
+        .report-section h3 {{
+            color: #1e40af;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }}
+        
+        .metrics-grid {{
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 15px;
+        }}
+        
+        .metric-card {{
+            background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
             color: white;
             padding: 20px;
-            border-radius: 12px;
-            margin: 20px 0;
-            text-align: center;
-            font-style: italic;
-            border-left: 4px solid #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         }}
-        .footer {{
-            background: rgba(0, 0, 0, 0.8);
+        
+        .metric-label {{
+            font-size: 14px;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }}
+        
+        .metric-value {{
+            font-size: 24px;
+            font-weight: bold;
+        }}
+        
+        .identity-coverage-grid {{
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }}
+        
+        .ic-card {{
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
             color: white;
-            padding: 30px;
-            border-radius: 12px;
-            margin-top: 40px;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            text-align: center;
         }}
-        .footer a {{
-            color: #667eea;
-            text-decoration: none;
+        
+        .ic-card.not-available {{
+            background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
         }}
-        .footer a:hover {{
-            text-decoration: underline;
+        
+        .ic-value {{
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 5px;
         }}
+        
+        .ic-label {{
+            font-size: 14px;
+            opacity: 0.9;
+        }}
+        
+        .primary-result {{
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 10px;
+            margin: 20px 0;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }}
+        
+        .summary-table {{
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 14px;
+        }}
+        
+        .summary-table th {{
+            background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: bold;
+        }}
+        
+        .summary-table td {{
+            padding: 12px;
+            border-bottom: 1px solid #e5e7eb;
+        }}
+        
+        .summary-table tr:nth-child(even) {{
+            background-color: #f8fafc;
+        }}
+        
+        .summary-table tr:hover {{
+            background-color: #e0f2fe;
+        }}
+        
+        .detail-table {{
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 13px;
+        }}
+        
+        .detail-table th {{
+            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+            color: white;
+            padding: 10px;
+            text-align: left;
+            font-weight: bold;
+        }}
+        
+        .detail-table td {{
+            padding: 10px;
+            border-bottom: 1px solid #e5e7eb;
+        }}
+        
+        .detail-table tr:nth-child(even) {{
+            background-color: #f8fafc;
+        }}
+        
+        .spa-type-cell {{
+            font-weight: bold;
+            color: #1e40af;
+        }}
+        
+        .repeat-cell {{
+            font-family: 'Courier New', monospace;
+            background-color: #f0f9ff;
+            color: #0369a1;
+            font-weight: bold;
+        }}
+        
+        .success {{
+            color: #16a34a;
+            font-weight: 600;
+        }}
+        
+        .warning {{
+            color: #f59e0b;
+            font-weight: 600;
+        }}
+        
+        .error {{
+            color: #dc2626;
+            font-weight: 600;
+        }}
+        
+        .critical {{ background-color: #fee2e2; font-weight: bold; }}
+        .high-risk {{ background-color: #fef3c7; }}
+        .present {{ background-color: #d1fae5; }}
+        
+        .stats-grid {{
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }}
+        
+        .stat-card {{
+            background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }}
+        
+        .stat-value {{
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }}
+        
+        .stat-label {{
+            font-size: 12px;
+            opacity: 0.9;
+        }}
+        
+        .identity-coverage-stats {{
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }}
+        
+        .ic-stat-card {{
+            background: #f0f9ff;
+            color: #0369a1;
+            padding: 10px;
+            border-radius: 6px;
+            text-align: center;
+            border: 1px solid #bae6fd;
+        }}
+        
+        .ic-stat-value {{
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 3px;
+        }}
+        
+        .ic-stat-label {{
+            font-size: 11px;
+            opacity: 0.8;
+        }}
+        
+        .confidence-badge {{
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }}
+        
+        .confidence-high {{
+            background-color: #16a34a;
+            color: white;
+        }}
+        
+        .confidence-medium {{
+            background-color: #f59e0b;
+            color: white;
+        }}
+        
+        .confidence-low {{
+            background-color: #dc2626;
+            color: white;
+        }}
+        
+        .confidence-very-high {{
+            background-color: #0d9488;
+            color: white;
+        }}
+        
+        .footer {{
+            text-align: center;
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            font-size: 14px;
+        }}
+        
+        .timestamp {{
+            color: #fbbf24;
+            font-weight: bold;
+        }}
+        
+        .authorship {{
+            margin-top: 15px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            font-size: 12px;
+        }}
+        
         .risk-badge {{
             display: inline-block;
-            background: #dc3545;
+            background: #dc2626;
             color: white;
             padding: 5px 10px;
             border-radius: 15px;
             margin: 2px;
             font-size: 0.9em;
         }}
+        
         .warning-badge {{
             display: inline-block;
-            background: #ffc107;
+            background: #f59e0b;
             color: black;
             padding: 5px 10px;
             border-radius: 15px;
             margin: 2px;
             font-size: 0.9em;
         }}
+        
         .safe-badge {{
             display: inline-block;
-            background: #28a745;
+            background: #16a34a;
             color: white;
             padding: 5px 10px;
             border-radius: 15px;
             margin: 2px;
             font-size: 0.9em;
         }}
+        
         /* FIX FOR REVIEWER: Make product column responsive with word wrapping */
         .product-cell {{
             white-space: normal !important;
@@ -891,47 +1341,74 @@ class AbricateExecutor:
             max-width: 500px;
             min-width: 200px;
         }}
+        
         /* FIX FOR REVIEWER: Make tables responsive */
         .table-responsive {{
             width: 100%;
             overflow-x: auto;
             margin: 20px 0;
         }}
-        .gene-table {{
-            min-width: 900px; /* Ensure table has minimum width */
+        
+        .summary-table {{
+            min-width: 900px;
+        }}
+        
+        @media (max-width: 768px) {{
+            .ascii-art {{
+                font-size: 6px;
+            }}
+            .metrics-grid {{
+                grid-template-columns: 1fr;
+            }}
+            .summary-table {{
+                font-size: 12px;
+            }}
+            .summary-table th,
+            .summary-table td {{
+                padding: 6px;
+            }}
         }}
     </style>
-    {quotes_js}
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1 style="color: #333; margin: 0; font-size: 2.5em;">🧫 StaphScope ABRicate Analysis Report</h1>
-            <p style="color: #666; font-size: 1.2em;">Comprehensive S. aureus Antimicrobial Resistance & Virulence Analysis</p>
+            <div class="ascii-container">
+                <div class="ascii-art">███████╗████████╗ █████╗ ██████╗ ██╗  ██╗███████╗ ██████╗ ██████╗ ██████╗ ███████╗
+██╔════╝╚══██╔══╝██╔══██╗██╔══██╗██║  ██║██╔════╝██╔════╝██╔═══██╗██╔══██╗██╔════╝
+███████╗   ██║   ███████║██████╔╝███████║███████╗██║     ██║   ██║██████╔╝█████╗  
+╚════██║   ██║   ██╔══██║██╔═══╝ ██╔══██║╚════██║██║     ██║   ██║██╔═══╝ ██╔══╝  
+███████║   ██║   ██║  ██║██║     ██║  ██║███████║╚██████╗╚██████╔╝██║     ███████╗
+╚══════╝   ╚═╝   ╚═╝  ╚═╝╚═╝     ╚═╝  ╚═╝╚══════╝ ╚═════╝ ╚═════╝ ╚═╝     ╚══════╝</div>
+            </div>
+            
+            <div class="quote-container" id="quoteContainer">
+                <div class="quote-text" id="quoteText">"{random_quote['text']}"</div>
+                <div class="quote-author" id="quoteAuthor">— {random_quote['author']}</div>
+            </div>
         </div>
         
-        <div class="quote-container">
-            <div id="science-quote" style="font-size: 1.1em;"></div>
-        </div>
-        
-        <div class="card">
-            <h2 style="color: #333; border-bottom: 2px solid #667eea; padding-bottom: 10px;">📊 S. aureus AMR Summary</h2>
-            <div class="summary-stats">
-                <div class="stat-card">
-                    <h3>Total Genes</h3>
-                    <p style="font-size: 2em; margin: 0;">{analysis['total_hits']}</p>
+        <div class="report-section">
+            <h2>📊 S. aureus AMR Summary</h2>
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-label">Total Genes</div>
+                    <div class="metric-value">{analysis['total_hits']}</div>
                 </div>
-                <div class="stat-card">
-                    <h3>S. aureus Genes</h3>
-                    <p style="font-size: 2em; margin: 0;">{analysis['total_sa_genes']}</p>
+                <div class="metric-card">
+                    <div class="metric-label">S. aureus Genes</div>
+                    <div class="metric-value">{analysis['total_sa_genes']}</div>
                 </div>
-                <div class="stat-card">
-                    <h3>Critical Resistance</h3>
-                    <p style="font-size: 2em; margin: 0;">{analysis['total_critical_resistance']}</p>
+                <div class="metric-card">
+                    <div class="metric-label">Critical Resistance</div>
+                    <div class="metric-value">{analysis['total_critical_resistance']}</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Analysis Date</div>
+                    <div class="metric-value">{datetime.now().strftime('%Y-%m-%d')}</div>
                 </div>
             </div>
             <p><strong>Genome:</strong> {genome_name}</p>
-            <p><strong>Date:</strong> {self.metadata['analysis_date']}</p>
             <p><strong>Tool Version:</strong> {self.metadata['version']}</p>
         </div>
 """
@@ -945,8 +1422,8 @@ class AbricateExecutor:
         
         if critical_alerts:
             html_content += f"""
-        <div class="card" style="border-left: 4px solid #dc3545;">
-            <h2 style="color: #dc3545;">⚠️ CRITICAL RESISTANCE ALERTS</h2>
+        <div class="report-section" style="border-left: 4px solid #dc2626;">
+            <h2 style="color: #dc2626;">⚠️ CRITICAL RESISTANCE ALERTS</h2>
             <div style="margin: 10px 0;">
 """
             for alert in critical_alerts:
@@ -959,15 +1436,15 @@ class AbricateExecutor:
         # PVL status
         if analysis['pvl_status'] == 'positive':
             html_content += f"""
-        <div class="card" style="border-left: 4px solid #ffc107;">
-            <h2 style="color: #ffc107;">🦠 PVL POSITIVE</h2>
+        <div class="report-section" style="border-left: 4px solid #f59e0b;">
+            <h2 style="color: #f59e0b;">🦠 PVL POSITIVE</h2>
             <p>Panton-Valentine Leukocidin genes detected - High virulence potential</p>
         </div>
 """
         elif analysis['pvl_status'] == 'partial':
             html_content += f"""
-        <div class="card" style="border-left: 4px solid #ffc107;">
-            <h2 style="color: #ffc107;">🟡 PARTIAL PVL DETECTED</h2>
+        <div class="report-section" style="border-left: 4px solid #f59e0b;">
+            <h2 style="color: #f59e0b;">🟡 PARTIAL PVL DETECTED</h2>
             <p>Only one PVL gene detected - Complete PVL requires both lukS-PV and lukF-PV</p>
         </div>
 """
@@ -975,8 +1452,8 @@ class AbricateExecutor:
         # Resistance classes summary
         if analysis['resistance_classes']:
             html_content += """
-        <div class="card">
-            <h2 style="color: #333; border-bottom: 2px solid #667eea; padding-bottom: 10px;">🧪 Resistance Classes Detected</h2>
+        <div class="report-section">
+            <h2 style="color: #333; border-bottom: 2px solid #3b82f6; padding-bottom: 10px;">🧪 Resistance Classes Detected</h2>
             <div style="margin: 20px 0;">
 """
             
@@ -994,10 +1471,10 @@ class AbricateExecutor:
         # Critical resistance genes table
         if analysis['critical_resistance_genes']:
             html_content += """
-        <div class="card">
-            <h2 style="color: #333; border-bottom: 2px solid #667eea; padding-bottom: 10px;">🔴 CRITICAL Resistance Genes</h2>
+        <div class="report-section">
+            <h2 style="color: #1e3a8a; border-bottom: 3px solid #3b82f6; padding-bottom: 10px;">🔴 CRITICAL Resistance Genes</h2>
             <div class="table-responsive">
-                <table class="gene-table">
+                <table class="summary-table">
                     <thead>
                         <tr>
                             <th>Gene</th>
@@ -1036,10 +1513,10 @@ class AbricateExecutor:
         # High-risk virulence genes table
         if analysis['high_risk_virulence_genes']:
             html_content += """
-        <div class="card">
-            <h2 style="color: #333; border-bottom: 2px solid #667eea; padding-bottom: 10px;">🟡 High-Risk Virulence Genes</h2>
+        <div class="report-section">
+            <h2 style="color: #1e3a8a; border-bottom: 3px solid #3b82f6; padding-bottom: 10px;">🟡 High-Risk Virulence Genes</h2>
             <div class="table-responsive">
-                <table class="gene-table">
+                <table class="summary-table">
                     <thead>
                         <tr>
                             <th>Gene</th>
@@ -1078,10 +1555,10 @@ class AbricateExecutor:
         # Other S. aureus genes table
         if analysis['other_sa_genes']:
             html_content += """
-        <div class="card">
-            <h2 style="color: #333; border-bottom: 2px solid #667eea; padding-bottom: 10px;">🔵 Other S. aureus Genes</h2>
+        <div class="report-section">
+            <h2 style="color: #1e3a8a; border-bottom: 3px solid #3b82f6; padding-bottom: 10px;">🔵 Other S. aureus Genes</h2>
             <div class="table-responsive">
-                <table class="gene-table">
+                <table class="summary-table">
                     <thead>
                         <tr>
                             <th>Gene</th>
@@ -1099,7 +1576,7 @@ class AbricateExecutor:
                 product_display = gene_info['product']
                 
                 html_content += f"""
-                    <tr>
+                    <tr class="present">
                         <td><strong>{gene_info['gene']}</strong></td>
                         <td class="product-cell">{product_display}</td>
                         <td>{gene_info['database']}</td>
@@ -1117,10 +1594,10 @@ class AbricateExecutor:
         
         # Database summary
         html_content += """
-        <div class="card">
-            <h2 style="color: #333; border-bottom: 2px solid #667eea; padding-bottom: 10px;">🗃️ Database Results Summary</h2>
+        <div class="report-section">
+            <h2 style="color: #1e3a8a; border-bottom: 3px solid #3b82f6; padding-bottom: 10px;">🗃️ Database Results Summary</h2>
             <div class="table-responsive">
-                <table class="gene-table">
+                <table class="summary-table">
                     <thead>
                         <tr>
                             <th>Database</th>
@@ -1134,33 +1611,58 @@ class AbricateExecutor:
         for db, result in results.items():
             status_icon = "✅" if result['status'] == 'success' else "❌"
             html_content += f"""
-                    <tr>
+                    <tr class="present">
                         <td>{db}</td>
                         <td>{result['hit_count']}</td>
                         <td>{status_icon} {result['status']}</td>
                     </tr>
 """
         
-        html_content += """
+        html_content += f"""
                     </tbody>
                 </table>
             </div>
         </div>
         
         <div class="footer">
-            <h3 style="color: #fff; border-bottom: 2px solid #667eea; padding-bottom: 10px;">👥 Contact Information</h3>
-            <p><strong>Author:</strong> Brown Beckley</p>
-            <p><strong>Email:</strong> brownbeckley94@gmail.com</p>
-            <p><strong>GitHub:</strong> <a href="https://github.com/bbeckley-hub" target="_blank">https://github.com/bbeckley-hub</a></p>
-            <p><strong>Affiliation:</strong> University of Ghana Medical School</p>
-            <p style="margin-top: 20px; font-size: 0.9em; color: #ccc;">
-                Analysis performed using StaphScope ABRicate v1.0.1
-            </p>
+            <p><strong>STAPHSCOPE</strong> - ABRicate Analysis Module</p>
+            <p class="timestamp">Generated: {current_time}</p>
+            <div class="authorship">
+                <p><strong>Technical Support & Inquiries:</strong></p>
+                <p>Author: Brown Beckley | GitHub: bbeckley-hub</p>
+                <p>Email: brownbeckley94@gmail.com</p>
+                <p>Affiliation: University of Ghana Medical School - Department of Medical Biochemistry</p>
+            </div>
         </div>
     </div>
+
+    <script>
+        const quotes = {json.dumps(self.science_quotes)};
+
+        const quoteContainer = document.getElementById('quoteContainer');
+        const quoteText = document.getElementById('quoteText');
+        const quoteAuthor = document.getElementById('quoteAuthor');
+
+        function getRandomQuote() {{
+            return quotes[Math.floor(Math.random() * quotes.length)];
+        }}
+
+        function displayQuote() {{
+            quoteContainer.style.opacity = '0';
+            
+            setTimeout(() => {{
+                const quote = getRandomQuote();
+                quoteText.textContent = '"' + quote.text + '"';
+                quoteAuthor.textContent = '— ' + quote.author;
+                quoteContainer.style.opacity = '1';
+            }}, 500);
+        }}
+
+        // Rotate quotes every 10 seconds
+        setInterval(displayQuote, 10000);
+    </script>
 </body>
-</html>
-"""
+</html>"""
         
         # Write comprehensive HTML report
         html_file = os.path.join(output_dir, f"{genome_name}_comprehensive_abricate_report.html")
@@ -1279,7 +1781,7 @@ class AbricateExecutor:
                 },
                 'gene_frequency': gene_frequency,
                 'summary_by_genome': self._create_genome_summary(data),
-                'hits': data['hits'][:100]  # Include first 100 hits to keep file manageable
+                'hits': data['hits'][:1000]  # Include first 100 hits to keep file manageable
             }
             
             # Write JSON file
@@ -1419,26 +1921,11 @@ class AbricateExecutor:
     def _create_database_summary_html(self, database: str, hits: List[Dict], output_base: str):
         """Create HTML summary report for a specific database across all genomes"""
         
-        # JavaScript for rotating quotes
-        quotes_js = f"""
-        <script>
-            let quotes = {json.dumps(self.science_quotes)};
-            let currentQuote = 0;
-            
-            function rotateQuote() {{
-                document.getElementById('science-quote').innerHTML = quotes[currentQuote];
-                currentQuote = (currentQuote + 1) % quotes.length;
-            }}
-            
-            // Rotate every 10 seconds
-            setInterval(rotateQuote, 10000);
-            
-            // Initial display
-            document.addEventListener('DOMContentLoaded', function() {{
-                rotateQuote();
-            }});
-        </script>
-        """
+        # Get initial random quote
+        random_quote = self.get_random_quote()
+        
+        # Get current timestamp
+        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         
         # Count unique genomes
         unique_genomes = list(set(hit['genome'] for hit in hits))
@@ -1451,158 +1938,318 @@ class AbricateExecutor:
                 genes_per_genome[genome] = set()
             genes_per_genome[genome].add(hit['gene'])
         
-        html_content = f"""
-<!DOCTYPE html>
-<html>
+        html_content = f"""<!DOCTYPE html>
+<html lang="en">
 <head>
-    <title>StaphScope ABRicate - {database.upper()} Database Summary</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STAPHSCOPE - Batch ABRicate Summary ({database.upper()})</title>
     <style>
-        body {{ 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            margin: 0; 
-            padding: 0; 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        * {{
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }}
+        
+        body {{
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #7e22ce 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #ffffff;
+            padding: 20px;
             min-height: 100vh;
         }}
-        .container {{ 
-            max-width: 1200px; 
-            margin: 0 auto; 
-            padding: 20px; 
+        
+        .container {{
+            max-width: 1800px;
+            margin: 0 auto;
         }}
-        .header {{ 
-            background: rgba(255, 255, 255, 0.95); 
-            padding: 30px; 
-            border-radius: 15px; 
-            margin-bottom: 30px; 
-            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-            backdrop-filter: blur(10px);
+        
+        .header {{
+            text-align: center;
+            margin-bottom: 30px;
         }}
-        .card {{ 
-            background: rgba(255, 255, 255, 0.95); 
-            padding: 25px; 
-            margin: 20px 0; 
-            border-radius: 12px; 
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-            backdrop-filter: blur(10px);
+        
+        .ascii-container {{
+            background: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            border: 2px solid rgba(0, 255, 0, 0.3);
         }}
-        .gene-table {{ 
-            width: 100%; 
-            border-collapse: collapse; 
-            margin: 20px 0; 
-            background: white;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        
+        .ascii-art {{
+            font-family: 'Courier New', monospace;
+            font-size: 10px;
+            line-height: 1.1;
+            white-space: pre;
+            color: #00ff00;
+            text-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+            overflow-x: auto;
         }}
-        .gene-table th, .gene-table td {{ 
-            padding: 15px; 
-            text-align: left; 
-            border-bottom: 1px solid #e0e0e0; 
-        }}
-        .gene-table th {{ 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            font-weight: 600;
-        }}
-        tr:hover {{ background-color: #f8f9fa; }}
-        .summary-stats {{ 
-            display: flex; 
-            justify-content: space-around; 
-            margin: 20px 0; 
-            flex-wrap: wrap;
-        }}
-        .stat-card {{ 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 20px; 
-            border-radius: 12px; 
-            text-align: center; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            margin: 10px;
-            flex: 1;
-            min-width: 200px;
-        }}
+        
         .quote-container {{
             background: rgba(255, 255, 255, 0.1);
-            color: white;
+            backdrop-filter: blur(10px);
             padding: 20px;
-            border-radius: 12px;
-            margin: 20px 0;
+            border-radius: 10px;
+            margin-bottom: 30px;
             text-align: center;
+            min-height: 100px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: opacity 0.5s ease-in-out;
+        }}
+        
+        .quote-text {{
+            font-size: 18px;
             font-style: italic;
-            border-left: 4px solid #fff;
+            margin-bottom: 10px;
+            color: #ffffff;
         }}
-        .footer {{
-            background: rgba(0, 0, 0, 0.8);
-            color: white;
-            padding: 30px;
-            border-radius: 12px;
-            margin-top: 40px;
+        
+        .quote-author {{
+            font-size: 14px;
+            color: #fbbf24;
+            font-weight: bold;
         }}
-        .footer a {{
-            color: #667eea;
-            text-decoration: none;
+        
+        .report-section {{
+            background: rgba(255, 255, 255, 0.95);
+            color: #1f2937;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
         }}
-        .footer a:hover {{
-            text-decoration: underline;
+        
+        .report-section h2 {{
+            color: #1e3a8a;
+            border-bottom: 3px solid #3b82f6;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            font-size: 24px;
         }}
-        .present {{ background-color: #d4edda; }}
-        /* FIX FOR REVIEWER: Make product column responsive with word wrapping */
-        .product-cell {{
-            white-space: normal !important;
-            word-wrap: break-word;
-            max-width: 400px;
-            min-width: 200px;
-        }}
-        /* FIX FOR REVIEWER: Make tables responsive */
-        .table-responsive {{
+        
+        .summary-table {{
             width: 100%;
-            overflow-x: auto;
-            margin: 20px 0;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 14px;
         }}
-        .gene-table {{
-            min-width: 800px; /* Ensure table has minimum width */
+        
+        .summary-table th {{
+            background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: bold;
+            position: sticky;
+            top: 0;
+        }}
+        
+        .summary-table td {{
+            padding: 10px;
+            border-bottom: 1px solid #e5e7eb;
+        }}
+        
+        .summary-table tr:nth-child(even) {{
+            background-color: #f8fafc;
+        }}
+        
+        .summary-table tr:hover {{
+            background-color: #e0f2fe;
+        }}
+        
+        .spa-type-cell {{
+            font-weight: bold;
+            color: #1e40af;
+        }}
+        
+        .repeat-cell {{
+            font-family: 'Courier New', monospace;
+            background-color: #f0f9ff;
+            color: #0369a1;
+            font-weight: bold;
+        }}
+        
+        .success {{
+            color: #16a34a;
+            font-weight: bold;
+        }}
+        
+        .failed {{
+            color: #dc2626;
+            font-weight: bold;
+        }}
+        
+        .stats-grid {{
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }}
+        
+        .stat-card {{
+            background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }}
+        
+        .stat-value {{
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }}
+        
+        .stat-label {{
+            font-size: 12px;
+            opacity: 0.9;
+        }}
+        
+        .identity-coverage-stats {{
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }}
+        
+        .ic-stat-card {{
+            background: #f0f9ff;
+            color: #0369a1;
+            padding: 10px;
+            border-radius: 6px;
+            text-align: center;
+            border: 1px solid #bae6fd;
+        }}
+        
+        .ic-stat-value {{
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 3px;
+        }}
+        
+        .ic-stat-label {{
+            font-size: 11px;
+            opacity: 0.8;
+        }}
+        
+        .confidence-badge {{
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }}
+        
+        .confidence-high {{
+            background-color: #16a34a;
+            color: white;
+        }}
+        
+        .confidence-medium {{
+            background-color: #f59e0b;
+            color: white;
+        }}
+        
+        .confidence-low {{
+            background-color: #dc2626;
+            color: white;
+        }}
+        
+        .confidence-very-high {{
+            background-color: #0d9488;
+            color: white;
+        }}
+        
+        .footer {{
+            text-align: center;
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            font-size: 14px;
+        }}
+        
+        .timestamp {{
+            color: #fbbf24;
+            font-weight: bold;
+        }}
+        
+        .authorship {{
+            margin-top: 15px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            font-size: 12px;
+        }}
+        
+        @media (max-width: 768px) {{
+            .ascii-art {{
+                font-size: 6px;
+            }}
+            .summary-table {{
+                font-size: 12px;
+            }}
+            .summary-table th,
+            .summary-table td {{
+                padding: 6px;
+            }}
         }}
     </style>
-    {quotes_js}
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1 style="color: #333; margin: 0; font-size: 2.5em;">🧫 StaphScope ABRicate - {database.upper()} Database Summary</h1>
-            <p style="color: #666; font-size: 1.2em;">Cross-genome analysis of {database.upper()} database results</p>
+            <div class="ascii-container">
+                <div class="ascii-art">███████╗████████╗ █████╗ ██████╗ ██╗  ██╗███████╗ ██████╗ ██████╗ ██████╗ ███████╗
+██╔════╝╚══██╔══╝██╔══██╗██╔══██╗██║  ██║██╔════╝██╔════╝██╔═══██╗██╔══██╗██╔════╝
+███████╗   ██║   ███████║██████╔╝███████║███████╗██║     ██║   ██║██████╔╝█████╗  
+╚════██║   ██║   ██╔══██║██╔═══╝ ██╔══██║╚════██║██║     ██║   ██║██╔═══╝ ██╔══╝  
+███████║   ██║   ██║  ██║██║     ██║  ██║███████║╚██████╗╚██████╔╝██║     ███████╗
+╚══════╝   ╚═╝   ╚═╝  ╚═╝╚═╝     ╚═╝  ╚═╝╚══════╝ ╚═════╝ ╚═════╝ ╚═╝     ╚══════╝</div>
+            </div>
+            
+            <div class="quote-container" id="quoteContainer">
+                <div class="quote-text" id="quoteText">"{random_quote['text']}"</div>
+                <div class="quote-author" id="quoteAuthor">— {random_quote['author']}</div>
+            </div>
         </div>
         
-        <div class="quote-container">
-            <div id="science-quote" style="font-size: 1.1em;"></div>
-        </div>
-        
-        <div class="card">
-            <h2 style="color: #333; border-bottom: 2px solid #667eea; padding-bottom: 10px;">📊 Database Overview</h2>
-            <div class="summary-stats">
+        <div class="report-section">
+            <h2>📊 Batch ABRicate Summary - {database.upper()} Database</h2>
+            
+            <div class="stats-grid">
                 <div class="stat-card">
-                    <h3>Total Hits</h3>
-                    <p style="font-size: 2em; margin: 0;">{len(hits)}</p>
+                    <div class="stat-value">{len(hits)}</div>
+                    <div class="stat-label">TOTAL HITS</div>
                 </div>
                 <div class="stat-card">
-                    <h3>Genomes</h3>
-                    <p style="font-size: 2em; margin: 0;">{len(unique_genomes)}</p>
+                    <div class="stat-value">{len(unique_genomes)}</div>
+                    <div class="stat-label">GENOMES ANALYZED</div>
                 </div>
                 <div class="stat-card">
-                    <h3>Unique Genes</h3>
-                    <p style="font-size: 2em; margin: 0;">{len(set(hit['gene'] for hit in hits))}</p>
+                    <div class="stat-value">{len(set(hit['gene'] for hit in hits))}</div>
+                    <div class="stat-label">UNIQUE GENES</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">{datetime.now().strftime('%Y-%m-%d')}</div>
+                    <div class="stat-label">ANALYSIS DATE</div>
                 </div>
             </div>
-            <p><strong>Database:</strong> {database.upper()}</p>
-            <p><strong>Date:</strong> {self.metadata['analysis_date']}</p>
         </div>
         
-        <div class="card">
-            <h2 style="color: #333; border-bottom: 2px solid #667eea; padding-bottom: 10px;">🔍 Genes by Genome</h2>
+        <div class="report-section">
+            <h2>🔍 Genes by Genome</h2>
             <div class="table-responsive">
-                <table class="gene-table">
+                <table class="summary-table">
                     <thead>
                         <tr>
                             <th>Genome</th>
@@ -1617,7 +2264,7 @@ class AbricateExecutor:
             genes = genes_per_genome.get(genome, set())
             gene_list = ", ".join(sorted(genes))
             html_content += f"""
-                    <tr class="present">
+                    <tr>
                         <td><strong>{genome}</strong></td>
                         <td>{len(genes)}</td>
                         <td>{gene_list}</td>
@@ -1630,10 +2277,10 @@ class AbricateExecutor:
             </div>
         </div>
         
-        <div class="card">
-            <h2 style="color: #333; border-bottom: 2px solid #667eea; padding-bottom: 10px;">📈 Gene Frequency</h2>
+        <div class="report-section">
+            <h2>📈 Gene Frequency</h2>
             <div class="table-responsive">
-                <table class="gene-table">
+                <table class="summary-table">
                     <thead>
                         <tr>
                             <th>Gene</th>
@@ -1658,30 +2305,55 @@ class AbricateExecutor:
                     <tr>
                         <td><strong>{gene}</strong></td>
                         <td>{len(genomes)}</td>
-                        <td class="product-cell">{genome_list}</td>
+                        <td>{genome_list}</td>
                     </tr>
 """
         
-        html_content += """
+        html_content += f"""
                     </tbody>
                 </table>
             </div>
         </div>
         
         <div class="footer">
-            <h3 style="color: #fff; border-bottom: 2px solid #667eea; padding-bottom: 10px;">👥 Contact Information</h3>
-            <p><strong>Author:</strong> Brown Beckley</p>
-            <p><strong>Email:</strong> brownbeckley94@gmail.com</p>
-            <p><strong>GitHub:</strong> <a href="https://github.com/bbeckley-hub" target="_blank">https://github.com/bbeckley-hub</a></p>
-            <p><strong>Affiliation:</strong> University of Ghana Medical School</p>
-            <p style="margin-top: 20px; font-size: 0.9em; color: #ccc;">
-                Analysis performed using StaphScope ABRicate v1.0.1
-            </p>
+            <p><strong>STAPHSCOPE</strong> - Batch ABRicate Analysis Summary</p>
+            <p class="timestamp">Generated: {current_time}</p>
+            <div class="authorship">
+                <p><strong>Technical Support & Inquiries:</strong></p>
+                <p>Author: Brown Beckley | GitHub: bbeckley-hub</p>
+                <p>Email: brownbeckley94@gmail.com</p>
+                <p>Affiliation: University of Ghana Medical School - Department of Medical Biochemistry</p>
+            </div>
         </div>
     </div>
+
+    <script>
+        const quotes = {json.dumps(self.science_quotes)};
+
+        const quoteContainer = document.getElementById('quoteContainer');
+        const quoteText = document.getElementById('quoteText');
+        const quoteAuthor = document.getElementById('quoteAuthor');
+
+        function getRandomQuote() {{
+            return quotes[Math.floor(Math.random() * quotes.length)];
+        }}
+
+        function displayQuote() {{
+            quoteContainer.style.opacity = '0';
+            
+            setTimeout(() => {{
+                const quote = getRandomQuote();
+                quoteText.textContent = '"' + quote.text + '"';
+                quoteAuthor.textContent = '— ' + quote.author;
+                quoteContainer.style.opacity = '1';
+            }}, 500);
+        }}
+
+        // Rotate quotes every 10 seconds
+        setInterval(displayQuote, 10000);
+    </script>
 </body>
-</html>
-"""
+</html>"""
         
         # Write database summary HTML report
         html_file = os.path.join(output_base, f"staph_{database}_summary_report.html")
