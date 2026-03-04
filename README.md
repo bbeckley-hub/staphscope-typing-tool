@@ -66,6 +66,7 @@
 - [🙏 Acknowledgements](#-acknowledgements)
 - [👥 Authors & Contact](#-authors--contact)
 - [📄 License](#-license)
+- [📚 Third-Party Tool Citations](#-Third-Party-Tool-Citations)
 
 ---
 
@@ -708,6 +709,190 @@ StaphScope executes several external bioinformatics tools, which are installed a
 | `spa typing` (Ridom) | Free for academic use |
 
 By using StaphScope, you agree to comply with the licenses of these third-party tools.
+
+
+---
+Here are all the citations shortened with "et al." as requested. Much cleaner and perfect for a README.
+
+---
+
+### 📚 **Third-Party Tool Citations**
+
+StaphScope integrates several powerful open-source tools and databases. If you use StaphScope in your research, please also cite the following essential tools:
+
+#### **MLST (Torsten Seemann)**
+```bibtex
+@software{seemann_mlst_2025,
+  author = {Seemann, T.},
+  title = {MLST: Scan contig files against traditional PubMLST typing schemes},
+  year = {2025},
+  publisher = {GitHub},
+  url = {https://github.com/tseemann/mlst}
+}
+```
+
+#### **ABRicate (Torsten Seemann)**
+```bibtex
+@software{seemann_abricate_2025,
+  author = {Seemann, T.},
+  title = {ABRicate: Mass screening of contigs for antimicrobial resistance and virulence genes},
+  year = {2025},
+  publisher = {GitHub},
+  url = {https://github.com/tseemann/abricate}
+}
+```
+
+#### **AMRFinderPlus (NCBI)**
+```bibtex
+@article{feldgarden_amrfinderplus_2021,
+  author = {Feldgarden, M. et al.},
+  title = {AMRFinderPlus and the Reference Gene Catalog facilitate examination of the genomic links among antimicrobial resistance, stress response, and virulence},
+  journal = {Scientific Reports},
+  volume = {11},
+  pages = {12728},
+  year = {2021},
+  doi = {10.1038/s41598-021-91456-0}
+}
+```
+
+#### **SCCmecFinder (CGE)**
+```bibtex
+@article{kaya_sccmecfinder_2018,
+  author = {Kaya, H. et al.},
+  title = {SCCmecFinder, a Web-Based Tool for Typing of Staphylococcal Cassette Chromosome mec in Staphylococcus aureus Using Whole-Genome Sequence Data},
+  journal = {mSphere},
+  volume = {3},
+  number = {1},
+  pages = {e00612-17},
+  year = {2018},
+  doi = {10.1128/mSphere.00612-17}
+}
+```
+
+#### ***spa* Typing (Ridom)**
+```bibtex
+@article{mellmann_spa_typing_2005,
+  author = {Mellmann, A. et al.},
+  title = {Evidenzbasierte Hygienemassnahmen mittels spa-Typisierung bei MRSA-Häufungen im Krankenhaus},
+  journal = {Deutsche Medizinische Wochenschrift},
+  volume = {130},
+  number = {22},
+  pages = {1364-1368},
+  year = {2005},
+  doi = {10.1055/s-2005-868351},
+  note = {Database: https://spa.ridom.de}
+}
+```
+
+---
+
+### **📊 Database Citations**
+
+#### **CARD (Comprehensive Antibiotic Resistance Database)**
+```bibtex
+@article{alcock_card_2023,
+  author = {Alcock, B. P. et al.},
+  title = {CARD 2023: expanded curation, support for machine learning, and resistome prediction at the Comprehensive Antibiotic Resistance Database},
+  journal = {Nucleic Acids Research},
+  volume = {51},
+  number = {D1},
+  pages = {D690-D699},
+  year = {2023},
+  doi = {10.1093/nar/gkac920}
+}
+```
+
+#### **ResFinder**
+```bibtex
+@article{bortolaia_resfinder_2020,
+  author = {Bortolaia, V. et al.},
+  title = {ResFinder 4.0 for predictions of phenotypes from genotypes},
+  journal = {Journal of Antimicrobial Chemotherapy},
+  volume = {75},
+  number = {12},
+  pages = {3491-3500},
+  year = {2020},
+  doi = {10.1093/jac/dkaa345}
+}
+```
+
+#### **ARG-ANNOT**
+```bibtex
+@article{gupta_argannot_2014,
+  author = {Gupta, S. K. et al.},
+  title = {ARG-ANNOT, a new bioinformatic tool to discover antibiotic resistance genes in bacterial genomes},
+  journal = {Antimicrobial Agents and Chemotherapy},
+  volume = {58},
+  number = {1},
+  pages = {212-220},
+  year = {2014},
+  doi = {10.1128/AAC.01310-13}
+}
+```
+
+#### **VFDB (Virulence Factor Database)**
+```bibtex
+@article{chen_vfdb_2016,
+  author = {Chen, L. et al.},
+  title = {VFDB 2016: hierarchical and refined dataset for big data analysis—10 years on},
+  journal = {Nucleic Acids Research},
+  volume = {44},
+  number = {D1},
+  pages = {D694-D697},
+  year = {2016},
+  doi = {10.1093/nar/gkv1239}
+}
+```
+
+#### **PlasmidFinder**
+```bibtex
+@article{carattoli_plasmidfinder_2014,
+  author = {Carattoli, A. et al.},
+  title = {In silico detection and typing of plasmids using PlasmidFinder and plasmid multilocus sequence typing},
+  journal = {Antimicrobial Agents and Chemotherapy},
+  volume = {58},
+  number = {7},
+  pages = {3895-3903},
+  year = {2014},
+  doi = {10.1128/AAC.02412-14}
+}
+```
+
+#### **EcOH (E. coli O/H typing)**
+```bibtex
+@article{joensen_ecoh_2015,
+  author = {Joensen, K. G. et al.},
+  title = {Rapid and easy in silico serotyping of Escherichia coli isolates by use of whole-genome sequencing data},
+  journal = {Journal of Clinical Microbiology},
+  volume = {53},
+  number = {8},
+  pages = {2410-2426},
+  year = {2015},
+  doi = {10.1128/JCM.00008-15}
+}
+```
+
+#### **MEGARes 3.0**
+```bibtex
+@article{bonin_megares_2023,
+  author = {Bonin, N. et al.},
+  title = {MEGARes and AMR++, v3.0: an updated comprehensive database of antimicrobial resistance determinants and an improved software pipeline for classification using high-throughput sequencing},
+  journal = {Nucleic Acids Research},
+  volume = {51},
+  number = {D1},
+  pages = {D744-D752},
+  year = {2023},
+  doi = {10.1093/nar/gkac1047}
+}
+```
+
+---
+
+### 📝 **Usage Note**
+
+When citing StaphScope in your publications, please include the main StaphScope citation along with citations for the specific tools and databases you used:
+
+> "Genomic analysis was performed using StaphScope [Beckley & Amarh, 2026], which integrates MLST [Seemann, 2025], ABRicate [Seemann, 2025], AMRFinderPlus [Feldgarden et al., 2021], and SCCmecFinder [Kaya et al., 2018] for comprehensive *S. aureus* characterization. Antimicrobial resistance genes were identified using the CARD [Alcock et al., 2023] and ResFinder [Bortolaia et al., 2020] databases."
 
 ---
 
