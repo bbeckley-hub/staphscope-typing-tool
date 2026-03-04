@@ -298,7 +298,7 @@ docker run --rm \
 
 ## 🔗 **Integrated External Tools & Dependencies**
 
-StaphScope integrates several powerful open-source tools and databases. These are **not bundled directly in this repository**. Instead, they are automatically installed as **dependencies via Conda** (as defined in `environment.yml`) or called as external executables during pipeline execution. Each tool is used under the terms of its own license, and we gratefully acknowledge their authors.
+StaphScope integrates several powerful open-source tools and databases. These are **not bundled directly in this repository**. Instead, they are automatically installed as **dependencies via Conda** (as defined in `environment.yml`). Each tool is used under the terms of its own license, and we gratefully acknowledge their authors.
 
 | Tool/Database | Purpose | Source | License |
 |---------------|---------|--------|---------|
@@ -308,8 +308,6 @@ StaphScope integrates several powerful open-source tools and databases. These ar
 | **SCCmecFinder** | SCCmec typing | [genomicepidemiology/Sccmecfinder](https://bitbucket.org/genomicepidemiology/Sccmecfinder) | Apache-2.0 |
 | **spa typing** | *spa* gene typing | [spa.ridom.de](https://spa.ridom.de/) | Free for academic use |
 | **PubMedST** | MLST allele database | [pubmlst.org](https://pubmlst.org/organisms/staphylococcus-aureus) | Open access for research |
-
-All databases are accessed via their public APIs or downloaded during installation. Users are responsible for complying with each tool's license terms.
 
 ---
 
@@ -709,10 +707,6 @@ StaphScope executes several external bioinformatics tools, which are installed a
 | `spa typing` (Ridom) | Free for academic use |
 
 By using StaphScope, you agree to comply with the licenses of these third-party tools.
-
-
----
-Here are all the citations shortened with "et al." as requested. Much cleaner and perfect for a README.
 
 ---
 
