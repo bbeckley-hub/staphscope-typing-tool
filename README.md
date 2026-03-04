@@ -16,12 +16,23 @@
 
 #### **Complete MRSA/MSSA genomic analysis in minutes — not hours**
 
-[![Version](https://anaconda.org/bbeckley-hub/staphscope/badges/version.svg)](https://anaconda.org/bbeckley-hub/staphscope)
-[![Downloads](https://anaconda.org/bbeckley-hub/staphscope/badges/downloads.svg)](https://anaconda.org/bbeckley-hub/staphscope)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+
+![Version](https://anaconda.org/bbeckley-hub/staphscope/badges/version.svg)
+![Latest Release Date](https://anaconda.org/bbeckley-hub/staphscope/badges/latest_release_date.svg)
+![Platforms](https://anaconda.org/bbeckley-hub/staphscope/badges/platforms.svg)
+![License](https://anaconda.org/bbeckley-hub/staphscope/badges/license.svg)
+![Downloads](https://anaconda.org/bbeckley-hub/staphscope/badges/downloads.svg)
 [![DOI](https://img.shields.io/badge/DOI-10.1186%2Fs12864--026--12609--x-blue)](https://doi.org/10.1186/s12864-026-12609-x)
+
+
 [![Docker Pulls](https://img.shields.io/docker/pulls/bbeckleyhub/staphscope)](https://hub.docker.com/r/bbeckleyhub/staphscope)
-[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/)
+[![Docker Image Size](https://img.shields.io/docker/image-size/bbeckleyhub/staphscope/latest)](https://hub.docker.com/r/bbeckleyhub/staphscope)
+[![Docker Version](https://img.shields.io/docker/v/bbeckleyhub/staphscope?sort=semver)](https://hub.docker.com/r/bbeckleyhub/staphscope)
+
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![Conda](https://img.shields.io/badge/conda-✓-green.svg)](https://docs.conda.io/en/latest/)
+[![MIT License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![GitHub Issues](https://img.shields.io/github/issues/bbeckley-hub/staphscope-typing-tool)](https://github.com/bbeckley-hub/staphscope-typing-tool/issues)
 [![GitHub Stars](https://img.shields.io/github/stars/bbeckley-hub/staphscope-typing-tool)](https://github.com/bbeckley-hub/staphscope-typing-tool/stargazers)
 
 **Two ways to use StaphScope:**  
