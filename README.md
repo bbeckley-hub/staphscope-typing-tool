@@ -298,7 +298,7 @@ docker run --rm \
 
 ## 🔗 **Integrated External Tools & Dependencies**
 
-StaphScope integrates several powerful open-source tools and databases. These are **not bundled directly in this repository**. Instead, they are automatically installed as **dependencies via Conda** (as defined in `environment.yml`). Each tool is used under the terms of its own license, and we gratefully acknowledge their authors.
+StaphScope integrates several powerful open-source tools and databases. These are **not bundled directly in this repository**. Instead, they are automatically installed as **dependencies via Conda** (as defined in `environment.yml`). The MIT license that applies to the StaphScope pipeline code does not cover these external tools. Each tool is used under the terms of its own license, and we gratefully acknowledge their authors.
 
 | Tool/Database | Purpose | Source | License |
 |---------------|---------|--------|---------|
