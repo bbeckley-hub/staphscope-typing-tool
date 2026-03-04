@@ -93,3 +93,16 @@ staphscope/modules/amr_module/data/
 staphscope/modules/amr_module/stx/
 staphscope/modules/sccmec_module/database/
 staphscope/modules/sccmec_module/database/
+# Ignore bundled third-party code
+staphscope/modules/mlst_module/bin/
+staphscope/modules/mlst_module/db/
+staphscope/modules/mlst_module/perl5/
+staphscope/modules/mlst_module/scripts/
+staphscope/modules/mlst_module/test/
+staphscope/modules/mlst_module/CODE_OF_CONDUCT.md
+staphscope/modules/mlst_module/LICENSE
+staphscope/modules/mlst_module/README.md
+
+staphscope/modules/sccmec_module/database/
+staphscope/modules/sccmec_module/script_dir/
+
