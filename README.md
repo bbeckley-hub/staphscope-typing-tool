@@ -886,7 +886,7 @@ StaphScope integrates several powerful open-source tools and databases. If you u
 
 When citing StaphScope in your publications, please include the main StaphScope citation along with citations for the specific tools and databases you used:
 
-> "Genomic analysis was performed using StaphScope [Beckley & Amarh, 2026], which integrates MLST [Seemann, 2025], ABRicate [Seemann, 2025], AMRFinderPlus [Feldgarden et al., 2021], and SCCmecFinder [Kaya et al., 2018] for comprehensive *S. aureus* characterization. Antimicrobial resistance genes were identified using the CARD [Alcock et al., 2023] and ResFinder [Bortolaia et al., 2020] databases."
+> "Genomic analysis was performed using StaphScope [Beckley & Amarh, 2026], which integrates MLST [Seemann, 2018], ABRicate [Seemann, 2018], AMRFinderPlus [Feldgarden et al., 2021], and SCCmecFinder [Kaya et al., 2018] for comprehensive *S. aureus* characterization. Antimicrobial resistance genes were identified using the CARD [Alcock et al., 2023] and ResFinder [Bortolaia et al., 2020] databases."
 
 ---
 
