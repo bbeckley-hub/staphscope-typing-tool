@@ -719,7 +719,7 @@ StaphScope integrates several powerful open-source tools and databases. If you u
 @software{seemann_mlst_2025,
   author = {Seemann, T.},
   title = {MLST: Scan contig files against traditional PubMLST typing schemes},
-  year = {2025},
+  year = {2018},
   publisher = {GitHub},
   url = {https://github.com/tseemann/mlst}
 }
@@ -730,7 +730,7 @@ StaphScope integrates several powerful open-source tools and databases. If you u
 @software{seemann_abricate_2025,
   author = {Seemann, T.},
   title = {ABRicate: Mass screening of contigs for antimicrobial resistance and virulence genes},
-  year = {2025},
+  year = {2018},
   publisher = {GitHub},
   url = {https://github.com/tseemann/abricate}
 }
