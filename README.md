@@ -716,7 +716,7 @@ StaphScope integrates several powerful open-source tools and databases. If you u
 
 #### **MLST (Torsten Seemann)**
 ```bibtex
-@software{seemann_mlst_2025,
+@software{seemann_mlst_2018,
   author = {Seemann, T.},
   title = {MLST: Scan contig files against traditional PubMLST typing schemes},
   year = {2018},
@@ -727,7 +727,7 @@ StaphScope integrates several powerful open-source tools and databases. If you u
 
 #### **ABRicate (Torsten Seemann)**
 ```bibtex
-@software{seemann_abricate_2025,
+@software{seemann_abricate_2018,
   author = {Seemann, T.},
   title = {ABRicate: Mass screening of contigs for antimicrobial resistance and virulence genes},
   year = {2018},
@@ -738,13 +738,13 @@ StaphScope integrates several powerful open-source tools and databases. If you u
 
 #### **AMRFinderPlus (NCBI)**
 ```bibtex
-@article{feldgarden_amrfinderplus_2021,
+@article{feldgarden_amrfinderplus_2019,
   author = {Feldgarden, M. et al.},
   title = {AMRFinderPlus and the Reference Gene Catalog facilitate examination of the genomic links among antimicrobial resistance, stress response, and virulence},
   journal = {Scientific Reports},
   volume = {11},
   pages = {12728},
-  year = {2021},
+  year = {2019},
   doi = {10.1038/s41598-021-91456-0}
 }
 ```
@@ -886,7 +886,7 @@ StaphScope integrates several powerful open-source tools and databases. If you u
 
 When citing StaphScope in your publications, please include the main StaphScope citation along with citations for the specific tools and databases you used:
 
-> "Genomic analysis was performed using StaphScope [Beckley & Amarh, 2026], which integrates MLST [Seemann, 2018], ABRicate [Seemann, 2018], AMRFinderPlus [Feldgarden et al., 2021], and SCCmecFinder [Kaya et al., 2018] for comprehensive *S. aureus* characterization. Antimicrobial resistance genes were identified using the CARD [Alcock et al., 2023] and ResFinder [Bortolaia et al., 2020] databases."
+> "Genomic analysis was performed using StaphScope [Beckley & Amarh, 2026], which integrates MLST [Seemann, 2018], ABRicate [Seemann, 2018], AMRFinderPlus [Feldgarden et al., 2019], and SCCmecFinder [Kaya et al., 2018] for comprehensive *S. aureus* characterization. Antimicrobial resistance genes were identified using the CARD [Alcock et al., 2023] and ResFinder [Bortolaia et al., 2020] databases."
 
 ---
 
