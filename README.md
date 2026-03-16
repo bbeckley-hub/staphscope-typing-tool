@@ -150,7 +150,7 @@ For researchers and clinicians who prefer a graphical interface, **StaphScope We
 
 *Note: The web version limits uploads to 10 files per job for fair resource usage. For larger datasets, please use the command-line tool.*
 
-*Note: Currently hosted on personal infrastructure; availability may vary as we work toward sustainable 24/7 hosting.
+*Note: Currently hosted on personal infrastructure; availability may vary as we work toward sustainable 24/7 hosting.*
 
 ---
 
