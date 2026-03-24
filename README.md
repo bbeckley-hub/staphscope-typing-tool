@@ -662,7 +662,7 @@ StaphScope stands on the shoulders of giants. We are deeply grateful to:
 - **PubMedST, Ridom, CARD, VFDB** for essential databases
 - **Python community** for Biopython, pandas, plotly, seaborn, matplotlib
 - **Early adopters and beta testers** for invaluable feedback
-- **Peer reviewers & Editorial Team @BMC GENOMICS** for their constructive feedback, which significantly strengthened this manuscript. 
+- **Peer reviewers & Editorial Team @BMC GENOMICS** for their constructive feedback, which significantly strengthened this tool and it manuscript. 
 
 > *"If we ever meet in person, the drinks are on me!" – Brown Beckley*
 
