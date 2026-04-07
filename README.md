@@ -306,7 +306,7 @@ docker run --rm -v $(pwd):/data bbeckleyhub/staphscope:latest [STAPHSCOPE_OPTION
 - Input files must be under `/data` (e.g., `/data/*.fna`)
 - Output directory must also be under `/data` (e.g., `/data/output`)
 
-### All EcoliTyper options work
+### All StaphScope options work
 
 ```bash
 docker run --rm -v $(pwd):/data bbeckleyhub/staphscope:latest \
