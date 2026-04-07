@@ -293,6 +293,90 @@ docker run --rm \
   bbeckleyhub/staphscope:latest \
   -i "*.fasta" -o /data/output -t 4
 ```
+## 📖 Detailed Usage
+
+### Basic syntax
+
+```bash
+docker run --rm -v $(pwd):/data bbeckleyhub/staphscope:latest [ECOLITYPER_OPTIONS]
+```
+
+- `--rm` : remove container after exit
+- `-v $(pwd):/data` : mount current directory to `/data` inside container
+- Input files must be under `/data` (e.g., `/data/*.fna`)
+- Output directory must also be under `/data` (e.g., `/data/output`)
+
+### All EcoliTyper options work
+
+```bash
+docker run --rm -v $(pwd):/data bbeckleyhub/staphscope:latest \
+  -i "/data/*.fna" -o /data/output \
+  --threads 8 --skip-visualization
+```
+
+### Using custom threads
+
+```bash
+docker run --rm -v $(pwd):/data bbeckleyhub/staphscope:latest \
+  -i "/data/*.fna" -o /data/output -t 16
+```
+
+---
+
+## 🔧 Handling File Permissions (The “Padlock” Issue)
+
+By default, Docker runs as `root` inside the container. Any files written to your mounted directory will be owned by `root:root`.  
+You have three options:
+
+### 1. Change ownership after the run (easiest)
+
+```bash
+sudo chown -R $USER:$USER ./output
+```
+
+### 2. Run with your host user ID (requires a small code fix – coming soon)
+
+Currently not fully supported because StaphScope needs to write to its own installation directory. A future update will fix this.
+
+### 3. Use Singularity (recommended for HPC, no `sudo` needed)
+
+See the [Singularity section](#singularity-for-hpc-no-sudo) below.
+
+---
+
+## 🧪 Testing Your Docker Setup
+
+### Check help message
+
+```bash
+docker run --rm bbeckleyhub/staphscope:latest -h
+```
+
+### Verify ABRicate databases are installed
+
+```bash
+docker run --rm --entrypoint /bin/bash bbeckleyhub/staphscope:latest -c "abricate --list | head -5"
+```
+
+Expected output: list of databases (ncbi, card, vfdb, etc.)
+
+---
+
+## 🖥️ Singularity for HPC (no `sudo`, correct ownership)
+
+On HPC clusters that support [Singularity/Apptainer](https://sylabs.io/singularity/), you can convert the Docker image and run without `sudo` – output files will be owned by your user automatically.
+
+```bash
+# Pull the image as a Singularity SIF file
+singularity pull staphscope.sif docker://bbeckleyhub/staphscope:latest
+
+# Run the analysis
+singularity run -B $(pwd):/data staphscope.sif -i "/data/*.fna" -o /data/output
+```
+
+No `sudo chown` needed.
+
+---
 
 [Full Docker documentation available in the repository]
 
