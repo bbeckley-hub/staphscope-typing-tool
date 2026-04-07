@@ -298,6 +298,10 @@ docker run --rm \
   -v $(pwd)/results:/data/output \
   bbeckleyhub/staphscope:latest \
   -i "*.fasta" -o /data/output -t 4
+
+# Outputs
+sudo chown -R $USER:$USER ./output
+
 ```
 
 ## 🖥️ Singularity for HPC (no `sudo`, correct ownership)
