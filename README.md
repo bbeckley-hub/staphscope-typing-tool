@@ -298,7 +298,7 @@ docker run --rm \
 ### Basic syntax
 
 ```bash
-docker run --rm -v $(pwd):/data bbeckleyhub/staphscope:latest [ECOLITYPER_OPTIONS]
+docker run --rm -v $(pwd):/data bbeckleyhub/staphscope:latest [STAPHSCOPE_OPTIONS]
 ```
 
 - `--rm` : remove container after exit
