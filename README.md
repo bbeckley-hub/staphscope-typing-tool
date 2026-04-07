@@ -376,7 +376,6 @@ singularity run -B $(pwd):/data staphscope.sif -i "/data/*.fna" -o /data/output
 
 No `sudo chown` needed.
 
----
 
 [Full Docker documentation available in the repository]
 
