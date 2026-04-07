@@ -50,7 +50,7 @@
 - [🌐 StaphScope Web Platform](#-staphscope-web-platform)
 - [⚡ Quick Start (CLI)](#-quick-start-cli)
 - [🔧 Installation (CLI)](#-installation-cli)
-- [🐳 Docker Usage](#-docker-usage)
+- [🐳 Staphscope Docker Usage](#-Staphscope-docker-usage)
 - [🔗 Integrated External Tools & Dependencies](#-integrated-external-tools--dependencies)
 - [🚀 Usage Guide (CLI)](#-usage-guide-cli)
 - [📁 Output Structure](#-output-structure)
@@ -280,104 +280,80 @@ abricate --setupdb
 
 ---
 
-## 🐳 **Docker Usage**
+## 🐳 **Staphscope Docker Usage**
+
+
+## 📦 Quick Start
 
 ```bash
-# Pull image
+# Pull the latest image
 docker pull bbeckleyhub/staphscope:latest
 
-# Run analysis
+# Test installation
+docker run --rm bbeckleyhub/staphscope:latest --help
+
+# Analyze your data
 docker run --rm \
-  -v $(pwd)/data/input:/data/input \
-  -v $(pwd)/data/output:/data/output \
+  -v $(pwd)/genomes:/data/input \
+  -v $(pwd)/results:/data/output \
   bbeckleyhub/staphscope:latest \
   -i "*.fasta" -o /data/output -t 4
 ```
-## 📖 Detailed Usage
-
-### Basic syntax
-
-```bash
-docker run --rm -v $(pwd):/data bbeckleyhub/staphscope:latest [STAPHSCOPE_OPTIONS]
-```
-
-- `--rm` : remove container after exit
-- `-v $(pwd):/data` : mount current directory to `/data` inside container
-- Input files must be under `/data` (e.g., `/data/*.fna`)
-- Output directory must also be under `/data` (e.g., `/data/output`)
-
-### All StaphScope options work
-
-```bash
-docker run --rm -v $(pwd):/data bbeckleyhub/staphscope:latest \
-  -i "/data/*.fna" -o /data/output \
-  --threads 8 --skip-visualization
-```
-
-### Using custom threads
-
-```bash
-docker run --rm -v $(pwd):/data bbeckleyhub/staphscope:latest \
-  -i "/data/*.fna" -o /data/output -t 16
-```
-
----
-
-## 🔧 Handling File Permissions (The “Padlock” Issue)
-
-By default, Docker runs as `root` inside the container. Any files written to your mounted directory will be owned by `root:root`.  
-You have three options:
-
-### 1. Change ownership after the run (easiest)
-
-```bash
-sudo chown -R $USER:$USER ./output
-```
-
-### 2. Run with your host user ID (requires a small code fix – coming soon)
-
-Currently not fully supported because StaphScope needs to write to its own installation directory. A future update will fix this.
-
-### 3. Use Singularity (recommended for HPC, no `sudo` needed)
-
-See the [Singularity section](#singularity-for-hpc-no-sudo) below.
-
----
-
-## 🧪 Testing Your Docker Setup
-
-### Check help message
-
-```bash
-docker run --rm bbeckleyhub/staphscope:latest -h
-```
-
-### Verify ABRicate databases are installed
-
-```bash
-docker run --rm --entrypoint /bin/bash bbeckleyhub/staphscope:latest -c "abricate --list | head -5"
-```
-
-Expected output: list of databases (ncbi, card, vfdb, etc.)
-
----
 
 ## 🖥️ Singularity for HPC (no `sudo`, correct ownership)
 
-On HPC clusters that support [Singularity/Apptainer](https://sylabs.io/singularity/), you can convert the Docker image and run without `sudo` – output files will be owned by your user automatically.
+On HPC clusters that support [Singularity/Apptainer](https://sylabs.io/singularity/), you can run StaphScope **without `sudo`** and output files will be owned by your user automatically.
+
+> **Important:** StaphScope writes temporary files inside its own installation directory (e.g., `/opt/staphscope/...`). Singularity mounts containers as read‑only by default, so you **must** add the `--writable-tmpfs` flag to allow these writes. The flag creates an ephemeral, writable overlay in memory – no permanent changes are made to the container.
+
+### Option A: Direct pull (if network allows)
 
 ```bash
-# Pull the image as a Singularity SIF file
 singularity pull staphscope.sif docker://bbeckleyhub/staphscope:latest
-
-# Run the analysis
-singularity run -B $(pwd):/data staphscope.sif -i "/data/*.fna" -o /data/output
+singularity run --writable-tmpfs -B $(pwd):/data staphscope.sif -i "/data/*.fasta" -o /data/output
 ```
 
-No `sudo chown` needed.
+### Option B: Convert from a local Docker image (when `singularity pull` fails)
 
+If you encounter TLS timeouts or other network errors (common on some HPCs), convert an existing Docker image to a Singularity SIF file on a machine with Docker, then transfer the `.sif` file to the HPC.
 
-[Full Docker documentation available in the repository]
+**Step 1 – on a machine with Docker (e.g., your laptop):**
+
+```bash
+docker pull bbeckleyhub/staphscope:latest
+docker save bbeckleyhub/staphscope:latest -o staphscope.tar
+singularity build staphscope.sif docker-archive://staphscope.tar
+```
+
+Now copy `staphscope.sif` to your HPC home or project directory (e.g., using `scp`).
+
+**Step 2 – on the HPC (no sudo needed):**
+
+```bash
+singularity run --writable-tmpfs -B $(pwd):/data staphscope.sif -i "/data/*.fasta" -o /data/output
+```
+
+### Explanation of flags
+
+| Flag | Purpose |
+|------|---------|
+| `--writable-tmpfs` | Creates a temporary writable overlay – **required** for StaphScope to write intermediate files to `/opt/...` |
+| `-B $(pwd):/data` | Binds your current directory to `/data` inside the container (input files are read from here, output is written here) |
+| `-i "/data/*.fasta"` | Input pattern – use quotes to prevent shell expansion on the host |
+| `-o /data/output` | Output directory (will appear as `./output` on your host) |
+
+### Additional options
+
+You can use any StaphScope flag, e.g.:
+
+```bash
+singularity run --writable-tmpfs -B $(pwd):/data staphscope.sif \
+    -i "/data/*.fasta" -o /data/output --threads 8 --skip-amr
+```
+
+### Verify it works
+
+After a successful run, you will see output indicating each module completed. All result files in `./output` will be owned by **your HPC user** – no `sudo chown` needed.
 
 ---
 
