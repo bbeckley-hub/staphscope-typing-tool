@@ -1,0 +1,8 @@
+#Protein id	Contig id	Start	Stop	Strand	Element symbol	Element name	Scope	Type	Subtype	Class	Subclass	Method	Target length	Reference sequence length	% Coverage of reference	% Identity to reference	Alignment length	Closest reference accession	Closest reference name	HMM accession	HMM description
+NA	partial	27	1045	+	stx2_operon	Partial stx2 operon	plus	VIRULENCE	STX_TYPE	STX2	STX2	PARTIAL	1019	NA	NA	99.40	335	AAA16362.1,AAS07607.1	Shiga toxin stx2	NA	NA
+NA	partial_contig_end	3	661	-	stx2_operon	Partial stx2 operon	plus	VIRULENCE	STX_TYPE	STX2	STX2	PARTIAL_CONTIG_END	659	NA	NA	100.00	215	AAM70046.1,AAA16362.1	Shiga toxin stx2	NA	NA
+NA	stx1a	218	1441	+	stx1a_operon	stx1a operon	plus	VIRULENCE	STX_TYPE	STX1	STX1A	COMPLETE	1224	NA	NA	100.00	404	AAA98347.1,AAA71894.1	Shiga toxin stx1a	NA	NA
+NA	stx2_fs	2165	3229	+	stx2_operon	stx2 operon with frameshift	plus	VIRULENCE	STX_TYPE	STX2	STX2	FRAMESHIFT	1065	NA	NA	99.71	350	AAG01033.1,AAA16363.1	Shiga toxin stx2c	NA	NA
+NA	stx2_novel	216	1453	+	stx2_operon	Novel stx2 operon	plus	VIRULENCE	STX_TYPE	STX2	STX2	COMPLETE_NOVEL	1238	NA	NA	99.75	408	AAA19623.1,AAA16363.1	Shiga toxin stx2c	NA	NA
+NA	stx2_stop	694	1632	+	stx2_operon	Partial stx2 operon	plus	VIRULENCE	STX_TYPE	STX2	STX2	PARTIAL_CONTIG_END	939	NA	NA	100.00	313	WAK53220.1	Shiga toxin stx2n subunit A	NA	NA
+NA	stx2c	1301	2538	-	stx2c_operon	stx2c operon	plus	VIRULENCE	STX_TYPE	STX2	STX2C	COMPLETE	1238	NA	NA	100.00	408	AAA16363.1,AAS07596.1	Shiga toxin stx2c	NA	NA

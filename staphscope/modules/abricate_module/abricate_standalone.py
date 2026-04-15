@@ -6,7 +6,7 @@ Author: Beckley Brown <brownbeckley94@gmail.com>
 Affiliation: University of Ghana Medical School-Department of Medical Biochemistry
 Date: 2025
 Send a quick mail for any issues or further explanations.
-version-1.1.0
+version-1.2.0
 """
 
 import subprocess
@@ -64,7 +64,7 @@ class AbricateExecutor:
         
         self.metadata = {
             "tool_name": "StaphScope ABRicate",
-            "version": "1.1.0", 
+            "version": "1.2.0", 
             "authors": ["Brown Beckley"],
             "email": "brownbeckley94@gmail.com",
             "github": "https://github.com/bbeckley-hub",
@@ -176,11 +176,11 @@ class AbricateExecutor:
             version_match = re.search(r'(\d+\.\d+\.\d+)', version_line)
             if version_match:
                 version_str = version_match.group(1)
-                if version_str >= "1.0.1":
-                    self.logger.info("✓ ABRicate version meets requirement (>=1.0.1)")
+                if version_str >= "1.2.0":
+                    self.logger.info("✓ ABRicate version meets requirement (>=1.2.0)")
                     return True
                 else:
-                    self.logger.error("ABRicate version too old: %s. Required >=1.0.1", version_str)
+                    self.logger.error("ABRicate version too old: %s. Required >=1.2.0", version_str)
                     return False
             self.logger.info("✓ ABRicate installed (version check skipped)")
             return True

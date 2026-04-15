@@ -1,5 +1,5 @@
 {% set name = "staphscope" %}
-{% set version = "1.1.0" %}
+{% set version = "1.2.0" %}
 
 package:
   name: {{ name|lower }}
@@ -39,7 +39,7 @@ requirements:
     # Optional/extra (for full features)
     - plotly>=5.10.0
     # Bioinformatic tools
-    - abricate >=1.0.1
+    - abricate >=1.2.0
     - perl
     - any2fasta
     - blast >=2.13.0

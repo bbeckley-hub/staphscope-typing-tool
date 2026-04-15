@@ -1,108 +1,32 @@
-# Python
+# Byte-compiled / optimised / DLL files
 __pycache__/
 *.py[cod]
-*$py.class
 *.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
 
-# Test and output directories
-results/
-test_fixed*/
-test_fixed2*/
-AAAA/
-R/
-R2/
-
-# Editor files
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-
-# OS files
-.DS_Store
-Thumbs.db
-
-# Large data files - but ALLOW the specific ones we need
-*.fna
-*.faa
-
-# BUT DO NOT IGNORE these specific fasta files that our tools need:
-!staphscope/tools/spatyper/spa_typing/main/sparepeats.fasta
-!staphscope/tools/sccmecfinder/database/*.fasta
-!staphscope/tools/mlst/db/blast/mlst.fa
-
-# Allow the BLAST database files but not other generated files
-staphscope/tools/mlst/db/blast/*
-!staphscope/tools/mlst/db/blast/mlst.fa.*
-!staphscope/tools/mlst/db/blast/mlst.fa
-
-# Allow SCCmecFinder template database files
-!staphscope/tools/sccmecfinder/database/template_db/*.p
-
-# Logs
+# Logs and databases
 *.log
+*.sqlite
 
-# Temporary files
-*.tmp
-*.temp
-
-# Environment files
-.env
-venv/
-env/
-
-# Jupyter notebooks
-.ipynb_checkpoints/
-
-# PyCharm
-.idea/
-
-# VS Code
-.vscode/
-
-# Custom
-.pytest_cache/
-.coverage
-htmlcov/
-staphscope/modules/sccmec_module/database/
-staphscope/modules/sccmec_module/database/
-*.db
-*.fasta
-*.fa
-*.fna
-staphscope/modules/amr_module/bin/
+# Large data directories (AMR, SCCmec, MLST)
 staphscope/modules/amr_module/data/
-staphscope/modules/amr_module/stx/
 staphscope/modules/sccmec_module/database/
-staphscope/modules/sccmec_module/database/
-# Ignore bundled third-party code
 staphscope/modules/mlst_module/bin/
 staphscope/modules/mlst_module/db/
 staphscope/modules/mlst_module/perl5/
 staphscope/modules/mlst_module/scripts/
-staphscope/modules/mlst_module/test/
-staphscope/modules/mlst_module/CODE_OF_CONDUCT.md
-staphscope/modules/mlst_module/LICENSE
-staphscope/modules/mlst_module/README.md
 
-staphscope/modules/sccmec_module/database/
-staphscope/modules/sccmec_module/script_dir/
+# Temporary / output files
+staphscope_ultimate_report.html
+*.tmp
+*.bak
 
+# Environment / IDE
+.env
+.venv
+venv/
+.vscode/
+.idea/
+
+# OS metadata
+.DS_Store
+Thumbs.db

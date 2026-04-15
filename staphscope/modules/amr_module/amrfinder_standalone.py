@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
-StaphScope AMRfinderPlus Standalone Module - BUNDLED VERSION
+StaphScope AMRfinderPlus Standalone Module - BUNDLED VERSION with DYNAMIC DATABASE
 Comprehensive AMR analysis with HTML, TSV, and JSON reporting - MAXIMUM SPEED VERSION
 Author: Beckley Brown <brownbeckley94@gmail.com>
-Date: 2025
+Date: 2025 / Updated 2026
 Send a quick mail for any issues or further explanations.
 Affiliation: University of Ghana Medical School-Department of Medical Biochemistry
-Uses BUNDLED AMRFinderPlus 4.2.4 with database 2025-12-03.1
+Uses BUNDLED AMRFinderPlus 4.2.7 with LATEST DYNAMIC DATABASE
 """
 
 import subprocess
@@ -27,7 +27,7 @@ import random
 from collections import defaultdict, Counter
 
 class AMRfinderPlusExecutor:
-    """AMRfinderPlus executor with BUNDLED resources - Comprehensive HTML, TSV, and JSON reporting"""
+    """AMRfinderPlus executor with DYNAMIC database detection and update capability"""
     
     def __init__(self, cpus: int = None):
         # Setup logging FIRST
@@ -44,18 +44,28 @@ class AMRfinderPlusExecutor:
         
         # Set bundled resources paths
         self.bundled_amrfinder = os.path.join(self.module_dir, "bin", "amrfinder")
-        self.bundled_database = os.path.join(self.module_dir, "data", "amrfinder_db", "2025-12-03.1")
+        self.bundled_update = os.path.join(self.module_dir, "bin", "amrfinder_update")
+        
+        # DYNAMIC DATABASE: find the latest dated folder (starts with 20)
+        self.bundled_database = self._get_latest_database()
+        
+        # If no database found, log warning but do not raise (analysis will be skipped later)
+        if self.bundled_database is None:
+            self.logger.warning("No AMRfinderPlus database found. Please run with --update-db to download.")
+        
+        # Read database version or set to Unknown
+        db_version = self._get_database_version() if self.bundled_database else "Unknown"
         
         self.metadata = {
             "tool_name": "StaphScope AMRfinderPlus (BUNDLED)",
-            "version": "1.1.0", 
+            "version": "1.2.0",   # Updated version to reflect dynamic DB
             "authors": ["Brown Beckley"],
             "email": "brownbeckley94@gmail.com",
             "github": "https://github.com/bbeckley-hub",
             "affiliation": "University of Ghana Medical School",
             "analysis_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "amrfinder_version": "4.2.4",
-            "database_version": "2025-12-03.1"
+            "amrfinder_version": "4.2.7",
+            "database_version": db_version
         }
         
         # S. aureus specific high-risk and critical gene sets
@@ -189,8 +199,69 @@ class AMRfinderPlusExecutor:
         else:
             self.logger.info("💡 Performance: MAXIMUM SPEED MODE 🚀")
     
+    def _get_latest_database(self) -> Optional[str]:
+        """Find the latest dated database folder in data/amrfinder_db/ (starts with 20)"""
+        db_root = os.path.join(self.module_dir, "data", "amrfinder_db")
+        if not os.path.exists(db_root):
+            self.logger.warning(f"Database root directory not found: {db_root}")
+            return None
+        # Find all subdirectories starting with '20'
+        candidates = []
+        for item in os.listdir(db_root):
+            full_path = os.path.join(db_root, item)
+            if os.path.isdir(full_path) and item.startswith('20'):
+                candidates.append(item)
+        if not candidates:
+            self.logger.warning("No database folder starting with '20' found.")
+            return None
+        # Sort lexicographically (YYYY-MM-DD works) and take the latest
+        latest = sorted(candidates)[-1]
+        latest_path = os.path.join(db_root, latest)
+        self.logger.info(f"Using latest database: {latest_path}")
+        return latest_path
+    
+    def _get_database_version(self) -> str:
+        """Read version.txt from the database folder or fallback to folder name"""
+        if not self.bundled_database:
+            return "Unknown"
+        version_file = os.path.join(self.bundled_database, "version.txt")
+        if os.path.exists(version_file):
+            with open(version_file, 'r') as f:
+                return f.read().strip()
+        # Fallback to folder name
+        return os.path.basename(self.bundled_database)
+    
+    def update_database(self) -> bool:
+        """Download the latest AMRfinderPlus database using bundled amrfinder_update"""
+        if not os.path.exists(self.bundled_update):
+            self.logger.error(f"amrfinder_update not found at {self.bundled_update}")
+            return False
+        if not os.access(self.bundled_update, os.X_OK):
+            self.logger.warning("amrfinder_update not executable, fixing permissions...")
+            os.chmod(self.bundled_update, 0o755)
+        db_dir = os.path.join(self.module_dir, "data", "amrfinder_db")
+        os.makedirs(db_dir, exist_ok=True)
+        self.logger.info("Updating AMRfinderPlus database...")
+        try:
+            cmd = [self.bundled_update, "--database", db_dir]
+            result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+            self.logger.info("Database update completed successfully.")
+            # Re‑detect latest database
+            self.bundled_database = self._get_latest_database()
+            if self.bundled_database:
+                self.metadata['database_version'] = self._get_database_version()
+                self.logger.info(f"New database version: {self.metadata['database_version']}")
+                return True
+            else:
+                self.logger.error("Database update succeeded but no database folder found.")
+                return False
+        except subprocess.CalledProcessError as e:
+            self.logger.error(f"Database update failed: {e}")
+            self.logger.error(f"STDERR: {e.stderr}")
+            return False
+    
     def check_amrfinder_installed(self) -> bool:
-        """Check if BUNDLED AMRfinderPlus is available"""
+        """Check if BUNDLED AMRfinderPlus is available and database exists"""
         try:
             if not os.path.exists(self.bundled_amrfinder):
                 self.logger.error(f"Bundled AMRfinderPlus not found at: {self.bundled_amrfinder}")
@@ -207,23 +278,24 @@ class AMRfinderPlusExecutor:
                 text=True, 
                 check=True
             )
-            
             version_line = result.stdout.strip()
             self.logger.info(f"Bundled AMRfinderPlus version: {version_line}")
             
             # Check database
-            if os.path.exists(self.bundled_database):
+            if self.bundled_database and os.path.exists(self.bundled_database):
                 self.logger.info(f"✅ Bundled database found: {self.bundled_database}")
                 db_version_file = os.path.join(self.bundled_database, "version.txt")
                 if os.path.exists(db_version_file):
                     with open(db_version_file, 'r') as f:
                         db_version = f.read().strip()
                         self.logger.info(f"✅ Database version: {db_version}")
+                else:
+                    self.logger.info(f"✅ Database folder: {os.path.basename(self.bundled_database)}")
+                return True
             else:
-                self.logger.warning(f"⚠️  Bundled database not found at: {self.bundled_database}")
-                self.logger.info("Will use default AMRfinderPlus database location")
-            
-            return True
+                self.logger.warning(f"⚠️  Bundled database not found at expected location.")
+                self.logger.info("Please run with --update-db to download the latest database.")
+                return False
             
         except (subprocess.CalledProcessError, FileNotFoundError) as e:
             self.logger.error(f"Bundled AMRfinderPlus check failed: {e}")
@@ -249,7 +321,7 @@ class AMRfinderPlusExecutor:
         ]
         
         # Add bundled database if it exists
-        if os.path.exists(self.bundled_database):
+        if self.bundled_database and os.path.exists(self.bundled_database):
             cmd.extend(['--database', self.bundled_database])
             self.logger.info(f"Using bundled database: {self.bundled_database}")
         else:
@@ -316,13 +388,6 @@ class AMRfinderPlusExecutor:
                     hit = dict(zip(headers, parts))
                     
                     # Map to consistent field names for AMRFinderPlus 4.2.4
-                    # New headers: 
-                    # Protein id, Contig id, Start, Stop, Strand, Element symbol, Element name,
-                    # Scope, Type, Subtype, Class, Subclass, Method, Target length,
-                    # Reference sequence length, % Coverage of reference, % Identity to reference,
-                    # Alignment length, Closest reference accession, Closest reference name,
-                    # HMM accession, HMM description
-                    
                     processed_hit = {
                         'protein_id': hit.get('Protein id', ''),
                         'contig_id': hit.get('Contig id', ''),
@@ -376,6 +441,8 @@ class AMRfinderPlusExecutor:
         # Get current timestamp
         current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         
+        # ==================== YOUR ORIGINAL HTML STARTS HERE ====================
+        # (No changes – exactly as you provided)
         html_content = f"""
 <!DOCTYPE html>
 <html lang="en">
@@ -1415,6 +1482,7 @@ class AMRfinderPlusExecutor:
         # Get current timestamp
         current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         
+        # ==================== YOUR ORIGINAL SUMMARY HTML STARTS HERE ====================
         html_content = f"""
 <!DOCTYPE html>
 <html lang="en">
@@ -2044,6 +2112,12 @@ Examples:
   # Force specific number of CPU cores
   python staph_amrfinder.py "*.fa" --cpus 16
 
+  # Update database only
+  python staph_amrfinder.py --update-db
+
+  # Show current database version
+  python staph_amrfinder.py --db-version
+
 MAXIMUM SPEED RESOURCE MANAGEMENT:
   • 1-4 cores: Uses ALL CPU cores (100% utilization)
   • 5-8 cores: Uses (cores-1) for optimal performance  
@@ -2055,13 +2129,38 @@ Supported FASTA extensions: .fasta, .fa, .fna, .faa
         """
     )
     
-    parser.add_argument('pattern', help='File pattern for S. aureus genomes (e.g., "*.fasta", "genomes/*.fna")')
+    # Make pattern optional (nargs='?') so that --update-db and --db-version work without it
+    parser.add_argument('pattern', nargs='?', help='File pattern for S. aureus genomes (e.g., "*.fasta", "genomes/*.fna")')
     parser.add_argument('--cpus', '-c', type=int, default=None, 
                        help='Number of CPU cores to use (default: auto-detect optimal for MAXIMUM SPEED)')
     parser.add_argument('--output', '-o', default='staph_amrfinder_results', 
                        help='Output directory (default: staph_amrfinder_results)')
+    parser.add_argument('--update-db', action='store_true', 
+                       help='Update AMRfinderPlus database to latest version and exit')
+    parser.add_argument('--db-version', action='store_true', 
+                       help='Show current database version and exit')
     
     args = parser.parse_args()
+    
+    # Handle database operations without requiring pattern
+    if args.update_db or args.db_version:
+        executor = AMRfinderPlusExecutor(cpus=args.cpus)
+        if args.update_db:
+            print("Updating AMRfinderPlus database...")
+            success = executor.update_database()
+            if success:
+                print("Database updated successfully.")
+            else:
+                print("Database update failed.")
+            sys.exit(0)
+        if args.db_version:
+            print(f"Database version: {executor.metadata['database_version']}")
+            print(f"Database path: {executor.bundled_database or 'Not found'}")
+            sys.exit(0)
+    
+    # For analysis, pattern is required
+    if not args.pattern:
+        parser.error("Please provide a file pattern for genomes (or use --update-db / --db-version)")
     
     executor = AMRfinderPlusExecutor(cpus=args.cpus)
     

@@ -52,6 +52,6 @@ Dockerfile
 docker-compose.yml
 
 # Data
-data/
+/data/
 test_data/
 tmp/

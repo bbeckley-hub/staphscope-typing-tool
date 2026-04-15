@@ -10,7 +10,7 @@ except FileNotFoundError:
 
 setup(
     name="staphscope",
-    version="1.1.0",
+    version="1.2.0",
     author="Brown Beckley",
     author_email="brownbeckley94@gmail.com",
     description="Advanced Staphylococcus aureus Typing & Lineage Analysis Platform",
