@@ -34,7 +34,7 @@
 [![MIT License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![GitHub Issues](https://img.shields.io/github/issues/bbeckley-hub/staphscope-typing-tool)](https://github.com/bbeckley-hub/staphscope-typing-tool/issues)
 [![GitHub Stars](https://img.shields.io/github/stars/bbeckley-hub/staphscope-typing-tool)](https://github.com/bbeckley-hub/staphscope-typing-tool/stargazers)
-[![Sample Report](https://img.shields.io/badge/📊-View_Sample_Report-blue)](https://bbeckley-hub.github.io/staphscope-typing-tool/staphscope_ultimate_report.html)
+[![Sample Report](https://img.shields.io/badge/📊-View_Sample_Report-blue)](https://htmlpreview.github.io/?https://github.com/bbeckley-hub/staphscope-typing-tool/blob/main/staphscope_ultimate_report.html)
 
 **Two ways to use StaphScope:**  
 🖥️ **Command-line tool** for high-throughput, local analysis  
