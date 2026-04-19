@@ -16,7 +16,6 @@ staphscope/modules/mlst_module/perl5/
 staphscope/modules/mlst_module/scripts/
 
 # Temporary / output files
-staphscope_ultimate_report.html
 *.tmp
 *.bak
 

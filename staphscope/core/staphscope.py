@@ -3,7 +3,7 @@
 StaphScope Main Orchestrator - UPDATED WITH DYNAMIC AMR DATABASE SUPPORT
 Complete S. aureus typing pipeline - FASTA QC, MLST, spa, SCCmec, AMR, Virulence, Lineage, Visualization
 Author: Brown Beckley <brownbeckley94@gmail.com>
-Date: 2025 / Updated 2026
+Date: 2025 / Updated 2026-04-14
 Send a quick mail for any issues or further explanations.
 Affiliation: University of Ghana Medical School-Department of Medical Biochemistry
 version 1.2.0
@@ -47,7 +47,7 @@ class StaphScopeOrchestrator:
         }
     
     # =========================================================================
-    # AMR Database Update Method
+    # AMR Database Update Methods
     # =========================================================================
     def update_amr_database(self) -> bool:
         """Run the AMR module's database update and return success."""
@@ -75,6 +75,24 @@ class StaphScopeOrchestrator:
             if result.stderr:
                 print(result.stderr)
             return False
+    
+    def ensure_amr_database(self) -> bool:
+        """Check if AMR database exists; if not, attempt to update."""
+        amr_module_path = self.base_dir / "modules" / "amr_module"
+        amr_script = amr_module_path / "amrfinder_standalone.py"
+        if not amr_script.exists():
+            self.banner.display_error("AMR script not found, cannot check database.")
+            return False
+        
+        # Run --db-version to see if database is present
+        cmd = [sys.executable, str(amr_script), "--db-version"]
+        result = subprocess.run(cmd, capture_output=True, text=True, cwd=amr_module_path)
+        if result.returncode == 0 and "Unknown" not in result.stdout and "No database" not in result.stdout:
+            self.banner.display_success(f"AMR database already present: {result.stdout.strip()}")
+            return True
+        else:
+            self.banner.display_warning("AMR database not found or outdated. Attempting automatic update...")
+            return self.update_amr_database()
     
     # =========================================================================
     # File finding and helper methods
@@ -399,33 +417,33 @@ class StaphScopeOrchestrator:
             self.cleanup_module_directory(sccmec_module_path, fasta_files)
 
     def run_amrfinder_analysis(self, fasta_files: List[Path], output_dir: Path, threads: int) -> bool:
-        """Run AMRFinderPlus analysis - skip if database missing."""
+        """Run AMRFinderPlus analysis with automatic database check"""
         amr_module_path = self.base_dir / "modules" / "amr_module"
-        amr_script = amr_module_path / "amrfinder_standalone.py"
-        if not amr_script.exists():
-            self.banner.display_error(f"AMRFinderPlus script not found at: {amr_script}")
-            return False
         
-        # Check if AMR database exists using --db-version
-        cmd_check = [sys.executable, str(amr_script), "--db-version"]
-        result = subprocess.run(cmd_check, capture_output=True, text=True, cwd=amr_module_path)
-        if result.returncode != 0 or "Unknown" in result.stdout or "Not found" in result.stdout:
-            self.banner.display_error("AMR database not found. Please run 'staphscope --update-amr-db' to download it.")
-            self.banner.display_warning("Skipping AMR analysis.")
-            return False  # Skip AMR, continue pipeline
-        
-        self.banner.display_success(f"AMR database found: {result.stdout.strip()}")
-        
-        # Proceed with analysis
         try:
+            amr_script = amr_module_path / "amrfinder_standalone.py"
+            if not amr_script.exists():
+                self.banner.display_error(f"AMRFinderPlus script not found at: {amr_script}")
+                return False
+            
+            # Ensure database is present before running
+            if not self.ensure_amr_database():
+                self.banner.display_error("AMR database is missing and could not be updated automatically.")
+                self.banner.display_info("Please run manually: python amrfinder_standalone.py --update-db")
+                return False
+            
             for fasta_file in fasta_files:
                 target_file = amr_module_path / fasta_file.name
                 shutil.copy2(fasta_file, target_file)
+            
             self.banner.display_info(f"Copied {len(fasta_files)} files to AMR module")
+            
             file_pattern = self.get_file_pattern(fasta_files)
             cmd = [sys.executable, str(amr_script), file_pattern]
+            
             self.banner.display_info(f"Running AMRFinderPlus analysis with pattern: {file_pattern}")
             result = subprocess.run(" ".join(cmd), shell=True, capture_output=True, text=True, cwd=amr_module_path)
+            
             if result.returncode == 0:
                 self.banner.display_success("AMRFinderPlus analysis completed!")
                 amr_source = amr_module_path / "staph_amrfinder_results"
@@ -439,6 +457,7 @@ class StaphScopeOrchestrator:
             else:
                 self.banner.display_warning("AMRFinderPlus analysis had warnings")
                 return True
+                
         except Exception as e:
             self.banner.display_error(f"AMRFinderPlus analysis failed: {str(e)}")
             return False
@@ -573,7 +592,7 @@ class StaphScopeOrchestrator:
                 ("abricate_results", "staph_resfinder_summary_report.html"),
                 ("abricate_results", "staph_argannot_summary_report.html"),
                 ("abricate_results", "staph_bacmet2_summary_report.html"),
-                ("fasta_qc_results", "FASTA_QC_summary.html"),  # Added for QC
+                ("fasta_qc_results", "FASTA_QC_summary.html"),
             ]
             copied_count = 0
             for source_dir, html_file in html_reports_needed:
@@ -718,7 +737,6 @@ class StaphScopeOrchestrator:
                 (output_dir / "abricate_results", "staph_resfinder_summary_report.html"),
                 (output_dir / "abricate_results", "staph_argannot_summary_report.html"),
                 (output_dir / "Staphscope_final_report", "staphscope_comprehensive_report.html"),
-                (output_dir / "fasta_qc_results", "FASTA_QC_summary.html"),
             ]
             copied_count = 0
             for source_dir, html_file in files_to_copy:
@@ -956,7 +974,7 @@ Examples:
   staphscope -i "*.fasta" -o analysis --threads 16 --skip-lineage
   staphscope -i "genome*.fa" -o results/ --threads 4 --skip-comprehensive
   staphscope -i "samples/*.fasta" -o output/ --skip-visualization
-  staphscope --update-amr-db   # Update AMR database only
+  staphscope --update-amr-db   # Updates AMR database only (Please run prior first analysis)
 
 Supported FASTA formats: .fna, .fasta, .fa, .fn, .faa
 
@@ -974,7 +992,7 @@ Analysis Modules:
 
 Output: Comprehensive results for all analyses in organized directories
 
-Please run abricate --setupdb for recent gene annotations!!!
+Please run (abricate --setupdb) for recent gene annotations!!!
 
 ⭐ Star us on GitHub if you find this tool useful!
 

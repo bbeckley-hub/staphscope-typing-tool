@@ -3,7 +3,7 @@
 StaphScope Main Orchestrator - UPDATED WITH DYNAMIC AMR DATABASE SUPPORT
 Complete S. aureus typing pipeline - FASTA QC, MLST, spa, SCCmec, AMR, Virulence, Lineage, Visualization
 Author: Brown Beckley <brownbeckley94@gmail.com>
-Date: 2025 / Updated 2026-04-14
+Date: 2025 / Updated 2026-04-19
 Send a quick mail for any issues or further explanations.
 Affiliation: University of Ghana Medical School-Department of Medical Biochemistry
 version 1.2.0
@@ -47,11 +47,24 @@ class StaphScopeOrchestrator:
         }
     
     # =========================================================================
+    # Helper method to locate module directories (Conda share first)
+    # =========================================================================
+    def get_module_path(self, module_name: str) -> Path:
+        """Return the absolute path to a module's directory.
+        Priority: Conda share directory (if exists) else local development.
+        """
+        if hasattr(sys, 'prefix'):
+            share_path = Path(sys.prefix) / "share" / "staphscope" / "modules" / module_name
+            if share_path.exists():
+                return share_path
+        return self.base_dir / "modules" / module_name
+    
+    # =========================================================================
     # AMR Database Update Methods
     # =========================================================================
     def update_amr_database(self) -> bool:
         """Run the AMR module's database update and return success."""
-        amr_module_path = self.base_dir / "modules" / "amr_module"
+        amr_module_path = self.get_module_path("amr_module")
         amr_script = amr_module_path / "amrfinder_standalone.py"
         
         if not amr_script.exists():
@@ -78,7 +91,7 @@ class StaphScopeOrchestrator:
     
     def ensure_amr_database(self) -> bool:
         """Check if AMR database exists; if not, attempt to update."""
-        amr_module_path = self.base_dir / "modules" / "amr_module"
+        amr_module_path = self.get_module_path("amr_module")
         amr_script = amr_module_path / "amrfinder_standalone.py"
         if not amr_script.exists():
             self.banner.display_error("AMR script not found, cannot check database.")
@@ -208,7 +221,7 @@ class StaphScopeOrchestrator:
     # =========================================================================
     def run_fasta_qc_analysis(self, fasta_files: List[Path], output_dir: Path, threads: int) -> bool:
         """Run FASTA QC analysis - first step in pipeline"""
-        qc_module_path = self.base_dir / "modules" / "fasta_qc_module"
+        qc_module_path = self.get_module_path("fasta_qc_module")
         
         try:
             qc_script = qc_module_path / "staph_fasta_qc.py"
@@ -258,7 +271,7 @@ class StaphScopeOrchestrator:
 
     def run_mlst_analysis(self, fasta_files: List[Path], output_dir: Path, threads: int) -> bool:
         """Run MLST analysis"""
-        mlst_module_path = self.base_dir / "modules" / "mlst_module"
+        mlst_module_path = self.get_module_path("mlst_module")
         
         try:
             mlst_script = mlst_module_path / "mlst_module.py"
@@ -307,7 +320,9 @@ class StaphScopeOrchestrator:
 
     def run_spa_typing(self, fasta_files: List[Path], output_dir: Path, threads: int) -> bool:
         """Run spa typing"""
-        spa_module_path = self.base_dir / "modules" / "spa_module" / "spatyper" / "spa_typing"
+        # The spa module path is deeper
+        spa_base = self.get_module_path("spa_module")
+        spa_module_path = spa_base / "spatyper" / "spa_typing"
         
         try:
             spa_script = spa_module_path / "spa_typing_module.py"
@@ -322,7 +337,7 @@ class StaphScopeOrchestrator:
             self.banner.display_info(f"Copied {len(fasta_files)} files to spa module")
             
             spa_env = os.environ.copy()
-            spa_pythonpath = str(self.base_dir / "modules" / "spa_module" / "spatyper")
+            spa_pythonpath = str(spa_base / "spatyper")
             current_pythonpath = spa_env.get('PYTHONPATH', '')
             spa_env['PYTHONPATH'] = f"{spa_pythonpath}:{current_pythonpath}" if current_pythonpath else spa_pythonpath
             
@@ -353,7 +368,7 @@ class StaphScopeOrchestrator:
 
     def run_sccmec_analysis(self, fasta_files: List[Path], output_dir: Path, threads: int) -> bool:
         """Run SCCmec analysis"""
-        sccmec_module_path = self.base_dir / "modules" / "sccmec_module"
+        sccmec_module_path = self.get_module_path("sccmec_module")
         
         try:
             sccmec_script = sccmec_module_path / "run_sccmec_batch.sh"
@@ -418,7 +433,7 @@ class StaphScopeOrchestrator:
 
     def run_amrfinder_analysis(self, fasta_files: List[Path], output_dir: Path, threads: int) -> bool:
         """Run AMRFinderPlus analysis with automatic database check"""
-        amr_module_path = self.base_dir / "modules" / "amr_module"
+        amr_module_path = self.get_module_path("amr_module")
         
         try:
             amr_script = amr_module_path / "amrfinder_standalone.py"
@@ -466,7 +481,7 @@ class StaphScopeOrchestrator:
 
     def run_abricate_analysis(self, fasta_files: List[Path], output_dir: Path, threads: int) -> bool:
         """Run Abricate analysis"""
-        abricate_module_path = self.base_dir / "modules" / "abricate_module"
+        abricate_module_path = self.get_module_path("abricate_module")
         
         try:
             abricate_script = abricate_module_path / "abricate_standalone.py"
@@ -509,7 +524,7 @@ class StaphScopeOrchestrator:
     def run_lineage_analysis(self, output_dir: Path) -> bool:
         """Run lineage database generation"""
         try:
-            lineage_module_path = self.base_dir / "modules" / "lineage_module"
+            lineage_module_path = self.get_module_path("lineage_module")
             lineage_script = lineage_module_path / "html_reference.py"
             
             if not lineage_script.exists():
@@ -546,7 +561,7 @@ class StaphScopeOrchestrator:
         """Copy required files to summary_module for comprehensive report"""
         try:
             self.banner.display_info("Copying required files for comprehensive report...")
-            summary_module_path = self.base_dir / "modules" / "summary_module"
+            summary_module_path = self.get_module_path("summary_module")
             comprehensive_script = summary_module_path / "comprehensive_report.py"
             if not comprehensive_script.exists():
                 self.banner.display_error(f"Comprehensive report script not found at: {comprehensive_script}")
@@ -581,7 +596,7 @@ class StaphScopeOrchestrator:
         """Copy HTML reports needed by ultimate reporter to summary_module"""
         try:
             self.banner.display_info("Copying HTML reports for ultimate reporter...")
-            summary_module_path = self.base_dir / "modules" / "summary_module"
+            summary_module_path = self.get_module_path("summary_module")
             html_reports_needed = [
                 ("amr_results", "staph_amrfinder_summary_report.html"),
                 ("abricate_results", "staph_card_summary_report.html"),
@@ -620,7 +635,7 @@ class StaphScopeOrchestrator:
     def run_comprehensive_report(self, output_dir: Path) -> bool:
         """Run comprehensive report generation"""
         try:
-            summary_module_path = self.base_dir / "modules" / "summary_module"
+            summary_module_path = self.get_module_path("summary_module")
             comprehensive_script = summary_module_path / "comprehensive_report.py"
             if not comprehensive_script.exists():
                 self.banner.display_error(f"Comprehensive report script not found: {comprehensive_script}")
@@ -647,7 +662,7 @@ class StaphScopeOrchestrator:
     def run_ultimate_reporter(self, output_dir: Path) -> bool:
         """Run ultimate reporter"""
         try:
-            summary_module_path = self.base_dir / "modules" / "summary_module"
+            summary_module_path = self.get_module_path("summary_module")
             ultimate_script = summary_module_path / "staphscope_ultimate_reporter.py"
             if not ultimate_script.exists():
                 self.banner.display_error(f"Ultimate reporter script not found: {ultimate_script}")
@@ -675,7 +690,7 @@ class StaphScopeOrchestrator:
         """Copy only comprehensive report files and ultimate reporter directory to final location"""
         try:
             self.banner.display_info("Copying summary results to final directory...")
-            summary_module_path = self.base_dir / "modules" / "summary_module"
+            summary_module_path = self.get_module_path("summary_module")
             final_report_dir = output_dir / "Staphscope_final_report"
             final_report_dir.mkdir(parents=True, exist_ok=True)
             
@@ -721,7 +736,7 @@ class StaphScopeOrchestrator:
         """Copy HTML files from other modules to visualization module"""
         try:
             self.banner.display_info("Copying HTML files to visualization module...")
-            vis_module_path = self.base_dir / "modules" / "visualization_module"
+            vis_module_path = self.get_module_path("visualization_module")
             vis_script = vis_module_path / "staphscope_visualizer.py"
             if not vis_script.exists():
                 self.banner.display_error(f"Visualization script not found at: {vis_script}")
@@ -761,7 +776,7 @@ class StaphScopeOrchestrator:
 
     def run_visualization_analysis(self, output_dir: Path) -> bool:
         """Run visualization analysis - last step in pipeline"""
-        vis_module_path = self.base_dir / "modules" / "visualization_module"
+        vis_module_path = self.get_module_path("visualization_module")
         try:
             vis_script = vis_module_path / "staphscope_visualizer.py"
             if not vis_script.exists():
