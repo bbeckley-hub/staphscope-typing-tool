@@ -15,7 +15,7 @@
 ### **A species-optimized computational pipeline for rapid, accessible *Staphylococcus aureus* genotyping and surveillance**
 
 #### **Complete MRSA/MSSA genomic analysis in minutes — not hours**
-NB: Use -c bbeckley-hub anaconda channel, fixing missing database issues-waiting PR merge on the updated recipe!
+NB: Use -c bbeckley-hub anaconda channel do not use -c bioconda, fixing missing database issues-waiting PR merge on the updated recipe!
 
 ![Version](https://anaconda.org/bbeckley-hub/staphscope/badges/version.svg)
 ![Latest Release Date](https://anaconda.org/bbeckley-hub/staphscope/badges/latest_release_date.svg)
