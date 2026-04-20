@@ -182,7 +182,7 @@ For researchers and clinicians who prefer a graphical interface, **StaphScope We
 ### **Install in 60 seconds**
 ```bash
 # Method 1: Conda (Recommended)
-conda create -n staphscope -c conda-forge -c bioconda -c bbeckley-hub staphscope -y
+conda create -n staphscope -c conda-forge -c bbeckley-hub staphscope -y
 conda activate staphscope
 
 # Method 2: Mamba (Faster installation)
