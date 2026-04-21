@@ -10,11 +10,6 @@ __pycache__/
 # Large data directories (AMR, SCCmec, MLST)
 staphscope/modules/amr_module/data/
 staphscope/modules/sccmec_module/database/
-staphscope/modules/mlst_module/bin/
-staphscope/modules/mlst_module/db/
-staphscope/modules/mlst_module/perl5/
-staphscope/modules/mlst_module/scripts/
-
 # Temporary / output files
 *.tmp
 *.bak

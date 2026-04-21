@@ -58,7 +58,7 @@ class AMRfinderPlusExecutor:
         
         self.metadata = {
             "tool_name": "StaphScope AMRfinderPlus (BUNDLED)",
-            "version": "1.2.0",   # Updated version to reflect dynamic DB
+            "version": "1.2.1",   # Updated version to reflect dynamic DB
             "authors": ["Brown Beckley"],
             "email": "brownbeckley94@gmail.com",
             "github": "https://github.com/bbeckley-hub",

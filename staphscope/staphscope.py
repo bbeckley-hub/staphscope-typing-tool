@@ -6,7 +6,7 @@ Author: Brown Beckley <brownbeckley94@gmail.com>
 Date: 2025 / Updated 2026-04-19
 Send a quick mail for any issues or further explanations.
 Affiliation: University of Ghana Medical School-Department of Medical Biochemistry
-version 1.2.0
+version 1.2.1
 """
 
 import os
@@ -25,6 +25,76 @@ try:
 except (ImportError, SystemError):
     sys.path.insert(0, str(Path(__file__).parent))
     from core.banner import StaphScopeBanner
+
+# =============================================================================
+# COLORED HELP FORMATTER
+# =============================================================================
+class ColoredHelpFormatter(argparse.HelpFormatter):
+    """Custom formatter that adds ANSI color codes to help messages."""
+    
+    # ANSI color codes
+    HEADER = '\033[95m'
+    BLUE = '\033[94m'
+    GREEN = '\033[92m'
+    YELLOW = '\033[93m'
+    RED = '\033[91m'
+    CYAN = '\033[96m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+    RESET = '\033[0m'
+    
+    def _format_usage(self, usage, actions, groups, prefix):
+        """Color the usage line."""
+        usage_str = super()._format_usage(usage, actions, groups, prefix)
+        if usage_str:
+            usage_str = self.GREEN + self.BOLD + "usage: " + self.RESET + usage_str
+        return usage_str
+    
+    def _format_action(self, action):
+        """Color option strings and help text."""
+        # Get the default formatted action string
+        action_str = super()._format_action(action)
+        if not action_str:
+            return action_str
+        
+        # Split into option part and help part
+        lines = action_str.split('\n')
+        colored_lines = []
+        for line in lines:
+            if line.strip():
+                # Color the option flags (e.g., '-i, --input')
+                if line.lstrip().startswith('-'):
+                    # Find where the option part ends (before the first space after flags)
+                    parts = line.split('  ', 1)
+                    if len(parts) == 2:
+                        options = parts[0].strip()
+                        help_text = parts[1]
+                        # Color options in cyan, help text in normal
+                        colored_line = f"  {self.CYAN}{options}{self.RESET}  {help_text}"
+                    else:
+                        colored_line = f"  {self.CYAN}{line.strip()}{self.RESET}"
+                else:
+                    # For metavar lines, use a subtle color
+                    colored_line = f"  {self.YELLOW}{line}{self.RESET}"
+                colored_lines.append(colored_line)
+            else:
+                colored_lines.append(line)
+        
+        return '\n'.join(colored_lines)
+    
+    def _format_text(self, text):
+        """Color description and epilog text."""
+        if not text:
+            return text
+        # Color the text in a nice blue/green, but keep existing formatting
+        colored = f"{self.BLUE}{text}{self.RESET}"
+        return colored
+    
+    def start_section(self, heading):
+        """Color section headings (e.g., 'positional arguments', 'optional arguments')."""
+        heading = f"{self.BOLD}{self.GREEN}{heading}{self.RESET}"
+        super().start_section(heading)
+
 
 class StaphScopeOrchestrator:
     """StaphScope orchestrator with dynamic AMR database support"""
@@ -981,7 +1051,7 @@ def main():
     """Main entry point for StaphScope"""
     parser = argparse.ArgumentParser(
         description="StaphScope: Advanced Staphylococcus aureus Typing & Lineage Analysis Platform with FASTA QC & Visualization",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
+        formatter_class=ColoredHelpFormatter,   # <-- COLORED HELP!
         epilog="""
 Examples:
   staphscope -i genome.fna -o results/
