@@ -298,6 +298,10 @@ staphscope --help
 #### **3. Update Databases (Recommended)**
 ```bash
 abricate --setupdb
+
+staphscope --update-amr-db   # Updates AMR database only (Please run prior first analysis)
+
+
 ```
 
 ---
