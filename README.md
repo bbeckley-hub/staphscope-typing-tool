@@ -181,14 +181,14 @@ For researchers and clinicians who prefer a graphical interface, **StaphScope We
 ### **Install in 60 seconds**
 ```bash
 # Method 1: Conda (Recommended)
-conda create -n staphscope -c conda-forge -c bbeckley-hub staphscope -y
+conda create -n staphscope -c conda-forge -c bioconda staphscope -y
 conda activate staphscope
 
 # Method 2: Mamba (Faster installation)
-mamba create -n staphscope -c conda-forge -c bioconda -c bbeckley-hub staphscope -y
+mamba create -n staphscope -c conda-forge -c bioconda staphscope -y
 mamba activate staphscope
 
-# Method 3: From source
+# Method 3: From source (Needs external databases)
 git clone https://github.com/bbeckley-hub/staphscope-typing-tool.git
 cd staphscope-typing-tool
 conda env create -f environment.yml
