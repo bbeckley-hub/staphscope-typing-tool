@@ -295,7 +295,7 @@ conda activate staphscope
 staphscope --help
 ```
 
-#### **3. Update Databases (Recommended)**
+#### **3. Update Databases (Recommended) for conda users only**
 ```bash
 abricate --setupdb
 
