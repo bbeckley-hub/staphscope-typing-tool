@@ -711,6 +711,7 @@ A: Yes! The ABRicate module uses *S. aureus*-optimized thresholds and databases 
 # Issue: Database errors
 # Solution:
 abricate --setupdb
+staphscope --update-amr-db
 
 # Issue: Missing dependencies
 # Solution:
