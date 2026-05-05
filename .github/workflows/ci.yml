@@ -33,7 +33,7 @@ jobs:
         conda config --add channels conda-forge
         conda config --add channels bioconda
         conda config --add channels bbeckley-hub 
-        conda create -n staphscope -c bbeckley-hub -c conda-forge -c bioconda staphscope python=${{ matrix.python-version }} -y
+        conda create -n staphscope -c conda-forge -c bioconda staphscope python=${{ matrix.python-version }} -y
         conda activate staphscope
     
     - name: Test staphscope help
