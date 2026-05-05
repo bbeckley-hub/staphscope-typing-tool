@@ -56,6 +56,12 @@
 [![Tests](https://img.shields.io/badge/tests-passing-brightgreen.svg)](https://github.com/bbeckley-hub/staphscope-typing-tool/tests)
 [![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/bbeckley-hub/staphscope-typing-tool)
 
+[![Speed](https://img.shields.io/badge/Speed-14%20min%2F24%20samples-FF6D00.svg)](https://github.com/bbeckley-hub/staphscope-typing-tool#performance-benchmarks)
+[![StaphScope Web](https://img.shields.io/badge/🌐-Try%20StaphScope%20Web-4285F4?logo=googlechrome&logoColor=white)](https://staphscope.dpdns.org)
+[![MRSA|MSSA](https://img.shields.io/badge/Classifies-MRSA%20%7C%20MSSA-00BCD4.svg)](https://github.com/bbeckley-hub/staphscope-typing-tool)
+[![Lineages](https://img.shields.io/badge/Lineages-44%20major-673AB7.svg)](https://github.com/bbeckley-hub/staphscope-typing-tool)
+[![AI Ready](https://img.shields.io/badge/AI-Ready%20Reports-00C853.svg)](https://github.com/bbeckley-hub/staphscope-typing-tool#ai-integration-guide)
+
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![Conda](https://img.shields.io/badge/conda-✓-green.svg)](https://docs.conda.io/en/latest/)
