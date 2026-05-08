@@ -218,7 +218,7 @@ conda activate staphscope
 mamba create -n staphscope -c conda-forge -c bioconda staphscope -y
 mamba activate staphscope
 
-# Method 3: From source (Needs external databases)
+# Method 3: From source (Needs external databases) stick to Conda or Docker
 git clone https://github.com/bbeckley-hub/staphscope-typing-tool.git
 cd staphscope-typing-tool
 conda env create -f environment.yml
