@@ -16,6 +16,8 @@
 
 #### **Complete MRSA/MSSA genomic analysis in minutes — not hours**
 
+Here fellas version 1.2.2 in Bioconda PR queeeee! You can get this version directly from -c bbeckley-hub
+
 ![Version](https://anaconda.org/bbeckley-hub/staphscope/badges/version.svg)
 ![Latest Release Date](https://anaconda.org/bbeckley-hub/staphscope/badges/latest_release_date.svg)
 ![Platforms](https://anaconda.org/bbeckley-hub/staphscope/badges/platforms.svg)
