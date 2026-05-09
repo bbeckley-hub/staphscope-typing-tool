@@ -1,7 +1,7 @@
-cff-version: 1.2.0
+cff-version: 1.2.2
 message: "If you use this software, please cite it as below."
 title: "StaphScope: A species-optimized computational pipeline for rapid and accessible Staphylococcus aureus genotyping and surveillance"
-version: "1.2.0"
+version: "1.2.2"
 authors:
   - family-names: "Beckley"
     given-names: "Brown"

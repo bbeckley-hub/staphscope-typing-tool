@@ -6,7 +6,7 @@ Author: Brown Beckley <brownbeckley94@gmail.com>
 Date: 2025 / Updated 2026-04-19
 Send a quick mail for any issues or further explanations.
 Affiliation: University of Ghana Medical School-Department of Medical Biochemistry
-version 1.2.1
+version 1.2.2
 """
 
 import os

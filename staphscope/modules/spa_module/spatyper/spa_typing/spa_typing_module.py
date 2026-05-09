@@ -88,6 +88,8 @@ class SpaTypingAnalyzer:
             Path(sys.prefix) / "lib" / "python3.9" / "site-packages" / "staphscope" / "modules" / "spa_module" / "spatyper" / "spa_typing" / "main",
             Path(sys.prefix) / "lib" / "python3.10" / "site-packages" / "staphscope" / "modules" / "spa_module" / "spatyper" / "spa_typing" / "main",
             Path(sys.prefix) / "lib" / "python3.11" / "site-packages" / "staphscope" / "modules" / "spa_module" / "spatyper" / "spa_typing" / "main",
+            Path(sys.prefix) / "lib" / "python3.12" / "site-packages" / "staphscope" / "modules" / "spa_module" / "spatyper" / "spa_typing" / "main",
+            Path(sys.prefix) / "lib" / "python3.13" / "site-packages" / "staphscope" / "modules" / "spa_module" / "spatyper" / "spa_typing" / "main",
             Path(sys.prefix) / "share" / "staphscope",
         ])
         

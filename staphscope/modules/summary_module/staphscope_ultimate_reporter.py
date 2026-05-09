@@ -4,8 +4,8 @@ STAPHSCOPE ULTIMATE REPORTER - GENE-CENTRIC S. AUREUS ANALYSIS
 Enhanced with FASTA QC, AI Guide, Filter Buttons, Combination Tables, Sortable Headers
 Author: Beckley Brown <brownbeckley94@gmail.com>
 Affiliation: University of Ghana Medical School
-Version: 2.0.0 - Kleboscope-inspired Ultimate Edition
-Date: 2026-04-14
+Version: 2.1.0 - Ultimate Edition with Scrollable Genome Lists, Triple Typing, BACMET, Citations and Call to Action!
+Date: 2026-05-08
 """
 
 import os
@@ -123,7 +123,6 @@ class StaphHTMLParser:
                     if pd.isna(val) or val == '' or val == 'ND':
                         qc_data[col] = 'ND'
                     else:
-                        # try to convert to numeric if it looks like a number
                         cleaned = str(val).replace('%', '').replace(',', '').strip()
                         try:
                             qc_data[col] = float(cleaned)
@@ -621,7 +620,7 @@ class StaphDataAnalyzer:
             'msra', 'msrA', 'mphc', 'mphC', 'tetk', 'tetK', 'tetm', 'tetM', 'tetl', 'tetL'
         }
         
-        # High-priority AMR genes for filter buttons (20)
+        # High-priority AMR genes for filter buttons 
         self.high_priority_amr = [
             'mecA', 'mecC', 'vanA', 'vanB', 'ermA', 'ermB', 'ermC',
             'msrA', 'mphC', 'tetK', 'tetM', 'aacA-aphD', 'aac(6\')-aph(2\'\')',
@@ -656,6 +655,7 @@ class StaphDataAnalyzer:
             'amr_databases': {},
             'virulence_databases': {},
             'plasmid_databases': {},
+            'bacmet_databases': {},  # New for biocide/heavy metal
             'combined_gene_frequencies': []
         }
         
@@ -701,13 +701,15 @@ class StaphDataAnalyzer:
                         gene_centric['virulence_databases'][db_name] = gene_list
                     elif db_name == 'plasmidfinder':
                         gene_centric['plasmid_databases'][db_name] = gene_list
+                    elif db_name == 'bacmet2':
+                        gene_centric['bacmet_databases'][db_name] = gene_list
                     else:
                         gene_centric['amr_databases'][db_name] = gene_list
         
         # Create combined gene frequencies for pattern discovery
         all_genes = []
         
-        for db_type in ['amr_databases', 'virulence_databases', 'plasmid_databases']:
+        for db_type in ['amr_databases', 'virulence_databases', 'plasmid_databases', 'bacmet_databases']:
             for db_name, genes in gene_centric.get(db_type, {}).items():
                 for gene_data in genes:
                     all_genes.append(gene_data)
@@ -719,7 +721,7 @@ class StaphDataAnalyzer:
         return gene_centric
     
     def create_cross_genome_patterns(self, integrated_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Create cross-genome patterns for S. aureus, including combination tables"""
+        """Create cross-genome patterns for S. aureus, including combination tables and triple typing"""
         patterns = {
             'mlst_distribution': Counter(),
             'spa_type_distribution': Counter(),
@@ -728,6 +730,7 @@ class StaphDataAnalyzer:
             'mlst_spa_combinations': defaultdict(list),
             'mlst_sccmec_combinations': defaultdict(list),
             'spa_sccmec_combinations': defaultdict(list),
+            'triple_combinations': defaultdict(list),   # NEW: ST-spa-SCCmec
             'gene_cooccurrence': defaultdict(Counter),
             'high_risk_combinations': []
         }
@@ -773,6 +776,10 @@ class StaphDataAnalyzer:
             if spa_type != 'ND' and sccmec_type != 'ND' and sccmec_type != 'Not Assigned':
                 patterns['spa_sccmec_combinations'][f"{spa_type} - {sccmec_type}"].append(sample)
             
+            # TRIPLE combination (MLST - spa - SCCmec)
+            if mlst != 'ND' and spa_type != 'ND' and sccmec_type != 'ND' and sccmec_type != 'Not Assigned':
+                patterns['triple_combinations'][f"{mlst} - {spa_type} - {sccmec_type}"].append(sample)
+            
             # Gene co-occurrence
             genes = sample_genes.get(sample, [])
             for i, gene1 in enumerate(genes):
@@ -815,18 +822,21 @@ class StaphHTMLGenerator:
         self.data_analyzer = data_analyzer
         self.tab_colors = {
             'summary': '#4CAF50',
-            'samples': '#2196F3',
+            'sample_overview': '#2196F3',
+            'qc': '#607D8B',
             'mlst': '#FF9800',
             'spa': '#9C27B0',
             'sccmec': '#009688',
             'mrsa': '#795548',
             'amr': '#F44336',
             'virulence': '#E91E63',
+            'bacmet': '#FF5722',
             'plasmids': '#673AB7',
-            'patterns': '#FF5722',
-            'qc': '#607D8B',
-            'aiguide': '#3F51B5',
-            'export': '#3F51B5'
+            'patterns': '#3F51B5',
+            'aiguide': '#00BCD4',
+            'citation': '#8BC34A',
+            'calltoaction': '#FFC107',
+            'export': '#9E9E9E'
         }
     
     def generate_main_report(self, integrated_data: Dict[str, Any], output_dir: Path) -> str:
@@ -859,23 +869,26 @@ class StaphHTMLGenerator:
     def _create_ultimate_html(self, **kwargs) -> str:
         """Create ultimate HTML with all sections for S. aureus"""
         
-        # CSS Styles - Updated for S. aureus with DEEP GREEN theme
+        # CSS Styles - Updated with scrollable genome list and new tab colors
         css = """
         <style>
         :root {
             --summary-color: #4CAF50;
-            --samples-color: #2196F3;
+            --sample_overview-color: #2196F3;
+            --qc-color: #607D8B;
             --mlst-color: #FF9800;
             --spa-color: #9C27B0;
             --sccmec-color: #009688;
             --mrsa-color: #795548;
             --amr-color: #F44336;
             --virulence-color: #E91E63;
+            --bacmet-color: #FF5722;
             --plasmids-color: #673AB7;
-            --patterns-color: #FF5722;
-            --qc-color: #607D8B;
-            --aiguide-color: #3F51B5;
-            --export-color: #3F51B5;
+            --patterns-color: #3F51B5;
+            --aiguide-color: #00BCD4;
+            --citation-color: #8BC34A;
+            --calltoaction-color: #FFC107;
+            --export-color: #9E9E9E;
         }
         
         * {
@@ -971,17 +984,20 @@ class StaphHTMLGenerator:
         }
         
         .card-summary { border-left-color: var(--summary-color); }
-        .card-samples { border-left-color: var(--samples-color); }
+        .card-sample_overview { border-left-color: var(--sample_overview-color); }
+        .card-qc { border-left-color: var(--qc-color); }
         .card-mlst { border-left-color: var(--mlst-color); }
         .card-spa { border-left-color: var(--spa-color); }
         .card-sccmec { border-left-color: var(--sccmec-color); }
         .card-mrsa { border-left-color: var(--mrsa-color); }
         .card-amr { border-left-color: var(--amr-color); }
         .card-virulence { border-left-color: var(--virulence-color); }
+        .card-bacmet { border-left-color: var(--bacmet-color); }
         .card-plasmids { border-left-color: var(--plasmids-color); }
         .card-patterns { border-left-color: var(--patterns-color); }
-        .card-qc { border-left-color: var(--qc-color); }
         .card-aiguide { border-left-color: var(--aiguide-color); }
+        .card-citation { border-left-color: var(--citation-color); }
+        .card-calltoaction { border-left-color: var(--calltoaction-color); }
         .card-export { border-left-color: var(--export-color); }
         
         .card-number {
@@ -1008,7 +1024,7 @@ class StaphHTMLGenerator:
         }
         
         .tab-button {
-            padding: 12px 25px;
+            padding: 12px 20px;
             background: #f5f5f5;
             border: none;
             border-radius: 8px;
@@ -1021,6 +1037,7 @@ class StaphHTMLGenerator:
             gap: 8px;
             position: relative;
             overflow: hidden;
+            font-size: 0.9em;
         }
         
         .tab-button::after {
@@ -1049,17 +1066,20 @@ class StaphHTMLGenerator:
         }
         
         .tab-button.summary.active { background: var(--summary-color); }
-        .tab-button.samples.active { background: var(--samples-color); }
+        .tab-button.sample_overview.active { background: var(--sample_overview-color); }
+        .tab-button.qc.active { background: var(--qc-color); }
         .tab-button.mlst.active { background: var(--mlst-color); }
         .tab-button.spa.active { background: var(--spa-color); }
         .tab-button.sccmec.active { background: var(--sccmec-color); }
         .tab-button.mrsa.active { background: var(--mrsa-color); }
         .tab-button.amr.active { background: var(--amr-color); }
         .tab-button.virulence.active { background: var(--virulence-color); }
+        .tab-button.bacmet.active { background: var(--bacmet-color); }
         .tab-button.plasmids.active { background: var(--plasmids-color); }
         .tab-button.patterns.active { background: var(--patterns-color); }
-        .tab-button.qc.active { background: var(--qc-color); }
         .tab-button.aiguide.active { background: var(--aiguide-color); }
+        .tab-button.citation.active { background: var(--citation-color); }
+        .tab-button.calltoaction.active { background: var(--calltoaction-color); }
         .tab-button.export.active { background: var(--export-color); }
         
         .tab-content {
@@ -1095,17 +1115,20 @@ class StaphHTMLGenerator:
         }
         
         .summary-header { border-color: var(--summary-color); }
-        .samples-header { border-color: var(--samples-color); }
+        .sample_overview-header { border-color: var(--sample_overview-color); }
+        .qc-header { border-color: var(--qc-color); }
         .mlst-header { border-color: var(--mlst-color); }
         .spa-header { border-color: var(--spa-color); }
         .sccmec-header { border-color: var(--sccmec-color); }
         .mrsa-header { border-color: var(--mrsa-color); }
         .amr-header { border-color: var(--amr-color); }
         .virulence-header { border-color: var(--virulence-color); }
+        .bacmet-header { border-color: var(--bacmet-color); }
         .plasmids-header { border-color: var(--plasmids-color); }
         .patterns-header { border-color: var(--patterns-color); }
-        .qc-header { border-color: var(--qc-color); }
         .aiguide-header { border-color: var(--aiguide-color); }
+        .citation-header { border-color: var(--citation-color); }
+        .calltoaction-header { border-color: var(--calltoaction-color); }
         .export-header { border-color: var(--export-color); }
         
         .data-table {
@@ -1163,6 +1186,36 @@ class StaphHTMLGenerator:
             border: 1px solid #e0e0e0;
             border-radius: 8px;
             margin: 20px 0;
+        }
+        
+        /* Scrollable genome list - wrapping + vertical scroll */
+        .genome-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            max-height: 200px;
+            overflow-y: auto;
+            padding: 5px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+
+        .genome-tag {
+            display: inline-block;
+            background: #e6ffe6;
+            color: #006400;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            border: 1px solid #b3ffb3;
+            white-space: nowrap;
+            margin: 2px;
+        }
+        
+        .genome-tag.highlight {
+            background-color: #ffff99 !important;
+            color: #000 !important;
+            border: 1px solid #ffc107;
         }
         
         .search-box {
@@ -1280,25 +1333,6 @@ class StaphHTMLGenerator:
             background: #228B22;
         }
         
-        .genome-list {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 5px;
-            margin-top: 5px;
-            max-width: none;
-        }
-        
-        .genome-tag {
-            background: #e6ffe6;
-            color: #006400;
-            padding: 3px 10px;
-            border-radius: 12px;
-            font-size: 0.85em;
-            border: 1px solid #b3ffb3;
-            white-space: nowrap;
-            margin: 2px;
-        }
-        
         .footer {
             text-align: center;
             padding: 30px;
@@ -1370,16 +1404,16 @@ class StaphHTMLGenerator:
             }
             
             .tab-button {
-                padding: 10px 15px;
-                font-size: 0.9em;
+                padding: 8px 12px;
+                font-size: 0.8em;
             }
             
             .dashboard-grid {
-                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
             }
             
             .data-table {
-                font-size: 0.85em;
+                font-size: 0.8em;
             }
             
             body {
@@ -1390,7 +1424,7 @@ class StaphHTMLGenerator:
         </style>
         """
         
-        # JavaScript
+        # JavaScript - updated with genome highlight function
         js = """
         <script>
         // Tab switching
@@ -1406,7 +1440,7 @@ class StaphHTMLGenerator:
             window.location.hash = tabName;
         }
         
-        // Search functionality
+        // Search functionality for tables
         function searchTable(tableId, searchId) {
             const input = document.getElementById(searchId);
             const filter = input.value.toUpperCase();
@@ -1428,6 +1462,20 @@ class StaphHTMLGenerator:
                 }
                 rows[i].style.display = found ? '' : 'none';
             }
+        }
+        
+        // Highlight genome tags
+        function highlightGenome(tableId, searchId) {
+            const filter = document.getElementById(searchId).value.toUpperCase().trim();
+            const table = document.getElementById(tableId);
+            const allTags = table.querySelectorAll('.genome-tag');
+            allTags.forEach(tag => tag.classList.remove('highlight'));
+            if (filter === '') return;
+            allTags.forEach(tag => {
+                if (tag.textContent.toUpperCase().indexOf(filter) > -1) {
+                    tag.classList.add('highlight');
+                }
+            });
         }
         
         // Sort table function
@@ -1533,6 +1581,8 @@ class StaphHTMLGenerator:
         
         # Calculate total AMR genes count
         total_amr_genes = sum(len(genes) for genes in kwargs['gene_centric'].get('amr_databases', {}).values())
+        total_virulence_genes = sum(len(genes) for genes in kwargs['gene_centric'].get('virulence_databases', {}).values())
+        total_bacmet_genes = sum(len(genes) for genes in kwargs['gene_centric'].get('bacmet_databases', {}).values())
         
         # Build HTML
         html = f"""<!DOCTYPE html>
@@ -1563,7 +1613,7 @@ class StaphHTMLGenerator:
                 </div>
                 <div class="metadata-item">
                     <i class="fas fa-user-md"></i>
-                    <span>Tool: STAPHSCOPE Ultimate v2.0.0</span>
+                    <span>Tool: STAPHSCOPE Ultimate v2.1.0</span>
                 </div>
                 <div class="metadata-item">
                     <i class="fas fa-university"></i>
@@ -1599,7 +1649,7 @@ class StaphHTMLGenerator:
             </div>
             
             <div class="dashboard-card card-virulence" onclick="switchTab('virulence')">
-                <div class="card-number">{sum(len(genes) for genes in kwargs['gene_centric'].get('virulence_databases', {}).values())}</div>
+                <div class="card-number">{total_virulence_genes}</div>
                 <div class="card-label">Virulence Genes</div>
                 <i class="fas fa-virus fa-2x" style="color: var(--virulence-color); margin-top: 10px;"></i>
             </div>
@@ -1611,47 +1661,24 @@ class StaphHTMLGenerator:
             </div>
         </div>
         
-        <!-- Tab Navigation -->
+        <!-- Tab Navigation (reordered) -->
         <div class="tab-navigation">
-            <button class="tab-button summary active" onclick="switchTab('summary')">
-                <i class="fas fa-chart-pie"></i> Summary
-            </button>
-            <button class="tab-button samples" onclick="switchTab('samples')">
-                <i class="fas fa-list-alt"></i> Sample Overview
-            </button>
-            <button class="tab-button mlst" onclick="switchTab('mlst')">
-                <i class="fas fa-code-branch"></i> MLST Analysis
-            </button>
-            <button class="tab-button spa" onclick="switchTab('spa')">
-                <i class="fas fa-dna"></i> spa Typing
-            </button>
-            <button class="tab-button sccmec" onclick="switchTab('sccmec')">
-                <i class="fas fa-shield-alt"></i> SCCmec
-            </button>
-            <button class="tab-button mrsa" onclick="switchTab('mrsa')">
-                <i class="fas fa-skull-crossbones"></i> MRSA Analysis
-            </button>
-            <button class="tab-button amr" onclick="switchTab('amr')">
-                <i class="fas fa-biohazard"></i> AMR Genes
-            </button>
-            <button class="tab-button virulence" onclick="switchTab('virulence')">
-                <i class="fas fa-virus"></i> Virulence Genes
-            </button>
-            <button class="tab-button plasmids" onclick="switchTab('plasmids')">
-                <i class="fas fa-plug"></i> Plasmids
-            </button>
-            <button class="tab-button patterns" onclick="switchTab('patterns')">
-                <i class="fas fa-project-diagram"></i> Pattern Discovery
-            </button>
-            <button class="tab-button qc" onclick="switchTab('qc')">
-                <i class="fas fa-chart-line"></i> FASTA QC
-            </button>
-            <button class="tab-button aiguide" onclick="switchTab('aiguide')">
-                <i class="fas fa-robot"></i> AI Guide
-            </button>
-            <button class="tab-button export" onclick="switchTab('export')">
-                <i class="fas fa-download"></i> Export
-            </button>
+            <button class="tab-button summary active" onclick="switchTab('summary')"><i class="fas fa-chart-pie"></i> Summary</button>
+            <button class="tab-button sample_overview" onclick="switchTab('sample_overview')"><i class="fas fa-list-alt"></i> Sample Overview</button>
+            <button class="tab-button qc" onclick="switchTab('qc')"><i class="fas fa-chart-line"></i> FASTA QC</button>
+            <button class="tab-button mlst" onclick="switchTab('mlst')"><i class="fas fa-code-branch"></i> MLST</button>
+            <button class="tab-button spa" onclick="switchTab('spa')"><i class="fas fa-dna"></i> spa Typing</button>
+            <button class="tab-button sccmec" onclick="switchTab('sccmec')"><i class="fas fa-shield-alt"></i> SCCmec</button>
+            <button class="tab-button mrsa" onclick="switchTab('mrsa')"><i class="fas fa-skull-crossbones"></i> MRSA Analysis</button>
+            <button class="tab-button amr" onclick="switchTab('amr')"><i class="fas fa-biohazard"></i> AMR</button>
+            <button class="tab-button virulence" onclick="switchTab('virulence')"><i class="fas fa-virus"></i> Virulence</button>
+            <button class="tab-button bacmet" onclick="switchTab('bacmet')"><i class="fas fa-flask"></i> BACMET</button>
+            <button class="tab-button plasmids" onclick="switchTab('plasmids')"><i class="fas fa-plug"></i> Plasmids</button>
+            <button class="tab-button patterns" onclick="switchTab('patterns')"><i class="fas fa-project-diagram"></i> Patterns</button>
+            <button class="tab-button aiguide" onclick="switchTab('aiguide')"><i class="fas fa-robot"></i> AI Guide</button>
+            <button class="tab-button citation" onclick="switchTab('citation')"><i class="fas fa-book"></i> Citation</button>
+            <button class="tab-button calltoaction" onclick="switchTab('calltoaction')"><i class="fas fa-bullhorn"></i> Call to Action</button>
+            <button class="tab-button export" onclick="switchTab('export')"><i class="fas fa-download"></i> Export</button>
         </div>
         
         <!-- Summary Tab -->
@@ -1666,17 +1693,28 @@ class StaphHTMLGenerator:
         </div>
         
         <!-- Sample Overview Tab -->
-        <div id="samples-tab" class="tab-content">
-            <h2 class="section-header samples-header">
-                <i class="fas fa-list-alt"></i> Complete Sample Overview
-                <button class="print-section-btn" onclick="printSection('samples-tab')">
+        <div id="sample_overview-tab" class="tab-content">
+            <h2 class="section-header sample_overview-header">
+                <i class="fas fa-list-alt"></i> Sample Overview
+                <button class="print-section-btn" onclick="printSection('sample_overview-tab')">
                     <i class="fas fa-print"></i> Print
                 </button>
             </h2>
             {self._generate_sample_overview_section(kwargs)}
         </div>
         
-        <!-- MLST Analysis Tab -->
+        <!-- FASTA QC Tab -->
+        <div id="qc-tab" class="tab-content">
+            <h2 class="section-header qc-header">
+                <i class="fas fa-chart-line"></i> FASTA Quality Control Metrics
+                <button class="print-section-btn" onclick="printSection('qc-tab')">
+                    <i class="fas fa-print"></i> Print
+                </button>
+            </h2>
+            {self._generate_qc_section(kwargs)}
+        </div>
+        
+        <!-- MLST Tab -->
         <div id="mlst-tab" class="tab-content">
             <h2 class="section-header mlst-header">
                 <i class="fas fa-code-branch"></i> MLST Analysis
@@ -1742,6 +1780,17 @@ class StaphHTMLGenerator:
             {self._generate_virulence_section(kwargs)}
         </div>
         
+        <!-- BACMET (Biocides) Tab -->
+        <div id="bacmet-tab" class="tab-content">
+            <h2 class="section-header bacmet-header">
+                <i class="fas fa-flask"></i> BACMET: Biocide & Heavy Metal Resistance
+                <button class="print-section-btn" onclick="printSection('bacmet-tab')">
+                    <i class="fas fa-print"></i> Print
+                </button>
+            </h2>
+            {self._generate_bacmet_section(kwargs)}
+        </div>
+        
         <!-- Plasmids Tab -->
         <div id="plasmids-tab" class="tab-content">
             <h2 class="section-header plasmids-header">
@@ -1764,17 +1813,6 @@ class StaphHTMLGenerator:
             {self._generate_pattern_discovery_section(kwargs)}
         </div>
         
-        <!-- FASTA QC Tab -->
-        <div id="qc-tab" class="tab-content">
-            <h2 class="section-header qc-header">
-                <i class="fas fa-chart-line"></i> FASTA Quality Control Metrics
-                <button class="print-section-btn" onclick="printSection('qc-tab')">
-                    <i class="fas fa-print"></i> Print
-                </button>
-            </h2>
-            {self._generate_qc_section(kwargs)}
-        </div>
-        
         <!-- AI Guide Tab -->
         <div id="aiguide-tab" class="tab-content">
             <h2 class="section-header aiguide-header">
@@ -1784,6 +1822,28 @@ class StaphHTMLGenerator:
                 </button>
             </h2>
             {self._generate_aiguide_section(kwargs)}
+        </div>
+        
+        <!-- Citation Tab -->
+        <div id="citation-tab" class="tab-content">
+            <h2 class="section-header citation-header">
+                <i class="fas fa-book"></i> Citations & References
+                <button class="print-section-btn" onclick="printSection('citation-tab')">
+                    <i class="fas fa-print"></i> Print
+                </button>
+            </h2>
+            {self._generate_citation_section(kwargs)}
+        </div>
+        
+        <!-- Call to Action Tab -->
+        <div id="calltoaction-tab" class="tab-content">
+            <h2 class="section-header calltoaction-header">
+                <i class="fas fa-bullhorn"></i> Call to Action
+                <button class="print-section-btn" onclick="printSection('calltoaction-tab')">
+                    <i class="fas fa-print"></i> Print
+                </button>
+            </h2>
+            {self._generate_calltoaction_section(kwargs)}
         </div>
         
         <!-- Export Tab -->
@@ -1799,10 +1859,10 @@ class StaphHTMLGenerator:
         
         <!-- Footer -->
         <div class="footer">
-            <h3>STAPHSCOPE Ultimate S. aureus Reporter v2.0.0</h3>
+            <h3>STAPHSCOPE Ultimate S. aureus Reporter v2.1.0</h3>
             <p>University of Ghana Medical School | Brown Beckley <brownbeckley94@gmail.com></p>
             <p>Generated on {kwargs['metadata'].get('analysis_date', 'Unknown')}</p>
-             <p>Please give a big STAR on github if you found the integrated report useful.</p>
+            <p>Please give a big STAR on GitHub if you found the integrated report useful.</p>
         </div>
     </div>
 </body>
@@ -1812,7 +1872,7 @@ class StaphHTMLGenerator:
         return html
     
     def _generate_summary_section(self, kwargs: Dict) -> str:
-        """Generate summary section for S. aureus"""
+        """Generate summary section for S. aureus with biology info"""
         samples_data = kwargs['samples_data']
         patterns = kwargs['patterns']
         gene_centric = kwargs['gene_centric']
@@ -1821,6 +1881,7 @@ class StaphHTMLGenerator:
         total_amr_genes = sum(len(genes) for genes in gene_centric.get('amr_databases', {}).values())
         total_virulence_genes = sum(len(genes) for genes in gene_centric.get('virulence_databases', {}).values())
         total_plasmids = sum(len(genes) for genes in gene_centric.get('plasmid_databases', {}).values())
+        total_bacmet = sum(len(genes) for genes in gene_centric.get('bacmet_databases', {}).values())
         critical_findings = len(patterns.get('high_risk_combinations', []))
         
         # Count MRSA vs MSSA
@@ -1837,10 +1898,9 @@ class StaphHTMLGenerator:
         <div class="alert-box alert-info">
             <i class="fas fa-info-circle fa-2x"></i>
             <div>
-                <h3>Analysis Overview</h3>
-                <p>This ultimate gene-centric report analyzes <strong>{total_samples}</strong> S. aureus genomes. 
-                Instead of listing genes per genome, we show each gene with all genomes that contain it - 
-                making it easy to track gene distribution across samples.</p>
+                <h3>📊 Analysis Overview – Gene‑Centric Approach</h3>
+                <p>This report analyzes <strong>{total_samples}</strong> <em>Staphylococcus aureus</em> genomes using a <strong>gene‑centric</strong> approach: each resistance or virulence gene is displayed with <strong>all genomes</strong> that carry it. This makes outbreak tracking and co‑occurrence analysis immediate and transparent.</p>
+                <p><strong>Why gene‑centric?</strong> Traditional sample‑centric tables force you to search sample by sample. Here, you see the full distribution of every gene in seconds.</p>
             </div>
         </div>
         
@@ -1867,94 +1927,65 @@ class StaphHTMLGenerator:
                     </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td>Total Samples Analyzed</th>
-                        <td><strong>{total_samples}</strong></th>
-                        <td>Complete genomic analysis with all databases</th>
-                    </tr>
-                    <tr>
-                        <td>MRSA Samples</th>
-                        <td><span class="badge badge-mrsa">{mrsa_count}</span></th>
-                        <td>Methicillin-resistant S. aureus</th>
-                    </tr>
-                    <tr>
-                        <td>MSSA Samples</th>
-                        <td><span class="badge badge-mssa">{mssa_count}</span></th>
-                        <td>Methicillin-sensitive S. aureus</th>
-                    </tr>
-                    <tr>
-                        <td>Unique Sequence Types</th>
-                        <td><strong>{len(patterns.get('mlst_distribution', {}))}</strong></th>
-                        <td>MLST typing results</th>
-                    </tr>
-                    <tr>
-                        <td>Unique spa Types</th>
-                        <td><strong>{len(patterns.get('spa_type_distribution', {}))}</strong></th>
-                        <td>Protein A gene typing</th>
-                    </tr>
-                    <tr>
-                        <td>Unique SCCmec Types</th>
-                        <td><strong>{len(patterns.get('sccmec_distribution', {}))}</strong></th>
-                        <td>SCCmec cassette typing</th>
-                    </tr>
-                    <tr>
-                        <td>AMR Genes Identified</th>
-                        <td><strong>{total_amr_genes}</strong></th>
-                        <td>Across all AMR databases (AMRfinder, CARD, ResFinder, etc.)</th>
-                    </tr>
-                    <tr>
-                        <td>Virulence Genes Identified</th>
-                        <td><strong>{total_virulence_genes}</strong></th>
-                        <td>From virulence databases (VFDB)</th>
-                    </tr>
-                    <tr>
-                        <td>Plasmid Replicons</th>
-                        <td><strong>{total_plasmids}</strong></th>
-                        <td>Plasmid replicon types detected</th>
-                    </tr>
-                    <tr>
-                        <td>High-Risk Combinations</th>
-                        <td><span class="badge {'badge-critical' if critical_findings > 0 else 'badge-low'}">{critical_findings}</span></th>
-                        <td>Samples with both critical AMR and virulence genes</th>
-                    </tr>
+                    <tr><td>Total Samples Analyzed</td><td><strong>{total_samples}</strong></td><td>Complete genomic analysis with all databases</td></tr>
+                    <tr><td>MRSA Samples</td><td><span class="badge badge-mrsa">{mrsa_count}</span></td><td>Methicillin‑resistant S. aureus (carry mecA/mecC)</td></tr>
+                    <tr><td>MSSA Samples</td><td><span class="badge badge-mssa">{mssa_count}</span></td><td>Methicillin‑sensitive S. aureus</td></tr>
+                    <tr><td>Unique MLST Types</td><td><strong>{len(patterns.get('mlst_distribution', {}))}</strong></td><td>Sequence types (population structure)</td></tr>
+                    <tr><td>Unique spa Types</td><td><strong>{len(patterns.get('spa_type_distribution', {}))}</strong></td><td>Protein A gene typing – outbreak tracking</td></tr>
+                    <tr><td>Unique SCCmec Types</td><td><strong>{len(patterns.get('sccmec_distribution', {}))}</strong></td><td>SCCmec cassette – MRSA lineage marker</td></tr>
+                    <tr><td>AMR Genes</td><td><strong>{total_amr_genes}</strong></td><td>Across AMRfinder, CARD, ResFinder, etc.</td></tr>
+                    <tr><td>Virulence Genes</td><td><strong>{total_virulence_genes}</strong></td><td>From VFDB (toxins, adhesins, immune evasion)</td></tr>
+                    <tr><td>BACMET (Biocide/Metal) Genes</td><td><strong>{total_bacmet}</strong></td><td>Biocide and heavy metal resistance (hospital environment)</td></tr>
+                    <tr><td>Plasmid Replicons</td><td><strong>{total_plasmids}</strong></td><td>Plasmid types – horizontal gene transfer potential</td></tr>
+                    <tr><td>High‑Risk AMR+Virulence Combos</td><td><span class="badge {'badge-critical' if critical_findings > 0 else 'badge-low'}">{critical_findings}</span></td><td>Samples with both critical AMR and virulence genes</td></tr>
                 </tbody>
             </table>
         </div>
         
-        <h3 style="margin-top: 30px;"><i class="fas fa-lightbulb"></i> Report Features</h3>
+        <h3 style="margin-top: 30px;"><i class="fas fa-lightbulb"></i> How to Use This Report</h3>
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin: 20px 0;">
             <div class="database-section">
-                <h4><i class="fas fa-gene"></i> Gene-Centric Approach</h4>
-                <p>Each gene is shown with ALL genomes that contain it. No more searching through sample lists!</p>
+                <h4><i class="fas fa-gene"></i> Gene‑Centric Tables</h4>
+                <p>In AMR, Virulence, and BACMET tabs, each gene is shown with <strong>all genomes</strong> that contain it. Use the <strong>genome search box</strong> to highlight specific isolates across multiple genes.</p>
             </div>
-            
             <div class="database-section">
-                <h4><i class="fas fa-print"></i> Section-Specific Printing</h4>
-                <p>Print button on each section header prints only that section. Report any issues by quick mail!</p>
+                <h4><i class="fas fa-print"></i> Section‑Specific Printing</h4>
+                <p>Click the <strong>Print</strong> button on any section header to generate a clean printout of only that tab – perfect for reports.</p>
             </div>
-            
             <div class="database-section">
-                <h4><i class="fas fa-search"></i> Comprehensive Search</h4>
-                <p>Search any table by gene name, sample name, ST, spa type, or any field.</p>
+                <h4><i class="fas fa-search"></i> Smart Filter Buttons</h4>
+                <p>Use the coloured buttons to instantly filter for <strong>mecA, PVL, TSST‑1, enterotoxins</strong> and other key genes.</p>
             </div>
-            
             <div class="database-section">
-                <h4><i class="fas fa-bacteria"></i> S. aureus Specific</h4>
-                <p>Special focus on MRSA markers (mecA/mecC), SCCmec types, and S. aureus virulence factors.</p>
+                <h4><i class="fas fa-chart-line"></i> FASTA QC</h4>
+                <p>Assess assembly quality (N50, contig count, GC%) before drawing biological conclusions.</p>
             </div>
         </div>
         """
-        
         return html
     
     def _generate_sample_overview_section(self, kwargs: Dict) -> str:
-        """Generate complete sample overview for S. aureus with sortable headers"""
+        """Generate sample overview with biology info"""
         samples_data = kwargs['samples_data']
         
         html = f"""
+        <div class="alert-box alert-info">
+            <i class="fas fa-info-circle fa-2x"></i>
+            <div>
+                <h3>🧬 Sample Overview – Population Snapshot</h3>
+                <p>This table summarises the three main typing methods for each <em>S. aureus</em> isolate:</p>
+                <ul>
+                    <li><strong>MLST</strong> (Multi‑Locus Sequence Typing) – gold standard for global epidemiology.</li>
+                    <li><strong>spa typing</strong> – high‑resolution typing based on the <em>spa</em> gene (protein A repeat region).</li>
+                    <li><strong>SCCmec type</strong> – identifies the staphylococcal cassette chromosome mec, which carries <em>mecA</em> and defines MRSA.</li>
+                </ul>
+                <p><strong>MRSA</strong> samples are highlighted in red. Click on column headers to sort.</p>
+            </div>
+        </div>
+        
         <input type="text" class="search-box" id="search-samples" 
                onkeyup="searchTable('samples-table', 'search-samples')" 
-               placeholder="🔍 Search samples by any field...">
+               placeholder="🔍 Search samples by ID, ST, spa type, or SCCmec...">
         
         <div class="action-buttons">
             <button class="action-btn btn-primary" onclick="exportTableToCSV('samples-table', 'sample_overview.csv')">
@@ -1987,26 +2018,14 @@ class StaphHTMLGenerator:
             mrsa_status = data.get('typing', {}).get('MRSA_Status', 'ND')
             virulence_count = len(data.get('abricate_databases', {}).get('vfdb', []))
             
-            # Highlight MRSA samples
             row_class = 'class="mrsa-highlight"' if 'MRSA' in mrsa_status else ''
-            
-            # Format status badge
-            status_badge = ''
-            if 'MRSA' in mrsa_status:
-                status_badge = '<span class="badge badge-mrsa">MRSA</span>'
-            elif 'MSSA' in mrsa_status:
-                status_badge = '<span class="badge badge-mssa">MSSA</span>'
-            else:
-                status_badge = mrsa_status
+            status_badge = '<span class="badge badge-mrsa">MRSA</span>' if 'MRSA' in mrsa_status else ('<span class="badge badge-mssa">MSSA</span>' if 'MSSA' in mrsa_status else mrsa_status)
             
             html += f"""
                     <tr {row_class}>
                         <td><strong>{sample}</strong></td>
-                        <td>{mlst}</td>
-                        <td>{spa_type}</td>
-                        <td>{sccmec_type}</td>
-                        <td>{status_badge}</td>
-                        <td>{virulence_count}</td>
+                        <td>{mlst}</td><td>{spa_type}</td><td>{sccmec_type}</td>
+                        <td>{status_badge}</td><td>{virulence_count}</td>
                     </tr>
             """
         
@@ -2014,16 +2033,80 @@ class StaphHTMLGenerator:
                 </tbody>
             </table>
         </div>
+        """
+        return html
+    
+    def _generate_qc_section(self, kwargs: Dict) -> str:
+        """Generate FASTA QC section with biology explanation"""
+        qc_data = kwargs.get('integrated_data', {}).get('qc_data', {})
         
-        <div class="alert-box alert-info" style="margin-top: 20px;">
-            <i class="fas fa-info-circle"></i>
+        if not qc_data:
+            return """
+            <div class="alert-box alert-warning">
+                <i class="fas fa-exclamation-circle fa-2x"></i>
+                <div>
+                    <h3>No QC Data Available</h3>
+                    <p>The FASTA_QC_summary.html file was not found or could not be parsed. Please ensure it is present in the input directory.</p>
+                </div>
+            </div>
+            """
+        
+        # Collect metrics
+        all_metrics = set()
+        for metrics in qc_data.values():
+            all_metrics.update(metrics.keys())
+        metric_list = sorted(all_metrics)
+        
+        html = f"""
+        <div class="alert-box alert-info">
+            <i class="fas fa-chart-line fa-2x"></i>
             <div>
-                <p><strong>Note:</strong> MRSA samples are highlighted in red. SCCmec type "Not Assigned" indicates no SCCmec cassette detected.</p>
-                <p><strong>Sortable columns:</strong> Click on any column header to sort the table.</p>
+                <h3>📏 FASTA Quality Control – Why It Matters</h3>
+                <p>Assembly quality directly affects the reliability of typing and gene detection.</p>
+                <ul>
+                    <li><strong>Number of contigs</strong> – lower is better; fragmented assemblies may miss genes or break up SCCmec cassettes.</li>
+                    <li><strong>N50</strong> – the contig length such that 50% of the assembly is in contigs ≥ N50; higher N50 indicates better continuity.</li>
+                    <li><strong>GC%</strong> – S. aureus is typically 32‑33%; large deviations may indicate contamination.</li>
+                    <li><strong>Total length</strong> – should be ~2.8 Mbp for a complete genome.</li>
+                </ul>
             </div>
         </div>
-        """
         
+        <input type="text" class="search-box" id="search-qc" onkeyup="searchTable('qc-table', 'search-qc')" placeholder="🔍 Search sample...">
+        
+        <div class="action-buttons">
+            <button class="action-btn btn-primary" onclick="exportTableToCSV('qc-table', 'fasta_qc.csv')">
+                <i class="fas fa-download"></i> Export QC Data
+            </button>
+        </div>
+        
+        <div class="master-scrollable-container">
+            <table id="qc-table" class="data-table">
+                <thead><tr><th data-sort="string">Sample</th>
+        """
+        for metric in metric_list:
+            html += f'<th data-sort="number">{metric}</th>'
+        html += "</tr></thead><tbody>"
+        
+        for sample, metrics in sorted(qc_data.items()):
+            html += f"<tr><td><strong>{sample}</strong></td>"
+            for metric in metric_list:
+                val = metrics.get(metric, 'ND')
+                if isinstance(val, float):
+                    if val > 1e6:
+                        val = f"{val:,.0f}"
+                    elif val > 1000:
+                        val = f"{val:,.0f}"
+                    else:
+                        val = f"{val:.2f}"
+                html += f"<td>{val}</td>"
+            html += "</tr>"
+        
+        html += """
+                </tbody>
+            </table>
+        </div>
+        """
         return html
     
     def _generate_mlst_section(self, kwargs: Dict) -> str:
@@ -2035,132 +2118,69 @@ class StaphHTMLGenerator:
         
         html = f"""
         <div class="alert-box alert-info">
-            <i class="fas fa-info-circle fa-2x"></i>
+            <i class="fas fa-code-branch fa-2x"></i>
             <div>
-                <h3>MLST Analysis</h3>
-                <p><strong>{len(mlst_dist)} unique sequence types</strong> identified. Each ST is shown with its associated spa types and SCCmec types.</p>
+                <h3>🔬 MLST (Multi‑Locus Sequence Typing)</h3>
+                <p>MLST indexes internal fragments of seven housekeeping genes (<em>arcC, aroE, glpF, gmk, pta, tpi, yqiL</em>). Each unique combination of alleles defines a Sequence Type (ST).</p>
+                <p><strong>Why MLST?</strong> It is highly reproducible and portable, enabling global surveillance. Closely related STs belong to the same clonal complex (CC). Major epidemic clones include CC1, CC5, CC8, CC22, CC30 and CC45.</p>
+                <p><strong>{len(mlst_dist)} unique STs</strong> identified.</p>
             </div>
         </div>
         
-        <h3><i class="fas fa-chart-bar"></i> Sequence Type Distribution</h3>
+        <h3>📊 ST Distribution</h3>
         <div class="scrollable-table">
             <table id="mlst-table" class="data-table">
-                <thead>
-                    <tr>
-                        <th data-sort="string">Sequence Type</th>
-                        <th data-sort="number">Count</th>
-                        <th data-sort="number">Percentage</th>
-                        <th data-sort="string">Associated spa Types</th>
-                        <th data-sort="string">Associated SCCmec Types</th>
-                    </tr>
-                </thead>
+                <thead><tr><th data-sort="string">ST</th><th data-sort="number">Count</th><th data-sort="number">Percentage</th><th data-sort="string">Associated spa Types</th><th data-sort="string">Associated SCCmec Types</th></tr></thead>
                 <tbody>
         """
-        
         total = sum(mlst_dist.values())
         for mlst, count in mlst_dist.most_common():
-            if mlst == 'ND':
-                continue
-                
-            percentage = (count / total) * 100
-            
-            # Get associated spa types for this ST
+            if mlst == 'ND': continue
+            pct = (count/total)*100
+            # Find associated spa
             associated_spa = []
-            for combo, samples in mlst_spa_combos.items():
+            for combo in mlst_spa_combos:
                 if f"{mlst} - " in combo:
-                    spa_type = combo.split(" - ")[1]
-                    if spa_type not in associated_spa:
-                        associated_spa.append(spa_type)
-            
-            # Get associated SCCmec types for this ST
+                    spa = combo.split(" - ")[1]
+                    if spa not in associated_spa:
+                        associated_spa.append(spa)
+            # Find associated SCCmec
             associated_sccmec = []
-            for combo, samples in mlst_sccmec_combos.items():
+            for combo in mlst_sccmec_combos:
                 if f"{mlst} - " in combo:
-                    sccmec_type = combo.split(" - ")[1]
-                    if sccmec_type not in associated_sccmec:
-                        associated_sccmec.append(sccmec_type)
-            
+                    scc = combo.split(" - ")[1]
+                    if scc not in associated_sccmec:
+                        associated_sccmec.append(scc)
             spa_list = ', '.join(associated_spa) if associated_spa else 'ND'
-            sccmec_list = ', '.join(associated_sccmec) if associated_sccmec else 'ND'
-            
-            html += f"""
-                    <tr>
-                        <td><strong>{mlst}</strong></td>
-                        <td>{count}</td>
-                        <td>{percentage:.1f}%</td>
-                        <td>{spa_list}</td>
-                        <td>{sccmec_list}</td>
-                    </tr>
-            """
+            scc_list = ', '.join(associated_sccmec) if associated_sccmec else 'ND'
+            html += f"<tr><td><strong>{mlst}</strong></td><td>{count}</td><td>{pct:.1f}%</td><td>{spa_list}</td><td>{scc_list}</td></tr>"
+        html += "</tbody></table></div>"
         
-        html += """
-                </tbody>
-            </table>
-        </div>
-        
-        <h3 style="margin-top: 30px;"><i class="fas fa-project-diagram"></i> ST-spa Combinations</h3>
-        <input type="text" class="search-box" id="search-mlst-spa" onkeyup="searchTable('mlst-spa-table', 'search-mlst-spa')" placeholder="🔍 Search ST-spa combinations...">
-        <div class="master-scrollable-container">
-            <table id="mlst-spa-table" class="data-table">
-                <thead>
-                    <tr>
-                        <th data-sort="string">ST-spa Combination</th>
-                        <th data-sort="number">Count</th>
-                        <th data-sort="string">Samples</th>
-                    </tr>
-                </thead>
-                <tbody>
+        # ST-spa combinations
+        html += f"""
+        <h3>🔗 ST–spa Combinations</h3>
+        <input type="text" class="search-box" id="search-mlst-spa" onkeyup="searchTable('mlst-spa-table','search-mlst-spa')" placeholder="🔍 Search ST-spa...">
+        <div class="master-scrollable-container"><table id="mlst-spa-table" class="data-table"><thead><tr><th data-sort="string">ST-spa Combination</th><th data-sort="number">Count</th><th data-sort="string">Samples</th></tr></thead><tbody>
         """
-        
         for combo, samples in sorted(mlst_spa_combos.items(), key=lambda x: len(x[1]), reverse=True):
-            sample_list = ', '.join(samples)  # No truncation
-            html += f"""
-                    <tr>
-                        <td><strong>{combo}</strong></td>
-                        <td>{len(samples)}</td>
-                        <td>{sample_list}</td>
-                    </tr>
-            """
+            sample_tags = ''.join(f'<span class="genome-tag">{s}</span>' for s in samples)
+            html += f"<tr><td><strong>{combo}</strong></td><td>{len(samples)}</td><td><div class='genome-list'>{sample_tags}</div></td></tr>"
+        html += "</tbody></table></div>"
         
-        html += """
-                </tbody>
-            </table>
-        </div>
-        
-        <h3 style="margin-top: 30px;"><i class="fas fa-project-diagram"></i> ST-SCCmec Combinations</h3>
-        <input type="text" class="search-box" id="search-mlst-sccmec" onkeyup="searchTable('mlst-sccmec-table', 'search-mlst-sccmec')" placeholder="🔍 Search ST-SCCmec combinations...">
-        <div class="master-scrollable-container">
-            <table id="mlst-sccmec-table" class="data-table">
-                <thead>
-                    <tr>
-                        <th data-sort="string">ST-SCCmec Combination</th>
-                        <th data-sort="number">Count</th>
-                        <th data-sort="string">Samples</th>
-                    </tr>
-                </thead>
-                <tbody>
+        # ST-SCCmec combinations
+        html += f"""
+        <h3>🔗 ST–SCCmec Combinations</h3>
+        <input type="text" class="search-box" id="search-mlst-sccmec" onkeyup="searchTable('mlst-sccmec-table','search-mlst-sccmec')" placeholder="🔍 Search ST-SCCmec...">
+        <div class="master-scrollable-container"><table id="mlst-sccmec-table" class="data-table"><thead><tr><th data-sort="string">ST-SCCmec Combination</th><th data-sort="number">Count</th><th data-sort="string">Samples</th></tr></thead><tbody>
         """
-        
         for combo, samples in sorted(mlst_sccmec_combos.items(), key=lambda x: len(x[1]), reverse=True):
-            sample_list = ', '.join(samples)  # No truncation
-            html += f"""
-                    <tr>
-                        <td><strong>{combo}</strong></td>
-                        <td>{len(samples)}</td>
-                        <td>{sample_list}</td>
-                    </tr>
-            """
-        
-        html += """
-                </tbody>
-            </table>
-        </div>
-        """
-        
+            sample_tags = ''.join(f'<span class="genome-tag">{s}</span>' for s in samples)
+            html += f"<tr><td><strong>{combo}</strong></td><td>{len(samples)}</td><td><div class='genome-list'>{sample_tags}</div></td></tr>"
+        html += "</tbody></table></div>"
         return html
     
     def _generate_spa_section(self, kwargs: Dict) -> str:
-        """Generate spa typing analysis section with spa-ST and spa-SCCmec combinations"""
+        """Generate spa typing section"""
         patterns = kwargs['patterns']
         spa_dist = patterns.get('spa_type_distribution', Counter())
         mlst_spa_combos = patterns.get('mlst_spa_combinations', {})
@@ -2168,128 +2188,59 @@ class StaphHTMLGenerator:
         
         html = f"""
         <div class="alert-box alert-info">
-            <i class="fas fa-info-circle fa-2x"></i>
+            <i class="fas fa-dna fa-2x"></i>
             <div>
-                <h3>spa Typing Analysis</h3>
-                <p><strong>{len(spa_dist)} unique spa types</strong> identified across all samples.</p>
+                <h3>🧬 spa Typing – High‑Resolution Outbreak Tracking</h3>
+                <p>The <em>spa</em> gene encodes protein A, an important virulence factor. The repeat region is highly polymorphic; differences in repeat patterns define spa types.</p>
+                <p><strong>Why spa typing?</strong> It is faster and cheaper than MLST, with higher discrimination. It is widely used for outbreak investigation and surveillance of MRSA.</p>
+                <p><strong>{len(spa_dist)} unique spa types</strong> identified.</p>
             </div>
         </div>
         
-        <h3><i class="fas fa-chart-bar"></i> spa Type Distribution</h3>
-        <div class="scrollable-table">
-            <table id="spa-table" class="data-table">
-                <thead>
-                    <tr>
-                        <th data-sort="string">spa Type</th>
-                        <th data-sort="number">Count</th>
-                        <th data-sort="number">Percentage</th>
-                        <th data-sort="string">Common STs</th>
-                    </tr>
-                </thead>
-                <tbody>
+        <h3>📊 spa Type Distribution</h3>
+        <div class="scrollable-table"><table id="spa-table" class="data-table"><thead><tr><th data-sort="string">spa Type</th><th data-sort="number">Count</th><th data-sort="number">Percentage</th><th data-sort="string">Common STs</th></tr></thead><tbody>
         """
-        
         total = sum(spa_dist.values())
-        for spa_type, count in spa_dist.most_common():
-            if spa_type == 'ND':
-                continue
-                
-            percentage = (count / total) * 100
-            
-            # Find STs with this spa type
+        for spa, count in spa_dist.most_common():
+            if spa == 'ND': continue
+            pct = (count/total)*100
             sts = []
-            for combo, samples in mlst_spa_combos.items():
-                if spa_type in combo:
+            for combo in mlst_spa_combos:
+                if spa in combo:
                     st = combo.split(" - ")[0]
                     if st not in sts:
                         sts.append(st)
-            
             st_list = ', '.join(sts) if sts else 'None'
-            
-            html += f"""
-                    <tr>
-                        <td><strong>{spa_type}</strong></td>
-                        <td>{count}</td>
-                        <td>{percentage:.1f}%</td>
-                        <td>{st_list}</td>
-                    </tr>
-            """
+            html += f"<tr><td><strong>{spa}</strong></td><td>{count}</td><td>{pct:.1f}%</td><td>{st_list}</td></tr>"
+        html += "</tbody></table></div>"
         
-        html += """
-                </tbody>
-            </table>
-        </div>
-        
-        <h3 style="margin-top: 30px;"><i class="fas fa-project-diagram"></i> spa-ST Combinations</h3>
-        <input type="text" class="search-box" id="search-spa-mlst" onkeyup="searchTable('spa-mlst-table', 'search-spa-mlst')" placeholder="🔍 Search spa-ST combinations...">
-        <div class="master-scrollable-container">
-            <table id="spa-mlst-table" class="data-table">
-                <thead>
-                    <tr>
-                        <th data-sort="string">spa-ST Combination</th>
-                        <th data-sort="number">Count</th>
-                        <th data-sort="string">Samples</th>
-                    </tr>
-                </thead>
-                <tbody>
+        # spa-ST combinations (reverse order)
+        html += f"""
+        <h3>🔗 spa–ST Combinations</h3>
+        <input type="text" class="search-box" id="search-spa-mlst" onkeyup="searchTable('spa-mlst-table','search-spa-mlst')" placeholder="🔍 Search spa-ST...">
+        <div class="master-scrollable-container"><table id="spa-mlst-table" class="data-table"><thead><tr><th data-sort="string">spa-ST Combination</th><th data-sort="number">Count</th><th data-sort="string">Samples</th></tr></thead><tbody>
         """
-        
-        # Reuse mlst_spa_combos but show as spa-ST
         for combo, samples in sorted(mlst_spa_combos.items(), key=lambda x: len(x[1]), reverse=True):
-            # Convert "ST123 - spa123" to "spa123 - ST123" for this view
             parts = combo.split(" - ")
-            if len(parts) == 2:
-                rev_combo = f"{parts[1]} - {parts[0]}"
-            else:
-                rev_combo = combo
-            sample_list = ', '.join(samples)
-            html += f"""
-                    <tr>
-                        <td><strong>{rev_combo}</strong></td>
-                        <td>{len(samples)}</td>
-                        <td>{sample_list}</td>
-                    </tr>
-            """
+            rev_combo = f"{parts[1]} - {parts[0]}" if len(parts)==2 else combo
+            sample_tags = ''.join(f'<span class="genome-tag">{s}</span>' for s in samples)
+            html += f"<tr><td><strong>{rev_combo}</strong></td><td>{len(samples)}</td><td><div class='genome-list'>{sample_tags}</div></td></tr>"
+        html += "</tbody></table></div>"
         
-        html += """
-                </tbody>
-            </table>
-        </div>
-        
-        <h3 style="margin-top: 30px;"><i class="fas fa-project-diagram"></i> spa-SCCmec Combinations</h3>
-        <input type="text" class="search-box" id="search-spa-sccmec" onkeyup="searchTable('spa-sccmec-table', 'search-spa-sccmec')" placeholder="🔍 Search spa-SCCmec combinations...">
-        <div class="master-scrollable-container">
-            <table id="spa-sccmec-table" class="data-table">
-                <thead>
-                    <tr>
-                        <th data-sort="string">spa-SCCmec Combination</th>
-                        <th data-sort="number">Count</th>
-                        <th data-sort="string">Samples</th>
-                    </tr>
-                </thead>
-                <tbody>
+        # spa-SCCmec combinations
+        html += f"""
+        <h3>🔗 spa–SCCmec Combinations</h3>
+        <input type="text" class="search-box" id="search-spa-sccmec" onkeyup="searchTable('spa-sccmec-table','search-spa-sccmec')" placeholder="🔍 Search spa-SCCmec...">
+        <div class="master-scrollable-container"><table id="spa-sccmec-table" class="data-table"><thead><tr><th data-sort="string">spa-SCCmec Combination</th><th data-sort="number">Count</th><th data-sort="string">Samples</th></tr></thead><tbody>
         """
-        
         for combo, samples in sorted(spa_sccmec_combos.items(), key=lambda x: len(x[1]), reverse=True):
-            sample_list = ', '.join(samples)
-            html += f"""
-                    <tr>
-                        <td><strong>{combo}</strong></td>
-                        <td>{len(samples)}</td>
-                        <td>{sample_list}</td>
-                    </tr>
-            """
-        
-        html += """
-                </tbody>
-            </table>
-        </div>
-        """
-        
+            sample_tags = ''.join(f'<span class="genome-tag">{s}</span>' for s in samples)
+            html += f"<tr><td><strong>{combo}</strong></td><td>{len(samples)}</td><td><div class='genome-list'>{sample_tags}</div></td></tr>"
+        html += "</tbody></table></div>"
         return html
     
     def _generate_sccmec_section(self, kwargs: Dict) -> str:
-        """Generate SCCmec typing analysis section with SCCmec-ST and SCCmec-spa combinations"""
+        """Generate SCCmec section"""
         patterns = kwargs['patterns']
         sccmec_dist = patterns.get('sccmec_distribution', Counter())
         mlst_sccmec_combos = patterns.get('mlst_sccmec_combinations', {})
@@ -2297,144 +2248,58 @@ class StaphHTMLGenerator:
         
         html = f"""
         <div class="alert-box alert-info">
-            <i class="fas fa-info-circle fa-2x"></i>
+            <i class="fas fa-shield-alt fa-2x"></i>
             <div>
-                <h3>SCCmec Typing Analysis</h3>
-                <p><strong>{len(sccmec_dist)} unique SCCmec types</strong> identified. SCCmec cassettes are critical for MRSA classification.</p>
+                <h3>🧬 SCCmec Typing – The MRSA Cassette</h3>
+                <p>The staphylococcal cassette chromosome <em>mec</em> (SCCmec) carries the <em>mecA</em> or <em>mecC</em> gene, conferring methicillin resistance. SCCmec types are classified by their <em>ccr</em> (cassette chromosome recombinase) gene complex and <em>mec</em> gene complex.</p>
+                <p>Major types: <strong>I, II, III</strong> (hospital‑acquired MRSA, often large), <strong>IV, V</strong> (community‑acquired MRSA, smaller, more mobile).</p>
+                <p><strong>{len(sccmec_dist)} unique SCCmec types</strong> identified.</p>
             </div>
         </div>
         
-        <h3><i class="fas fa-chart-bar"></i> SCCmec Type Distribution</h3>
-        <div class="scrollable-table">
-            <table id="sccmec-table" class="data-table">
-                <thead>
-                    <tr>
-                        <th data-sort="string">SCCmec Type</th>
-                        <th data-sort="number">Count</th>
-                        <th data-sort="number">Percentage</th>
-                        <th data-sort="string">Common STs</th>
-                        <th data-sort="string">Common spa Types</th>
-                    </tr>
-                </thead>
-                <tbody>
+        <h3>📊 SCCmec Type Distribution</h3>
+        <div class="scrollable-table"><table id="sccmec-table" class="data-table"><thead><tr><th data-sort="string">SCCmec Type</th><th data-sort="number">Count</th><th data-sort="number">Percentage</th><th data-sort="string">Common STs</th><th data-sort="string">Common spa Types</th></tr></thead><tbody>
         """
-        
         total = sum(sccmec_dist.values())
-        for sccmec_type, count in sccmec_dist.most_common():
-            if sccmec_type == 'ND' or 'Not Assigned' in sccmec_type:
-                continue
-                
-            percentage = (count / total) * 100
-            
-            # Find STs with this SCCmec type
-            sts = []
-            for combo, samples in mlst_sccmec_combos.items():
-                if sccmec_type in combo:
-                    st = combo.split(" - ")[0]
-                    if st not in sts:
-                        sts.append(st)
-            
-            # Find spa types with this SCCmec type
-            spas = []
-            for combo, samples in spa_sccmec_combos.items():
-                if sccmec_type in combo:
-                    spa = combo.split(" - ")[0]
-                    if spa not in spas:
-                        spas.append(spa)
-            
-            st_list = ', '.join(sts) if sts else 'None'
-            spa_list = ', '.join(spas) if spas else 'None'
-            
-            html += f"""
-                    <tr>
-                        <td><strong>{sccmec_type}</strong></td>
-                        <td>{count}</td>
-                        <td>{percentage:.1f}%</td>
-                        <td>{st_list}</td>
-                        <td>{spa_list}</td>
-                    </tr>
-            """
+        for scc, count in sccmec_dist.most_common():
+            if scc in ['ND', 'Not Assigned']: continue
+            pct = (count/total)*100
+            sts = [c.split(" - ")[0] for c in mlst_sccmec_combos if scc in c]
+            spas = [c.split(" - ")[0] for c in spa_sccmec_combos if scc in c]
+            st_list = ', '.join(set(sts)) if sts else 'None'
+            spa_list = ', '.join(set(spas)) if spas else 'None'
+            html += f"<tr><td><strong>{scc}</strong></td><td>{count}</td><td>{pct:.1f}%</td><td>{st_list}</td><td>{spa_list}</td></tr>"
+        html += "</tbody></table></div>"
         
-        html += """
-                </tbody>
-            </table>
-        </div>
-        
-        <h3 style="margin-top: 30px;"><i class="fas fa-project-diagram"></i> SCCmec-ST Combinations</h3>
-        <input type="text" class="search-box" id="search-sccmec-mlst" onkeyup="searchTable('sccmec-mlst-table', 'search-sccmec-mlst')" placeholder="🔍 Search SCCmec-ST combinations...">
-        <div class="master-scrollable-container">
-            <table id="sccmec-mlst-table" class="data-table">
-                <thead>
-                    <tr>
-                        <th data-sort="string">SCCmec-ST Combination</th>
-                        <th data-sort="number">Count</th>
-                        <th data-sort="string">Samples</th>
-                    </tr>
-                </thead>
-                <tbody>
+        # SCCmec-ST combinations
+        html += f"""
+        <h3>🔗 SCCmec–ST Combinations</h3>
+        <input type="text" class="search-box" id="search-sccmec-mlst" onkeyup="searchTable('sccmec-mlst-table','search-sccmec-mlst')" placeholder="🔍 Search SCCmec-ST...">
+        <div class="master-scrollable-container"><table id="sccmec-mlst-table" class="data-table"><thead><tr><th data-sort="string">SCCmec-ST Combination</th><th data-sort="number">Count</th><th data-sort="string">Samples</th></tr></thead><tbody>
         """
-        
-        # Reuse mlst_sccmec_combos but show as SCCmec-ST
         for combo, samples in sorted(mlst_sccmec_combos.items(), key=lambda x: len(x[1]), reverse=True):
             parts = combo.split(" - ")
-            if len(parts) == 2:
-                rev_combo = f"{parts[1]} - {parts[0]}"
-            else:
-                rev_combo = combo
-            sample_list = ', '.join(samples)
-            html += f"""
-                    <tr>
-                        <td><strong>{rev_combo}</strong></td>
-                        <td>{len(samples)}</td>
-                        <td>{sample_list}</td>
-                    </tr>
-            """
+            rev_combo = f"{parts[1]} - {parts[0]}" if len(parts)==2 else combo
+            sample_tags = ''.join(f'<span class="genome-tag">{s}</span>' for s in samples)
+            html += f"<tr><td><strong>{rev_combo}</strong></td><td>{len(samples)}</td><td><div class='genome-list'>{sample_tags}</div></td></tr>"
+        html += "</tbody></table></div>"
         
-        html += """
-                </tbody>
-            </table>
-        </div>
-        
-        <h3 style="margin-top: 30px;"><i class="fas fa-project-diagram"></i> SCCmec-spa Combinations</h3>
-        <input type="text" class="search-box" id="search-sccmec-spa" onkeyup="searchTable('sccmec-spa-table', 'search-sccmec-spa')" placeholder="🔍 Search SCCmec-spa combinations...">
-        <div class="master-scrollable-container">
-            <table id="sccmec-spa-table" class="data-table">
-                <thead>
-                    <tr>
-                        <th data-sort="string">SCCmec-spa Combination</th>
-                        <th data-sort="number">Count</th>
-                        <th data-sort="string">Samples</th>
-                    </tr>
-                </thead>
-                <tbody>
+        # SCCmec-spa combinations
+        html += f"""
+        <h3>🔗 SCCmec–spa Combinations</h3>
+        <input type="text" class="search-box" id="search-sccmec-spa" onkeyup="searchTable('sccmec-spa-table','search-sccmec-spa')" placeholder="🔍 Search SCCmec-spa...">
+        <div class="master-scrollable-container"><table id="sccmec-spa-table" class="data-table"><thead><tr><th data-sort="string">SCCmec-spa Combination</th><th data-sort="number">Count</th><th data-sort="string">Samples</th></tr></thead><tbody>
         """
-        
-        # Reuse spa_sccmec_combos but show as SCCmec-spa
         for combo, samples in sorted(spa_sccmec_combos.items(), key=lambda x: len(x[1]), reverse=True):
             parts = combo.split(" - ")
-            if len(parts) == 2:
-                rev_combo = f"{parts[1]} - {parts[0]}"
-            else:
-                rev_combo = combo
-            sample_list = ', '.join(samples)
-            html += f"""
-                    <tr>
-                        <td><strong>{rev_combo}</strong></td>
-                        <td>{len(samples)}</td>
-                        <td>{sample_list}</td>
-                    </tr>
-            """
-        
-        html += """
-                </tbody>
-            </table>
-        </div>
-        """
-        
+            rev_combo = f"{parts[1]} - {parts[0]}" if len(parts)==2 else combo
+            sample_tags = ''.join(f'<span class="genome-tag">{s}</span>' for s in samples)
+            html += f"<tr><td><strong>{rev_combo}</strong></td><td>{len(samples)}</td><td><div class='genome-list'>{sample_tags}</div></td></tr>"
+        html += "</tbody></table></div>"
         return html
     
     def _generate_mrsa_section(self, kwargs: Dict) -> str:
-        """Generate MRSA analysis section with combination tables filtered by MRSA status"""
+        """Generate MRSA-specific analysis with triple combinations"""
         patterns = kwargs['patterns']
         mrsa_status_dist = patterns.get('mrsa_status_distribution', Counter())
         mlst_spa_combos = patterns.get('mlst_spa_combinations', {})
@@ -2442,261 +2307,137 @@ class StaphHTMLGenerator:
         spa_sccmec_combos = patterns.get('spa_sccmec_combinations', {})
         samples_data = kwargs['samples_data']
         
-        # Filter only MRSA samples
-        mrsa_samples = []
-        for sample, data in samples_data.items():
-            if 'MRSA' in data.get('typing', {}).get('MRSA_Status', ''):
-                mrsa_samples.append(sample)
+        # Filter MRSA samples
+        mrsa_samples = [s for s, d in samples_data.items() if 'MRSA' in d.get('typing', {}).get('MRSA_Status', '')]
         
         # Build MRSA-specific combinations
         mrsa_mlst_spa = defaultdict(list)
         mrsa_mlst_sccmec = defaultdict(list)
         mrsa_spa_sccmec = defaultdict(list)
-        
         for sample in mrsa_samples:
             data = samples_data[sample]
             mlst = data.get('typing', {}).get('MLST', 'ND')
             spa = data.get('typing', {}).get('spa_Type', 'ND')
-            sccmec = data.get('typing', {}).get('SCCmec_Type', 'ND')
-            
-            if mlst != 'ND' and spa != 'ND':
+            scc = data.get('typing', {}).get('SCCmec_Type', 'ND')
+            if mlst!='ND' and spa!='ND':
                 mrsa_mlst_spa[f"{mlst} - {spa}"].append(sample)
-            if mlst != 'ND' and sccmec != 'ND' and sccmec != 'Not Assigned':
-                mrsa_mlst_sccmec[f"{mlst} - {sccmec}"].append(sample)
-            if spa != 'ND' and sccmec != 'ND' and sccmec != 'Not Assigned':
-                mrsa_spa_sccmec[f"{spa} - {sccmec}"].append(sample)
+            if mlst!='ND' and scc!='ND' and scc!='Not Assigned':
+                mrsa_mlst_sccmec[f"{mlst} - {scc}"].append(sample)
+            if spa!='ND' and scc!='ND' and scc!='Not Assigned':
+                mrsa_spa_sccmec[f"{spa} - {scc}"].append(sample)
         
         html = f"""
         <div class="alert-box alert-danger">
             <i class="fas fa-skull-crossbones fa-2x"></i>
             <div>
-                <h3>MRSA Analysis</h3>
-                <p><strong>{mrsa_status_dist.get('MRSA', 0)} MRSA samples</strong> identified. These carry the mecA or mecC gene conferring methicillin resistance.</p>
+                <h3>⚠️ MRSA (Methicillin‑Resistant S. aureus) – A Clinical Priority</h3>
+                <p>MRSA is resistant to all β‑lactam antibiotics, including penicillins and cephalosporins. It is a major cause of hospital‑ and community‑acquired infections. The presence of <em>mecA</em> or <em>mecC</em> (carried on SCCmec) defines MRSA.</p>
+                <p><strong>{mrsa_status_dist.get('MRSA',0)} MRSA samples</strong> identified.</p>
             </div>
         </div>
         
-        <h3><i class="fas fa-chart-bar"></i> MRSA/MSSA Distribution</h3>
-        <div class="scrollable-table">
-            <table id="mrsa-status-table" class="data-table">
-                <thead>
-                    <tr>
-                        <th data-sort="string">Status</th>
-                        <th data-sort="number">Count</th>
-                        <th data-sort="number">Percentage</th>
-                        <th data-sort="string">Common STs</th>
-                        <th data-sort="string">Common SCCmec Types</th>
-                    </tr>
-                </thead>
-                <tbody>
+        <h3>📊 MRSA vs MSSA Distribution</h3>
+        <div class="scrollable-table"><table id="mrsa-status-table" class="data-table"><thead><tr><th data-sort="string">Status</th><th data-sort="number">Count</th><th data-sort="number">Percentage</th><th data-sort="string">Common STs</th><th data-sort="string">Common SCCmec Types</th></tr></thead><tbody>
         """
-        
         total = sum(mrsa_status_dist.values())
         for status, count in mrsa_status_dist.most_common():
-            if status == 'ND':
-                continue
-                
-            percentage = (count / total) * 100
-            
-            # Find STs and SCCmec types for this status
-            sts = []
-            sccmec_types = []
-            
-            for sample, data in samples_data.items():
-                if data.get('typing', {}).get('MRSA_Status') == status:
-                    mlst = data.get('typing', {}).get('MLST', '')
-                    sccmec = data.get('typing', {}).get('SCCmec_Type', '')
-                    
-                    if mlst and mlst != 'ND' and mlst not in sts:
-                        sts.append(mlst)
-                    
-                    if sccmec and sccmec != 'ND' and sccmec != 'Not Assigned' and sccmec not in sccmec_types:
-                        sccmec_types.append(sccmec)
-            
-            st_list = ', '.join(sts) if sts else 'None'
-            sccmec_list = ', '.join(sccmec_types) if sccmec_types else 'None'
-            
-            status_badge = '<span class="badge badge-mrsa">MRSA</span>' if 'MRSA' in status else '<span class="badge badge-mssa">MSSA</span>'
-            
-            html += f"""
-                    <tr>
-                        <td>{status_badge}</td>
-                        <td>{count}</td>
-                        <td>{percentage:.1f}%</td>
-                        <td>{st_list}</td>
-                        <td>{sccmec_list}</td>
-                    </tr>
-            """
+            if status == 'ND': continue
+            pct = (count/total)*100
+            sts = set()
+            sccs = set()
+            for s, d in samples_data.items():
+                if d.get('typing', {}).get('MRSA_Status') == status:
+                    mlst = d.get('typing', {}).get('MLST')
+                    scc = d.get('typing', {}).get('SCCmec_Type')
+                    if mlst and mlst!='ND':
+                        sts.add(mlst)
+                    if scc and scc!='ND' and scc!='Not Assigned':
+                        sccs.add(scc)
+            st_list = ', '.join(sorted(sts)) if sts else 'None'
+            scc_list = ', '.join(sorted(sccs)) if sccs else 'None'
+            badge = '<span class="badge badge-mrsa">MRSA</span>' if 'MRSA' in status else '<span class="badge badge-mssa">MSSA</span>'
+            html += f"<tr><td>{badge}</td><td>{count}</td><td>{pct:.1f}%</td><td>{st_list}</td><td>{scc_list}</td></tr>"
+        html += "</tbody></table></div>"
         
+        # MRSA ST-spa combos
         html += f"""
-                </tbody>
-            </table>
-        </div>
-        
-        <h3 style="margin-top: 30px;"><i class="fas fa-project-diagram"></i> MRSA ST-spa Combinations ({len(mrsa_mlst_spa)} combinations)</h3>
-        <input type="text" class="search-box" id="search-mrsa-mlst-spa" onkeyup="searchTable('mrsa-mlst-spa-table', 'search-mrsa-mlst-spa')" placeholder="🔍 Search MRSA ST-spa combinations...">
-        <div class="master-scrollable-container">
-            <table id="mrsa-mlst-spa-table" class="data-table">
-                <thead>
-                    <tr>
-                        <th data-sort="string">ST-spa Combination</th>
-                        <th data-sort="number">Count</th>
-                        <th data-sort="string">Samples</th>
-                    </tr>
-                </thead>
-                <tbody>
+        <h3>🔗 MRSA ST–spa Combinations ({len(mrsa_mlst_spa)} combinations)</h3>
+        <input type="text" class="search-box" id="search-mrsa-mlst-spa" onkeyup="searchTable('mrsa-mlst-spa-table','search-mrsa-mlst-spa')" placeholder="🔍 Search...">
+        <div class="master-scrollable-container"><table id="mrsa-mlst-spa-table" class="data-table"><thead><tr><th data-sort="string">ST-spa Combination</th><th data-sort="number">Count</th><th data-sort="string">Samples</th></tr></thead><tbody>
         """
-        
         for combo, samples in sorted(mrsa_mlst_spa.items(), key=lambda x: len(x[1]), reverse=True):
-            sample_list = ', '.join(samples)
-            html += f"""
-                    <tr>
-                        <td><strong>{combo}</strong></td>
-                        <td>{len(samples)}</td>
-                        <td>{sample_list}</td>
-                    </tr>
-            """
+            sample_tags = ''.join(f'<span class="genome-tag">{s}</span>' for s in samples)
+            html += f"<tr><td><strong>{combo}</strong></td><td>{len(samples)}</td><td><div class='genome-list'>{sample_tags}</div></td></tr>"
+        html += "</tbody></table></div>"
         
+        # MRSA ST-SCCmec combos
         html += f"""
-                </tbody>
-            </table>
-        </div>
-        
-        <h3 style="margin-top: 30px;"><i class="fas fa-project-diagram"></i> MRSA ST-SCCmec Combinations ({len(mrsa_mlst_sccmec)} combinations)</h3>
-        <input type="text" class="search-box" id="search-mrsa-mlst-sccmec" onkeyup="searchTable('mrsa-mlst-sccmec-table', 'search-mrsa-mlst-sccmec')" placeholder="🔍 Search MRSA ST-SCCmec combinations...">
-        <div class="master-scrollable-container">
-            <table id="mrsa-mlst-sccmec-table" class="data-table">
-                <thead>
-                    <tr>
-                        <th data-sort="string">ST-SCCmec Combination</th>
-                        <th data-sort="number">Count</th>
-                        <th data-sort="string">Samples</th>
-                    </tr>
-                </thead>
-                <tbody>
+        <h3>🔗 MRSA ST–SCCmec Combinations ({len(mrsa_mlst_sccmec)} combinations)</h3>
+        <input type="text" class="search-box" id="search-mrsa-mlst-sccmec" onkeyup="searchTable('mrsa-mlst-sccmec-table','search-mrsa-mlst-sccmec')" placeholder="🔍 Search...">
+        <div class="master-scrollable-container"><table id="mrsa-mlst-sccmec-table" class="data-table"><thead><tr><th data-sort="string">ST-SCCmec Combination</th><th data-sort="number">Count</th><th data-sort="string">Samples</th></tr></thead><tbody>
         """
-        
         for combo, samples in sorted(mrsa_mlst_sccmec.items(), key=lambda x: len(x[1]), reverse=True):
-            sample_list = ', '.join(samples)
-            html += f"""
-                    <tr>
-                        <td><strong>{combo}</strong></td>
-                        <td>{len(samples)}</td>
-                        <td>{sample_list}</td>
-                    </tr>
-            """
+            sample_tags = ''.join(f'<span class="genome-tag">{s}</span>' for s in samples)
+            html += f"<tr><td><strong>{combo}</strong></td><td>{len(samples)}</td><td><div class='genome-list'>{sample_tags}</div></td></tr>"
+        html += "</tbody></table></div>"
         
+        # MRSA spa-SCCmec combos
         html += f"""
-                </tbody>
-            </table>
-        </div>
-        
-        <h3 style="margin-top: 30px;"><i class="fas fa-project-diagram"></i> MRSA spa-SCCmec Combinations ({len(mrsa_spa_sccmec)} combinations)</h3>
-        <input type="text" class="search-box" id="search-mrsa-spa-sccmec" onkeyup="searchTable('mrsa-spa-sccmec-table', 'search-mrsa-spa-sccmec')" placeholder="🔍 Search MRSA spa-SCCmec combinations...">
-        <div class="master-scrollable-container">
-            <table id="mrsa-spa-sccmec-table" class="data-table">
-                <thead>
-                    <tr>
-                        <th data-sort="string">spa-SCCmec Combination</th>
-                        <th data-sort="number">Count</th>
-                        <th data-sort="string">Samples</th>
-                    </tr>
-                </thead>
-                <tbody>
+        <h3>🔗 MRSA spa–SCCmec Combinations ({len(mrsa_spa_sccmec)} combinations)</h3>
+        <input type="text" class="search-box" id="search-mrsa-spa-sccmec" onkeyup="searchTable('mrsa-spa-sccmec-table','search-mrsa-spa-sccmec')" placeholder="🔍 Search...">
+        <div class="master-scrollable-container"><table id="mrsa-spa-sccmec-table" class="data-table"><thead><tr><th data-sort="string">spa-SCCmec Combination</th><th data-sort="number">Count</th><th data-sort="string">Samples</th></tr></thead><tbody>
         """
-        
         for combo, samples in sorted(mrsa_spa_sccmec.items(), key=lambda x: len(x[1]), reverse=True):
-            sample_list = ', '.join(samples)
-            html += f"""
-                    <tr>
-                        <td><strong>{combo}</strong></td>
-                        <td>{len(samples)}</td>
-                        <td>{sample_list}</td>
-                    </tr>
-            """
-        
-        html += """
-                </tbody>
-            </table>
-        </div>
-        """
-        
+            sample_tags = ''.join(f'<span class="genome-tag">{s}</span>' for s in samples)
+            html += f"<tr><td><strong>{combo}</strong></td><td>{len(samples)}</td><td><div class='genome-list'>{sample_tags}</div></td></tr>"
+        html += "</tbody></table></div>"
         return html
     
     def _generate_amr_section(self, kwargs: Dict) -> str:
-        """Generate AMR genes section with gene-centric approach and filter buttons"""
+        """Generate comprehensive AMR genes section with filter buttons, genome search, and database summary"""
         gene_centric = kwargs['gene_centric']
         amr_databases = gene_centric.get('amr_databases', {})
         total_samples = len(kwargs.get('samples_data', {}))
         
         html = """
         <div class="alert-box alert-info">
-            <i class="fas fa-info-circle fa-2x"></i>
+            <i class="fas fa-biohazard fa-2x"></i>
             <div>
-                <h3>AMR Gene Analysis</h3>
-                <p>Each AMR gene is shown with ALL genomes that contain it. Critical S. aureus AMR genes (mecA, mecC) are highlighted. Click buttons in colors to filter genes.</p>
+                <h3>🧬 Antimicrobial Resistance (AMR) Genes – Gene‑Centric View</h3>
+                <p>Each AMR gene is shown with <strong>all genomes</strong> that contain it. Critical S. aureus AMR genes (<em>mecA</em>, <em>mecC</em>, <em>vanA</em>, <em>vanB</em>) are highlighted. Use the filter buttons to focus on specific resistance classes.</p>
+                <p>The genome list is <strong>scrollable</strong> scollable, you can see every sample.</p>
             </div>
         </div>
         
-        <input type="text" class="search-box" id="search-amr" 
-            onkeyup="searchTable('amr-table', 'search-amr')" 
-            placeholder="🔍 Search AMR genes by name or database...">
+        <!-- Gene search -->
+        <input type="text" class="search-box" id="search-amr" onkeyup="searchTable('amr-table','search-amr')" placeholder="🔍 Search AMR genes by name or database...">
+        
+        <!-- Genome highlight search -->
+        <input type="text" class="search-box" id="search-amr-genome" onkeyup="highlightGenome('amr-table','search-amr-genome')" placeholder="🔍 Highlight genomes containing specific text (e.g., sample ID)">
         
         <div class="action-buttons">
-            <button class="action-btn btn-primary" onclick="exportTableToCSV('amr-table', 'amr_genes.csv')">
-                <i class="fas fa-download"></i> Export All AMR Genes
-            </button>
-            <button class="action-btn btn-danger" onclick="document.getElementById('search-amr').value='mecA'; searchTable('amr-table','search-amr')">
-                <i class="fas fa-skull-crossbones"></i> mecA (MRSA)
-            </button>
-            <button class="action-btn btn-danger" onclick="document.getElementById('search-amr').value='mecC'; searchTable('amr-table','search-amr')">
-                <i class="fas fa-skull-crossbones"></i> mecC
-            </button>
-            <button class="action-btn btn-warning" onclick="document.getElementById('search-amr').value='vanA'; searchTable('amr-table','search-amr')">
-                <i class="fas fa-biohazard"></i> vanA
-            </button>
-            <button class="action-btn btn-warning" onclick="document.getElementById('search-amr').value='vanB'; searchTable('amr-table','search-amr')">
-                <i class="fas fa-biohazard"></i> vanB
-            </button>
-            <button class="action-btn btn-info" onclick="document.getElementById('search-amr').value='erm'; searchTable('amr-table','search-amr')">
-                <i class="fas fa-pills"></i> erm (Macrolides)
-            </button>
-            <button class="action-btn btn-info" onclick="document.getElementById('search-amr').value='msrA'; searchTable('amr-table','search-amr')">
-                <i class="fas fa-pills"></i> msrA
-            </button>
-            <button class="action-btn btn-info" onclick="document.getElementById('search-amr').value='mphC'; searchTable('amr-table','search-amr')">
-                <i class="fas fa-pills"></i> mphC
-            </button>
-            <button class="action-btn btn-secondary" onclick="document.getElementById('search-amr').value='tet'; searchTable('amr-table','search-amr')">
-                <i class="fas fa-capsules"></i> tet (Tetracycline)
-            </button>
-            <button class="action-btn btn-secondary" onclick="document.getElementById('search-amr').value='aac'; searchTable('amr-table','search-amr')">
-                <i class="fas fa-syringe"></i> aac (Aminoglycosides)
-            </button>
-            <button class="action-btn btn-secondary" onclick="document.getElementById('search-amr').value='aph'; searchTable('amr-table','search-amr')">
-                <i class="fas fa-syringe"></i> aph
-            </button>
-            <button class="action-btn btn-secondary" onclick="document.getElementById('search-amr').value='ant'; searchTable('amr-table','search-amr')">
-                <i class="fas fa-syringe"></i> ant
-            </button>
-            <button class="action-btn btn-light" onclick="document.getElementById('search-amr').value='dfr'; searchTable('amr-table','search-amr')">
-                <i class="fas fa-tablets"></i> dfr (Trimethoprim)
-            </button>
-            <button class="action-btn btn-light" onclick="document.getElementById('search-amr').value='cat'; searchTable('amr-table','search-amr')">
-                <i class="fas fa-tablets"></i> cat (Chloramphenicol)
-            </button>
-            <button class="action-btn btn-light" onclick="document.getElementById('search-amr').value='bla'; searchTable('amr-table','search-amr')">
-                <i class="fas fa-tablets"></i> bla (Beta-lactamase)
-            </button>    
-            <button class="action-btn btn-light" onclick="document.getElementById('search-amr').value='pco'; searchTable('amr-table','search-amr')">
-                <i class="fas fa-tablets"></i> pco (Copper)
-            <button class="action-btn btn-light" onclick="document.getElementById('search-amr').value=''; searchTable('amr-table','search-amr')">
-                <i class="fas fa-sync"></i> Clear Search
-            </button>
+            <button class="action-btn btn-primary" onclick="exportTableToCSV('amr-table', 'amr_genes.csv')"><i class="fas fa-download"></i> Export All AMR Genes</button>
+            <button class="action-btn btn-danger" onclick="document.getElementById('search-amr').value='mecA'; searchTable('amr-table','search-amr')"><i class="fas fa-skull-crossbones"></i> mecA (MRSA)</button>
+            <button class="action-btn btn-danger" onclick="document.getElementById('search-amr').value='mecC'; searchTable('amr-table','search-amr')"><i class="fas fa-skull-crossbones"></i> mecC</button>
+            <button class="action-btn btn-warning" onclick="document.getElementById('search-amr').value='vanA'; searchTable('amr-table','search-amr')"><i class="fas fa-biohazard"></i> vanA</button>
+            <button class="action-btn btn-warning" onclick="document.getElementById('search-amr').value='vanB'; searchTable('amr-table','search-amr')"><i class="fas fa-biohazard"></i> vanB</button>
+            <button class="action-btn btn-info" onclick="document.getElementById('search-amr').value='erm'; searchTable('amr-table','search-amr')"><i class="fas fa-pills"></i> erm (Macrolides)</button>
+            <button class="action-btn btn-info" onclick="document.getElementById('search-amr').value='msrA'; searchTable('amr-table','search-amr')"><i class="fas fa-pills"></i> msrA</button>
+            <button class="action-btn btn-info" onclick="document.getElementById('search-amr').value='mphC'; searchTable('amr-table','search-amr')"><i class="fas fa-pills"></i> mphC</button>
+            <button class="action-btn btn-secondary" onclick="document.getElementById('search-amr').value='tet'; searchTable('amr-table','search-amr')"><i class="fas fa-capsules"></i> tet (Tetracycline)</button>
+            <button class="action-btn btn-secondary" onclick="document.getElementById('search-amr').value='aac'; searchTable('amr-table','search-amr')"><i class="fas fa-syringe"></i> aac (Aminoglycosides)</button>
+            <button class="action-btn btn-secondary" onclick="document.getElementById('search-amr').value='aph'; searchTable('amr-table','search-amr')"><i class="fas fa-syringe"></i> aph</button>
+            <button class="action-btn btn-secondary" onclick="document.getElementById('search-amr').value='ant'; searchTable('amr-table','search-amr')"><i class="fas fa-syringe"></i> ant</button>
+            <button class="action-btn btn-light" onclick="document.getElementById('search-amr').value='dfr'; searchTable('amr-table','search-amr')"><i class="fas fa-tablets"></i> dfr (Trimethoprim)</button>
+            <button class="action-btn btn-light" onclick="document.getElementById('search-amr').value='cat'; searchTable('amr-table','search-amr')"><i class="fas fa-tablets"></i> cat (Chloramphenicol)</button>
+            <button class="action-btn btn-light" onclick="document.getElementById('search-amr').value='bla'; searchTable('amr-table','search-amr')"><i class="fas fa-tablets"></i> bla (Beta‑lactamase)</button>
+            <button class="action-btn btn-light" onclick="document.getElementById('search-amr').value='pco'; searchTable('amr-table','search-amr')"><i class="fas fa-tablets"></i> pco (Copper)</button>
+            <button class="action-btn btn-light" onclick="document.getElementById('search-amr').value=''; searchTable('amr-table','search-amr')"><i class="fas fa-sync"></i> Clear Search</button>
         </div>
         
         <div style="margin: 10px 0 20px 0; background: #f8f9fa; padding: 15px; border-radius: 8px; font-size: 0.9em; border-left: 4px solid #F44336;">
             <strong><i class="fas fa-info-circle"></i> Role of each AMR gene family in S. aureus:</strong><br>
-            • <strong>mecA/mecC</strong> – Methicillin resistance (MRSA), confers resistance to all β-lactam antibiotics.<br>
+            • <strong>mecA/mecC</strong> – Methicillin resistance (MRSA), confers resistance to all β‑lactam antibiotics.<br>
             • <strong>vanA/vanB</strong> – Vancomycin resistance, last‑line antibiotic for MRSA.<br>
             • <strong>erm</strong> – Macrolide, lincosamide, streptogramin B resistance (MLS<sub>B</sub>).<br>
             • <strong>msrA</strong> – Macrolide efflux pump.<br>
@@ -2716,7 +2457,7 @@ class StaphHTMLGenerator:
                         <th data-sort="string">Database</th>
                         <th data-sort="number">Count</th>
                         <th data-sort="number">Percentage</th>
-                        <th data-sort="string">Genomes</th>
+                        <th data-sort="string">Genomes (scrollable)</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -2728,38 +2469,39 @@ class StaphHTMLGenerator:
             for gene_data in genes:
                 all_amr_genes.append(gene_data)
         
-        # Sort by count
+        # Sort by count descending
         all_amr_genes.sort(key=lambda x: x['count'], reverse=True)
         
         for gene_data in all_amr_genes:
             gene = gene_data['gene']
             database = gene_data['database']
-            frequency = gene_data['frequency']
+            frequency = gene_data.get('frequency', str(gene_data['count']))
             count = gene_data['count']
             genomes = gene_data.get('genomes', [])
             
-            # Calculate percentage
+            # Calculate percentage string
             percentage = "0%"
             if '(' in frequency:
+                # Already formatted like "5 (2.3%)"
                 percentage = frequency.split('(')[-1].replace(')', '').strip()
             elif count > 0 and total_samples > 0:
                 percentage = f"{(count/total_samples)*100:.1f}%"
             
-            # Check if critical AMR gene - show warning icon
-            is_critical = any(crit_gene in gene.lower() for crit_gene in self.data_analyzer.critical_amr_genes)
+            # Critical gene indicator (warning icon)
+            is_critical = any(crit in gene.lower() for crit in self.data_analyzer.critical_amr_genes)
             gene_display = f"<strong>{gene}</strong>" + (" ⚠️" if is_critical else "")
             
-            # Create genome tags - NO TRUNCATION
-            genome_tags = ''.join([f'<span class="genome-tag">{g}</span>' for g in genomes])
+            # Build scrollable genome tags
+            genome_tags = ''.join(f'<span class="genome-tag">{g}</span>' for g in genomes)
             
             html += f"""
-                    <tr>
-                        <td>{gene_display}</td>
-                        <td>{database}</td>
-                        <td><strong>{count}</strong></td>
-                        <td>{percentage}</td>
-                        <td><div class="genome-list">{genome_tags}</div></td>
-                    </tr>
+                <tr>
+                    <td>{gene_display}</td>
+                    <td>{database}</td>
+                    <td><strong>{count}</strong></td>
+                    <td>{percentage}</td>
+                    <td><div class="genome-list">{genome_tags}</div></td>
+                </tr>
             """
         
         html += """
@@ -2775,12 +2517,13 @@ class StaphHTMLGenerator:
             db_display = db_name.upper() if db_name != 'amrfinder' else 'AMRfinder'
             gene_count = len(genes)
             total_count = sum(g['count'] for g in genes) if genes else 0
+            top_genes = ', '.join([f"{g['gene']} ({g['count']})" for g in genes[:3]])
             
             html += f"""
             <div class="database-section">
                 <h4>{db_display}</h4>
                 <p><strong>{gene_count} unique AMR genes</strong> (Total occurrences: {total_count})</p>
-                <p>Top genes: {', '.join([f"{g['gene']} ({g['count']})" for g in genes[:3]])}...</p>
+                <p>Top genes: {top_genes}...</p>
             </div>
             """
         
@@ -2791,148 +2534,115 @@ class StaphHTMLGenerator:
         return html
     
     def _generate_virulence_section(self, kwargs: Dict) -> str:
-        """Generate virulence genes section with filter buttons and info box"""
+        """Generate comprehensive virulence genes section with filter buttons, genome search, and database summary"""
         gene_centric = kwargs['gene_centric']
         virulence_databases = gene_centric.get('virulence_databases', {})
         total_samples = len(kwargs.get('samples_data', {}))
         
         html = """
         <div class="alert-box alert-info">
-            <i class="fas fa-info-circle fa-2x"></i>
+            <i class="fas fa-virus fa-2x"></i>
             <div>
-                <h3>Virulence Gene Analysis</h3>
-                <p>Each virulence gene is shown with ALL genomes that contain it. Critical S. aureus virulence genes (PVL, TSST-1, enterotoxins) are highlighted. Click buttons in colors to filter virulence factors.</p>
+                <h3>🧬 Virulence Factors – Gene‑Centric View</h3>
+                <p>Each virulence gene is shown with <strong>all genomes</strong> that contain it. Critical S. aureus virulence genes (PVL, TSST‑1, enterotoxins) are highlighted. Use the filter buttons to focus on specific virulence mechanisms.</p>
+                <p>The genome list is <strong>scrollable</strong> you can see every sample.</p>
             </div>
         </div>
         
-        <input type="text" class="search-box" id="search-virulence" 
-               onkeyup="searchTable('virulence-table', 'search-virulence')" 
-               placeholder="🔍 Search virulence genes by name or database...">
+        <!-- Gene search -->
+        <input type="text" class="search-box" id="search-vir" onkeyup="searchTable('vir-table','search-vir')" placeholder="🔍 Search virulence genes by name or database...">
+        
+        <!-- Genome highlight search -->
+        <input type="text" class="search-box" id="search-vir-genome" onkeyup="highlightGenome('vir-table','search-vir-genome')" placeholder="🔍 Highlight genomes containing specific text (e.g., sample ID)">
         
         <div class="action-buttons">
-            <button class="action-btn btn-primary" onclick="exportTableToCSV('virulence-table', 'virulence_genes.csv')">
-                <i class="fas fa-download"></i> Export All Virulence Genes
-            </button>
-            <button class="action-btn btn-danger" onclick="document.getElementById('search-virulence').value='luk'; searchTable('virulence-table','search-virulence')">
-                <i class="fas fa-skull"></i> PVL (lukF/S-PV)
-            </button>
-            <button class="action-btn btn-danger" onclick="document.getElementById('search-virulence').value='tsst'; searchTable('virulence-table','search-virulence')">
-                <i class="fas fa-biohazard"></i> TSST-1 (tsst)
-            </button>
-            <button class="action-btn btn-warning" onclick="document.getElementById('search-virulence').value='se'; searchTable('virulence-table','search-virulence')">
-                <i class="fas fa-virus"></i> Enterotoxin Genes
-            </button>
-            <button class="action-btn btn-warning" onclick="document.getElementById('search-virulence').value='cap'; searchTable('virulence-table','search-virulence')">
-                <i class="fas fa-virus"></i> Capsule 
-            </button>
-            <button class="action-btn btn-warning" onclick="document.getElementById('search-virulence').value='isd'; searchTable('virulence-table','search-virulence')">
-                <i class="fas fa-virus"></i> Iron acquisition
-            </button>
-            <button class="action-btn btn-warning" onclick="document.getElementById('search-virulence').value='esa'; searchTable('virulence-table','search-virulence')">
-                <i class="fas fa-virus"></i> ESAT‑6 secretion system
-            </button>
-            <button class="action-btn btn-warning" onclick="document.getElementById('search-virulence').value='ess'; searchTable('virulence-table','search-virulence')">
-                <i class="fas fa-virus"></i> ESAT‑6 secretion system
-            </button>
-            <button class="action-btn btn-info" onclick="document.getElementById('search-virulence').value='set'; searchTable('virulence-table','search-virulence')">
-                <i class="fas fa-hand-peace"></i> SET (exotoxin‑like) proteins
-            </button>
-            <button class="action-btn btn-info" onclick="document.getElementById('search-virulence').value='esx'; searchTable('virulence-table','search-virulence')">
-                <i class="fas fa-hand-peace"></i> ESAT‑6 secretion system
-            </button>
-            </button>
-            <button class="action-btn btn-secondary" onclick="document.getElementById('search-virulence').value='hl'; searchTable('virulence-table','search-virulence')">
-                <i class="fas fa-tint"></i> Hemolysin
-            </button>
-            <button class="action-btn btn-secondary" onclick="document.getElementById('search-virulence').value='scn'; searchTable('virulence-table','search-virulence')">
-                <i class="fas fa-tint"></i> Immune evasion (staphylococcal complement inhibitor)
-            </button>
-            <button class="action-btn btn-secondary" onclick="document.getElementById('search-virulence').value='ica'; searchTable('virulence-table','search-virulence')">
-                <i class="fas fa-tint"></i> Biofilm
-            </button>
-            <button class="action-btn btn-secondary" onclick="document.getElementById('search-virulence').value='ssp'; searchTable('virulence-table','search-virulence')">
-                <i class="fas fa-tint"></i> Serine protease
-            </button>
-            <button class="action-btn btn-danger" onclick="document.getElementById('search-virulence').value='ads'; searchTable('virulence-table','search-virulence')">
-                <i class="fas fa-biohazard"></i> Adenosine synthase (immune modulation)
-            </button>
-            <button class="action-btn btn-danger" onclick="document.getElementById('search-virulence').value='eap'; searchTable('virulence-table','search-virulence')">
-                <i class="fas fa-biohazard"></i> Immune evasion (extracellular adherence protein)
-            </button>
-            <button class="action-btn btn-danger" onclick="document.getElementById('search-virulence').value='hys'; searchTable('virulence-table','search-virulence')">
-                <i class="fas fa-biohazard"></i> Hyaluronidase
-            </button>
-            <button class="action-btn btn-secondary" onclick="document.getElementById('search-virulence').value='clf'; searchTable('virulence-table','search-virulence')">
-                <i class="fas fa-tint"></i> Adhesin
-            </button>
-            <button class="action-btn btn-light" onclick="document.getElementById('search-virulence').value=''; searchTable('virulence-table','search-virulence')">
-                <i class="fas fa-sync"></i> Clear Search
-            </button>
+            <button class="action-btn btn-primary" onclick="exportTableToCSV('vir-table', 'virulence_genes.csv')"><i class="fas fa-download"></i> Export All Virulence Genes</button>
+            <button class="action-btn btn-danger" onclick="document.getElementById('search-vir').value='luk'; searchTable('vir-table','search-vir')"><i class="fas fa-skull"></i> PVL (lukF/S-PV)</button>
+            <button class="action-btn btn-danger" onclick="document.getElementById('search-vir').value='tsst'; searchTable('vir-table','search-vir')"><i class="fas fa-biohazard"></i> TSST‑1 (tsst)</button>
+            <button class="action-btn btn-warning" onclick="document.getElementById('search-vir').value='se'; searchTable('vir-table','search-vir')"><i class="fas fa-virus"></i> Enterotoxin Genes</button>
+            <button class="action-btn btn-warning" onclick="document.getElementById('search-vir').value='cap'; searchTable('vir-table','search-vir')"><i class="fas fa-virus"></i> Capsule</button>
+            <button class="action-btn btn-warning" onclick="document.getElementById('search-vir').value='isd'; searchTable('vir-table','search-vir')"><i class="fas fa-virus"></i> Iron acquisition</button>
+            <button class="action-btn btn-warning" onclick="document.getElementById('search-vir').value='esa'; searchTable('vir-table','search-vir')"><i class="fas fa-virus"></i> ESAT‑6 secretion (esa)</button>
+            <button class="action-btn btn-warning" onclick="document.getElementById('search-vir').value='ess'; searchTable('vir-table','search-vir')"><i class="fas fa-virus"></i> ESAT‑6 secretion (ess)</button>
+            <button class="action-btn btn-info" onclick="document.getElementById('search-vir').value='set'; searchTable('vir-table','search-vir')"><i class="fas fa-hand-peace"></i> SET exotoxin‑like proteins</button>
+            <button class="action-btn btn-info" onclick="document.getElementById('search-vir').value='esx'; searchTable('vir-table','search-vir')"><i class="fas fa-hand-peace"></i> ESAT‑6 secretion (esx)</button>
+            <button class="action-btn btn-secondary" onclick="document.getElementById('search-vir').value='hl'; searchTable('vir-table','search-vir')"><i class="fas fa-tint"></i> Hemolysins</button>
+            <button class="action-btn btn-secondary" onclick="document.getElementById('search-vir').value='scn'; searchTable('vir-table','search-vir')"><i class="fas fa-tint"></i> Immune evasion (SCIN)</button>
+            <button class="action-btn btn-secondary" onclick="document.getElementById('search-vir').value='ica'; searchTable('vir-table','search-vir')"><i class="fas fa-tint"></i> Biofilm (ica)</button>
+            <button class="action-btn btn-secondary" onclick="document.getElementById('search-vir').value='ssp'; searchTable('vir-table','search-vir')"><i class="fas fa-tint"></i> Serine protease</button>
+            <button class="action-btn btn-danger" onclick="document.getElementById('search-vir').value='ads'; searchTable('vir-table','search-vir')"><i class="fas fa-biohazard"></i> Adenosine synthase (immune modulation)</button>
+            <button class="action-btn btn-danger" onclick="document.getElementById('search-vir').value='eap'; searchTable('vir-table','search-vir')"><i class="fas fa-biohazard"></i> Immune evasion (Eap)</button>
+            <button class="action-btn btn-danger" onclick="document.getElementById('search-vir').value='hys'; searchTable('vir-table','search-vir')"><i class="fas fa-biohazard"></i> Hyaluronidase</button>
+            <button class="action-btn btn-secondary" onclick="document.getElementById('search-vir').value='clf'; searchTable('vir-table','search-vir')"><i class="fas fa-tint"></i> Adhesins (ClfA/B)</button>
+            <button class="action-btn btn-light" onclick="document.getElementById('search-vir').value=''; searchTable('vir-table','search-vir')"><i class="fas fa-sync"></i> Clear Search</button>
         </div>
         
         <div style="margin: 10px 0 20px 0; background: #f8f9fa; padding: 15px; border-radius: 8px; font-size: 0.9em; border-left: 4px solid #E91E63;">
             <strong><i class="fas fa-info-circle"></i> Role of each virulence factor in S. aureus:</strong><br>
-            • <strong>PVL (lukF/S-PV)</strong> – Panton-Valentine leukocidin, causes leukocyte destruction and necrosis, associated with severe skin and soft tissue infections.<br>
-            • <strong>TSST-1 (tsst)</strong> – Toxic shock syndrome toxin, causes toxic shock syndrome.<br>
-            • <strong>Enterotoxins (sea-see, seg-seu)</strong> – Superantigens causing food poisoning and toxic shock.<br>
-            • <strong>Exfoliative toxins (eta, etb)</strong> – Cause staphylococcal scalded skin syndrome.<br>
+            • <strong>PVL (lukF/S-PV)</strong> – Panton‑Valentine leukocidin, causes leukocyte destruction, linked to severe skin/soft tissue infections.<br>
+            • <strong>TSST‑1 (tsst)</strong> – Toxic shock syndrome toxin.<br>
+            • <strong>Enterotoxins (sea‑see, seg‑seu)</strong> – Superantigens causing food poisoning and toxic shock.<br>
+            • <strong>Exfoliative toxins (eta, etb)</strong> – Staphylococcal scalded skin syndrome.<br>
             • <strong>Hemolysins (hla, hlb, hlg, hld)</strong> – Lyse red blood cells and contribute to tissue damage.<br>
-             • <strong>NB:</strong> Please you can reach out to brownbeckley94@gmail.com if your favourite button is missing. All suggestions are WeLcOmE.<br>
+            • <strong>Biofilm (icaADBC)</strong> – Polysaccharide intercellular adhesin, critical for device‑related infections.<br>
+            • <strong>Immune evasion (scn, eap, ads)</strong> – Inhibit complement, neutrophil chemotaxis, and adenosine signalling.<br>
+            • <strong>Adhesins (clfA/B, fnbA/B)</strong> – Bind to fibrinogen and fibronectin, promoting attachment to host tissues.<br>
+            • <em>NB: If your favourite button is missing, please reach out to <strong>brownbeckley94@gmail.com</strong>. All suggestions are welcome!</em>
         </div>
         
         <h3><i class="fas fa-virus"></i> All Virulence Genes Across Databases</h3>
         <div class="master-scrollable-container">
-            <table id="virulence-table" class="data-table">
+            <table id="vir-table" class="data-table">
                 <thead>
                     <tr>
                         <th data-sort="string">Gene</th>
                         <th data-sort="string">Database</th>
                         <th data-sort="number">Count</th>
                         <th data-sort="number">Percentage</th>
-                        <th data-sort="string">Genomes</th>
+                        <th data-sort="string">Genomes (scrollable)</th>
                     </tr>
                 </thead>
                 <tbody>
         """
         
         # Combine all virulence genes from all databases
-        all_virulence_genes = []
+        all_vir_genes = []
         for db_name, genes in virulence_databases.items():
             for gene_data in genes:
-                all_virulence_genes.append(gene_data)
+                all_vir_genes.append(gene_data)
         
-        # Sort by count
-        all_virulence_genes.sort(key=lambda x: x['count'], reverse=True)
+        # Sort by count descending
+        all_vir_genes.sort(key=lambda x: x['count'], reverse=True)
         
-        for gene_data in all_virulence_genes:
+        for gene_data in all_vir_genes:
             gene = gene_data['gene']
             database = gene_data['database']
-            frequency = gene_data['frequency']
+            frequency = gene_data.get('frequency', str(gene_data['count']))
             count = gene_data['count']
             genomes = gene_data.get('genomes', [])
             
-            # Calculate percentage
+            # Calculate percentage string
             percentage = "0%"
             if '(' in frequency:
                 percentage = frequency.split('(')[-1].replace(')', '').strip()
             elif count > 0 and total_samples > 0:
                 percentage = f"{(count/total_samples)*100:.1f}%"
             
-            # Check if critical virulence gene
-            is_critical = any(crit_gene in gene.lower() for crit_gene in self.data_analyzer.critical_virulence_genes)
+            # Critical gene indicator (warning icon)
+            is_critical = any(crit in gene.lower() for crit in self.data_analyzer.critical_virulence_genes)
             gene_display = f"<strong>{gene}</strong>" + (" ⚠️" if is_critical else "")
             
-            # Create genome tags - NO TRUNCATION
-            genome_tags = ''.join([f'<span class="genome-tag">{g}</span>' for g in genomes])
+            # Build scrollable genome tags
+            genome_tags = ''.join(f'<span class="genome-tag">{g}</span>' for g in genomes)
             
             html += f"""
-                    <tr>
-                        <td>{gene_display}</td>
-                        <td>{database}</td>
-                        <td><strong>{count}</strong></td>
-                        <td>{percentage}</td>
-                        <td><div class="genome-list">{genome_tags}</div></td>
-                    </tr>
+                <tr>
+                    <td>{gene_display}</td>
+                    <td>{database}</td>
+                    <td><strong>{count}</strong></td>
+                    <td>{percentage}</td>
+                    <td><div class="genome-list">{genome_tags}</div></td>
+                </tr>
             """
         
         html += """
@@ -2948,12 +2658,13 @@ class StaphHTMLGenerator:
             db_display = db_name.upper()
             gene_count = len(genes)
             total_count = sum(g['count'] for g in genes) if genes else 0
+            top_genes = ', '.join([f"{g['gene']} ({g['count']})" for g in genes[:3]])
             
             html += f"""
             <div class="database-section">
                 <h4>{db_display}</h4>
                 <p><strong>{gene_count} unique virulence genes</strong> (Total occurrences: {total_count})</p>
-                <p>Top genes: {', '.join([f"{g['gene']} ({g['count']})" for g in genes[:3]])}...</p>
+                <p>Top genes: {top_genes}...</p>
             </div>
             """
         
@@ -2963,532 +2674,687 @@ class StaphHTMLGenerator:
         
         return html
     
+    def _generate_bacmet_section(self, kwargs: Dict) -> str:
+        """Generate comprehensive BACMET section with many filter buttons and database summary"""
+        gene_centric = kwargs['gene_centric']
+        bacmet_databases = gene_centric.get('bacmet_databases', {})
+        total_samples = len(kwargs.get('samples_data', {}))
+        
+        if not bacmet_databases or not any(bacmet_databases.values()):
+            return """
+            <div class="alert-box alert-warning">
+                <i class="fas fa-flask fa-2x"></i>
+                <div>
+                    <h3>No BACMET Data Available</h3>
+                    <p>Biocide and heavy metal resistance genes (BACMET2 database) were not detected in the input HTML files.</p>
+                    <p><strong>Why include BACMET?</strong> These genes confer resistance to disinfectants (quaternary ammonium compounds, chlorhexidine) and heavy metals (mercury, copper, arsenic). They can co‑select for antibiotic resistance in hospital environments. If you have ABRicate results with the bacmet2 database, please ensure the HTML report is present.</p>
+                </div>
+            </div>
+            """
+        
+        html = f"""
+        <div class="alert-box alert-info">
+            <i class="fas fa-flask fa-2x"></i>
+            <div>
+                <h3>🧪 BACMET: Biocide & Heavy Metal Resistance – Environmental Co‑Selection</h3>
+                <p>BACMET2 genes provide resistance to hospital disinfectants (e.g., quaternary ammonium compounds – <em>qac</em> genes) and heavy metals (<em>mer</em> for mercury, <em>ars</em> for arsenic, <em>cop</em> for copper). These markers can co‑select for antibiotic resistance and promote persistence in healthcare settings.</p>
+                <p>Each gene is shown with <strong>all genomes</strong> that carry it. Use the filter buttons to explore specific resistance categories.</p>
+                <p>The genome list is <strong>scrollable</strong> – all samples are visible.</p>
+            </div>
+        </div>
+        
+        <!-- Gene search -->
+        <input type="text" class="search-box" id="search-bac" onkeyup="searchTable('bac-table','search-bac')" placeholder="🔍 Search BACMET genes by name...">
+        
+        <!-- Genome highlight search -->
+        <input type="text" class="search-box" id="search-bac-genome" onkeyup="highlightGenome('bac-table','search-bac-genome')" placeholder="🔍 Highlight genomes containing specific text">
+        
+        <div class="action-buttons">
+            <button class="action-btn btn-primary" onclick="exportTableToCSV('bac-table', 'bacmet_genes.csv')"><i class="fas fa-download"></i> Export BACMET Genes</button>
+            
+            <!-- Biocide / Disinfectant resistance -->
+            <button class="action-btn btn-info" onclick="document.getElementById('search-bac').value='qac'; searchTable('bac-table','search-bac')">qac (Quat. ammonium)</button>
+            <button class="action-btn btn-info" onclick="document.getElementById('search-bac').value='qacEdelta1'; searchTable('bac-table','search-bac')">qacEdelta1 (Truncated)</button>
+            <button class="action-btn btn-info" onclick="document.getElementById('search-bac').value='cep'; searchTable('bac-table','search-bac')">cep (Chlorhexidine)</button>
+            <button class="action-btn btn-info" onclick="document.getElementById('search-bac').value='form'; searchTable('bac-table','search-bac')">form (Formaldehyde)</button>
+            
+            <!-- Heavy metals – Mercury -->
+            <button class="action-btn btn-warning" onclick="document.getElementById('search-bac').value='mer'; searchTable('bac-table','search-bac')">mer (Mercury)</button>
+            <!-- Heavy metals – Arsenic -->
+            <button class="action-btn btn-warning" onclick="document.getElementById('search-bac').value='ars'; searchTable('bac-table','search-bac')">ars (Arsenic)</button>
+            <button class="action-btn btn-warning" onclick="document.getElementById('search-bac').value='arsT'; searchTable('bac-table','search-bac')">arsT (Arsenic)</button>
+            <!-- Heavy metals – Copper -->
+            <button class="action-btn btn-warning" onclick="document.getElementById('search-bac').value='cop'; searchTable('bac-table','search-bac')">cop (Copper)</button>
+            <!-- Heavy metals – Silver -->
+            <button class="action-btn btn-warning" onclick="document.getElementById('search-bac').value='sil'; searchTable('bac-table','search-bac')">sil (Silver)</button>
+            <!-- Heavy metals – Chromate -->
+            <button class="action-btn btn-warning" onclick="document.getElementById('search-bac').value='chr'; searchTable('bac-table','search-bac')">chr (Chromate)</button>
+            <!-- Heavy metals – Cadmium -->
+            <button class="action-btn btn-warning" onclick="document.getElementById('search-bac').value='cad'; searchTable('bac-table','search-bac')">cad (Cadmium)</button>
+            <!-- Heavy metals – Zinc -->
+            <button class="action-btn btn-warning" onclick="document.getElementById('search-bac').value='znt'; searchTable('bac-table','search-bac')">znt (Zinc)</button>
+            <!-- Heavy metals – Cobalt‑Zinc‑Cadmium efflux -->
+            <button class="action-btn btn-warning" onclick="document.getElementById('search-bac').value='czc'; searchTable('bac-table','search-bac')">czc (Co‑Zn‑Cd efflux)</button>
+            <!-- Heavy metals – Lead -->
+            <button class="action-btn btn-warning" onclick="document.getElementById('search-bac').value='pbr'; searchTable('bac-table','search-bac')">pbr (Lead)</button>
+            <!-- Heavy metals – Nickel transport -->
+            <button class="action-btn btn-warning" onclick="document.getElementById('search-bac').value='nik'; searchTable('bac-table','search-bac')">nik (Nickel)</button>
+            <!-- Heavy metals – Magnesium/Cobalt transport -->
+            <button class="action-btn btn-warning" onclick="document.getElementById('search-bac').value='cor'; searchTable('bac-table','search-bac')">cor (Mg/Co transport)</button>
+            
+            <!-- Stress response & efflux -->
+            <button class="action-btn btn-secondary" onclick="document.getElementById('search-bac').value='soxR'; searchTable('bac-table','search-bac')">soxR (Oxidative stress)</button>
+            <button class="action-btn btn-secondary" onclick="document.getElementById('search-bac').value='cpxR'; searchTable('bac-table','search-bac')">cpxR (Envelope stress)</button>
+            <button class="action-btn btn-secondary" onclick="document.getElementById('search-bac').value='baeR'; searchTable('bac-table','search-bac')">baeR (MDR efflux reg.)</button>
+            <button class="action-btn btn-secondary" onclick="document.getElementById('search-bac').value='emr'; searchTable('bac-table','search-bac')">emr (MFS efflux)</button>
+            <button class="action-btn btn-secondary" onclick="document.getElementById('search-bac').value='sme'; searchTable('bac-table','search-bac')">sme (MFS efflux)</button>
+            <button class="action-btn btn-secondary" onclick="document.getElementById('search-bac').value='norA'; searchTable('bac-table','search-bac')">norA (MFS efflux)</button>
+            
+            <!-- Clear -->
+            <button class="action-btn btn-light" onclick="document.getElementById('search-bac').value=''; searchTable('bac-table','search-bac')"><i class="fas fa-sync"></i> Clear Search</button>
+        </div>
+        
+        <div style="margin: 10px 0 20px 0; background: #f8f9fa; padding: 15px; border-radius: 8px; font-size: 0.9em; border-left: 4px solid #FF5722;">
+            <strong><i class="fas fa-info-circle"></i> Environmental co‑selection – why these genes matter:</strong><br>
+            • <strong>qac family</strong> – Quaternary ammonium compounds (disinfectants used in hospitals).<br>
+            • <strong>cep</strong> – Chlorhexidine resistance (antiseptic).<br>
+            • <strong>mer/ars/cop/sil</strong> – Resistance to mercury, arsenic, copper, silver – often linked to metal‑based antimicrobials.<br>
+            • <strong>czc/cad/znt</strong> – Efflux of zinc, cadmium, cobalt – co‑selection with antibiotic resistance.<br>
+            • <strong>soxR/cpxR/baeR</strong> – Stress response regulators that also upregulate multidrug efflux pumps.<br>
+            • <strong>emr/sme/norA</strong> – Multidrug efflux pumps that can export both biocides and antibiotics.
+        </div>
+        
+        <h3>📋 BACMET Genes (Biocide / Heavy Metal Resistance)</h3>
+        <div class="master-scrollable-container">
+            <table id="bac-table" class="data-table">
+                <thead>
+                    <tr>
+                        <th data-sort="string">Gene</th>
+                        <th data-sort="string">Database</th>
+                        <th data-sort="number">Count</th>
+                        <th data-sort="number">Percentage</th>
+                        <th data-sort="string">Genomes (scrollable)</th>
+                    </tr>
+                </thead>
+                <tbody>
+        """
+        
+        # Combine all BACMET genes
+        all_bac = []
+        for db_name, genes in bacmet_databases.items():
+            for g in genes:
+                all_bac.append(g)
+        all_bac.sort(key=lambda x: x['count'], reverse=True)
+        
+        for g in all_bac:
+            gene = g['gene']
+            database = g['database']
+            count = g['count']
+            freq = g.get('frequency', f"{count} ({count/total_samples*100:.1f}%)" if total_samples>0 else "0")
+            if '(' not in freq and total_samples>0:
+                pct = (count/total_samples)*100
+                freq = f"{count} ({pct:.1f}%)"
+            genomes = g.get('genomes', [])
+            genome_tags = ''.join(f'<span class="genome-tag">{gen}</span>' for gen in genomes)
+            html += f"""
+                <tr>
+                    <td><strong>{gene}</strong></td>
+                    <td>{database}</td>
+                    <td>{count}</td>
+                    <td>{freq}</td>
+                    <td><div class='genome-list'>{genome_tags}</div></td>
+                </tr>"""
+        
+        html += """
+                </tbody>
+            </table>
+        </div>
+        
+        <h3 style="margin-top: 30px;"><i class="fas fa-database"></i> BACMET Databases Summary</h3>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin: 20px 0;">
+        """
+        
+        for db_name, genes in bacmet_databases.items():
+            db_display = db_name.upper()
+            gene_count = len(genes)
+            total_count = sum(g['count'] for g in genes) if genes else 0
+            top_genes = ', '.join([f"{g['gene']} ({g['count']})" for g in genes[:3]])
+            html += f"""
+            <div class="database-section">
+                <h4>{db_display}</h4>
+                <p><strong>{gene_count} unique BACMET genes</strong> (Total occurrences: {total_count})</p>
+                <p>Top genes: {top_genes}...</p>
+            </div>
+            """
+        
+        html += """
+        </div>
+        """
+        return html
+
     def _generate_plasmids_section(self, kwargs: Dict) -> str:
-        """Generate plasmid replicon analysis section"""
+        """Generate plasmid replicon section with scrollable list"""
         gene_centric = kwargs['gene_centric']
         plasmid_databases = gene_centric.get('plasmid_databases', {})
         total_samples = len(kwargs.get('samples_data', {}))
         
         html = """
         <div class="alert-box alert-info">
-            <i class="fas fa-info-circle fa-2x"></i>
+            <i class="fas fa-plug fa-2x"></i>
             <div>
-                <h3>Plasmid Replicon Analysis</h3>
-                <p>Each plasmid replicon is shown with ALL genomes that contain it. Plasmid replicons indicate horizontal gene transfer potential.</p>
+                <h3>🧬 Plasmid Replicons – Horizontal Gene Transfer</h3>
+                <p>Plasmid replicons indicate the presence of specific plasmid types. Plasmids are major vehicles for spreading AMR and virulence genes (e.g., <em>mecA</em> on SCCmec is not a plasmid, but many resistance genes like <em>erm</em>, <em>tet</em>, and <em>vanA</em> are plasmid‑borne).</p>
+                <p>Each replicon is shown with <strong>all genomes</strong> that carry it (scrollable list).</p>
             </div>
         </div>
         
-        <input type="text" class="search-box" id="search-plasmids" 
-               onkeyup="searchTable('plasmids-table', 'search-plasmids')" 
-               placeholder="🔍 Search plasmid replicons...">
+        <input type="text" class="search-box" id="search-plasmid" onkeyup="searchTable('plasmid-table','search-plasmid')" placeholder="🔍 Search plasmids...">
+        <input type="text" class="search-box" id="search-plasmid-genome" onkeyup="highlightGenome('plasmid-table','search-plasmid-genome')" placeholder="🔍 Highlight genomes...">
         
         <div class="action-buttons">
-            <button class="action-btn btn-primary" onclick="exportTableToCSV('plasmids-table', 'plasmid_replicons.csv')">
-                <i class="fas fa-download"></i> Export Plasmid Replicons
-            </button>
+            <button class="action-btn btn-primary" onclick="exportTableToCSV('plasmid-table', 'plasmid_replicons.csv')"><i class="fas fa-download"></i> Export</button>
         </div>
         
-        <h3><i class="fas fa-plug"></i> Plasmid Replicons Detected</h3>
-        <div class="master-scrollable-container">
-            <table id="plasmids-table" class="data-table">
-                <thead>
-                    <tr>
-                        <th data-sort="string">Plasmid Replicon</th>
-                        <th data-sort="string">Database</th>
-                        <th data-sort="number">Count</th>
-                        <th data-sort="number">Percentage</th>
-                        <th data-sort="string">Genomes</th>
-                    </tr>
-                </thead>
-                <tbody>
+        <h3>📋 Plasmid Replicons Detected</h3>
+        <div class="master-scrollable-container"><table id="plasmid-table" class="data-table"><thead><tr><th data-sort="string">Replicon</th><th data-sort="string">Database</th><th data-sort="number">Count</th><th data-sort="number">Percentage</th><th data-sort="string">Genomes (scrollable)</th></tr></thead><tbody>
         """
-        
-        # Combine all plasmid replicons
-        all_plasmids = []
+        all_plas = []
         for db_name, genes in plasmid_databases.items():
-            for gene_data in genes:
-                all_plasmids.append(gene_data)
+            for g in genes:
+                all_plas.append(g)
+        all_plas.sort(key=lambda x: x['count'], reverse=True)
         
-        # Sort by count
-        all_plasmids.sort(key=lambda x: x['count'], reverse=True)
-        
-        for gene_data in all_plasmids:
-            gene = gene_data['gene']
-            database = gene_data['database']
-            frequency = gene_data['frequency']
-            count = gene_data['count']
-            genomes = gene_data.get('genomes', [])
-            
-            # Calculate percentage
-            percentage = "0%"
-            if '(' in frequency:
-                percentage = frequency.split('(')[-1].replace(')', '').strip()
-            elif count > 0 and total_samples > 0:
-                percentage = f"{(count/total_samples)*100:.1f}%"
-            
-            # Create genome tags
-            genome_tags = ''.join([f'<span class="genome-tag">{g}</span>' for g in genomes])
-            
-            html += f"""
-                    <tr>
-                        <td><strong>{gene}</strong></td>
-                        <td>{database}</td>
-                        <td><strong>{count}</strong></td>
-                        <td>{percentage}</td>
-                        <td><div class="genome-list">{genome_tags}</div></td>
-                    </tr>
-            """
-        
-        html += """
-                </tbody>
-            </table>
-        </div>
-        
-        <h3 style="margin-top: 30px;"><i class="fas fa-database"></i> Plasmid Databases Summary</h3>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin: 20px 0;">
-        """
-        
-        for db_name, genes in plasmid_databases.items():
-            db_display = db_name.upper()
-            gene_count = len(genes)
-            total_count = sum(g['count'] for g in genes) if genes else 0
-            
-            html += f"""
-            <div class="database-section">
-                <h4>{db_display}</h4>
-                <p><strong>{gene_count} unique plasmid replicons</strong> (Total occurrences: {total_count})</p>
-                <p>Top replicons: {', '.join([f"{g['gene']} ({g['count']})" for g in genes[:3]])}...</p>
-            </div>
-            """
-        
-        html += """
-        </div>
-        """
-        
+        for g in all_plas:
+            gene = g['gene']
+            database = g['database']
+            count = g['count']
+            freq = g.get('frequency', f"{count} ({count/total_samples*100:.1f}%)" if total_samples>0 else "0")
+            if '(' not in freq and total_samples>0:
+                pct = (count/total_samples)*100
+                freq = f"{count} ({pct:.1f}%)"
+            genomes = g.get('genomes', [])
+            genome_tags = ''.join([f'<span class="genome-tag">{gen}</span>' for gen in genomes])
+            html += f"<tr><td><strong>{gene}</strong></td><td>{database}</td><td>{count}</td><td>{freq}</td><td><div class='genome-list'>{genome_tags}</div></td></tr>"
+        html += "</tbody></table></div>"
         return html
     
     def _generate_pattern_discovery_section(self, kwargs: Dict) -> str:
-        """Generate pattern discovery section for S. aureus"""
+        """Generate pattern discovery including triple typing combinations"""
         patterns = kwargs['patterns']
         gene_centric = kwargs['gene_centric']
+        total_samples = len(kwargs.get('samples_data', {}))
         
-        # Get critical genes from gene-centric data
-        critical_amr_genes = []
-        critical_virulence_genes = []
+        # Triple typing combination (ST - spa - SCCmec)
+        triple_combos = patterns.get('triple_combinations', {})
         
-        for db_type in ['amr_databases', 'virulence_databases']:
-            for db_name, genes in gene_centric.get(db_type, {}).items():
-                for gene_data in genes:
-                    gene = gene_data['gene'].lower()
-                    if any(crit in gene for crit in self.data_analyzer.critical_amr_genes):
-                        critical_amr_genes.append(gene_data)
-                    if any(crit in gene for crit in self.data_analyzer.critical_virulence_genes):
-                        critical_virulence_genes.append(gene_data)
-        
-        html = """
-        <div class="alert-box alert-info">
-            <i class="fas fa-info-circle fa-2x"></i>
-            <div>
-                <h3>Cross-Genome Pattern Discovery</h3>
-                <p>Discover associations between genes and identify high-risk combinations across all S. aureus samples.</p>
-            </div>
-        </div>
-        
-        <div class="action-buttons">
-            <button class="action-btn btn-primary" onclick="exportTableToCSV('high-risk-table', 'high_risk_combinations.csv')">
-                <i class="fas fa-download"></i> Export High-Risk Combos
-            </button>
-        </div>
-        """
-        
-        # High-risk combinations
-        high_risk_combinations = patterns.get('high_risk_combinations', [])
-        if high_risk_combinations:
-            html += f"""
-            <h3><i class="fas fa-exclamation-triangle"></i> High-Risk Combinations ({len(high_risk_combinations)})</h3>
-            <div class="alert-box alert-danger">
-                <i class="fas fa-radiation fa-2x"></i>
-                <div>
-                    <h3>⚠️ Critical Alert</h3>
-                    <p><strong>{len(high_risk_combinations)} samples</strong> contain dangerous combinations of critical AMR and virulence genes.</p>
-                </div>
-            </div>
-            
-            <div class="master-scrollable-container">
-                <table id="high-risk-table" class="data-table">
-                    <thead>
-                        <tr>
-                            <th data-sort="string">Sample</th>
-                            <th data-sort="string">MLST</th>
-                            <th data-sort="string">spa Type</th>
-                            <th data-sort="string">SCCmec Type</th>
-                            <th data-sort="string">Critical AMR Genes</th>
-                            <th data-sort="string">Critical Virulence Genes</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-            """
-            
-            for combo in high_risk_combinations:
-                amr_genes = ', '.join(combo['critical_amr_genes'])
-                vir_genes = ', '.join(combo['critical_virulence_genes'])
-                
-                html += f"""
-                        <tr>
-                            <td><strong>{combo['sample']}</strong></td>
-                            <td>{combo['mlst']}</td>
-                            <td>{combo['spa_type']}</td>
-                            <td>{combo['sccmec_type']}</td>
-                            <td>{amr_genes}</td>
-                            <td>{vir_genes}</td>
-                        </tr>
-                """
-            
-            html += """
-                    </tbody>
-                </table>
-            </div>
-            """
-        
-        # Critical genes summary - SHOW ALL, NO LIMIT
-        html += f"""
-        <h3 style="margin-top: 30px;"><i class="fas fa-skull-crossbones"></i> Critical Genes Summary</h3>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; margin: 20px 0;">
-            <div class="database-section">
-                <h4>Critical AMR Genes</h4>
-                <p><strong>{len(critical_amr_genes)} critical AMR genes</strong> identified</p>
-                <div style="margin-top: 10px;">
-        """
-        
-        # Show ALL critical AMR genes, no limit
-        for gene_data in critical_amr_genes:
-            html += f"""
-                    <div style="padding: 5px; border-bottom: 1px solid #eee;">
-                        <strong>{gene_data['gene']}</strong> - {gene_data['count']} genomes
-                    </div>
-            """
-        
-        html += """
-                </div>
-            </div>
-            
-            <div class="database-section">
-                <h4>Critical Virulence Genes</h4>
-                <p><strong>critical virulence genes</strong> identified</p>
-                <div style="margin-top: 10px;">
-        """
-        
-        # Show ALL critical virulence genes, no limit
-        for gene_data in critical_virulence_genes:
-            html += f"""
-                    <div style="padding: 5px; border-bottom: 1px solid #eee;">
-                        <strong>{gene_data['gene']}</strong> - {gene_data['count']} genomes
-                    </div>
-            """
-        
-        html += """
-                </div>
-            </div>
-        </div>
-        
-        <h3 style="margin-top: 30px;"><i class="fas fa-project-diagram"></i> Gene Co-occurrence</h3>
-        <p>Genes that frequently occur together across samples (top 100 associations):</p>
-        <div class="master-scrollable-container">
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th data-sort="string">Gene 1</th>
-                        <th data-sort="string">Gene 2</th>
-                        <th data-sort="number">Co-occurrence Count</th>
-                    </tr>
-                </thead>
-                <tbody>
-        """
-        
-        # Get top co-occurrences
-        gene_cooccurrence = patterns.get('gene_cooccurrence', {})
-        cooccurrence_list = []
-        for gene1, partners in gene_cooccurrence.items():
-            for gene2, count in partners.items():
-                cooccurrence_list.append((gene1, gene2, count))
-        
-        cooccurrence_list.sort(key=lambda x: x[2], reverse=True)
-        
-        for gene1, gene2, count in cooccurrence_list[:100]:
-            html += f"""
-                    <tr>
-                        <td><strong>{gene1}</strong></td>
-                        <td><strong>{gene2}</strong></td>
-                        <td>{count}</td>
-                    </tr>
-            """
-        
-        html += """
-                </tbody>
-            </table>
-        </div>
-        """
-        
-        return html
-    
-    def _generate_qc_section(self, kwargs: Dict) -> str:
-        """Generate FASTA Quality Control section with sortable headers"""
-        qc_data = kwargs.get('integrated_data', {}).get('qc_data', {})
-        
-        if not qc_data:
-            return """
-            <div class="alert-box alert-warning">
-                <i class="fas fa-exclamation-circle fa-2x"></i>
-                <div>
-                    <h3>No QC Data Available</h3>
-                    <p>The FASTA_QC_summary.html file was not found or could not be parsed.</p>
-                </div>
-            </div>
-            """
-        
-        # Collect all metric columns from first sample
-        all_metrics = set()
-        for sample, metrics in qc_data.items():
-            all_metrics.update(metrics.keys())
-        
-        metric_list = sorted(all_metrics)
-        
-        # Build table
         html = f"""
         <div class="alert-box alert-info">
-            <i class="fas fa-chart-line fa-2x"></i>
+            <i class="fas fa-project-diagram fa-2x"></i>
             <div>
-                <h3>FASTA Quality Control Metrics</h3>
-                <p>Assembly quality metrics for each genome. Click on any column header to sort.</p>
+                <h3>🔍 Cross‑Genome Pattern Discovery</h3>
+                <p>This tab reveals associations between typing results, gene co‑occurrence, and high‑risk combinations.</p>
+                <p><strong>Triple Typing Combination (MLST – spa – SCCmec)</strong> – The most informative molecular fingerprint for S. aureus epidemiology. Use this table to track dominant clones.</p>
             </div>
         </div>
         
-        <input type="text" class="search-box" id="search-qc" 
-               onkeyup="searchTable('qc-table', 'search-qc')" 
-               placeholder="🔍 Search by sample name...">
-        
-        <div class="action-buttons">
-            <button class="action-btn btn-primary" onclick="exportTableToCSV('qc-table', 'fasta_qc.csv')">
-                <i class="fas fa-download"></i> Export QC Data
-            </button>
-        </div>
-        
-        <div class="master-scrollable-container">
-            <table id="qc-table" class="data-table">
-                <thead>
-                    <tr>
-                        <th data-sort="string">Sample</th>
+        <h3>🔗 Triple Typing Combination (ST – spa – SCCmec) – Outbreak Signature</h3>
+        <input type="text" class="search-box" id="search-triple" onkeyup="searchTable('triple-table','search-triple')" placeholder="🔍 Search combination...">
+        <div class="master-scrollable-container"><table id="triple-table" class="data-table"><thead><tr><th data-sort="string">ST - spa - SCCmec</th><th data-sort="number">Count</th><th data-sort="string">Samples</th></tr></thead><tbody>
         """
+        for combo, samples in sorted(triple_combos.items(), key=lambda x: len(x[1]), reverse=True):
+            sample_tags = ''.join(f'<span class="genome-tag">{s}</span>' for s in samples)
+            html += f"<tr><td><strong>{combo}</strong></td><td>{len(samples)}</td><td><div class='genome-list'>{sample_tags}</div></td></tr>"
+        html += "</tbody></table></div>"
         
-        for metric in metric_list:
-            html += f'                        <th data-sort="number">{metric}</th>\n'
-        
-        html += """
-                    </tr>
-                </thead>
-                <tbody>
-        """
-        
-        for sample, metrics in sorted(qc_data.items()):
+        # High-risk combinations
+        high_risk = patterns.get('high_risk_combinations', [])
+        if high_risk:
             html += f"""
-                    <tr>
-                        <td><strong>{sample}</strong></td>
+            <h3>⚠️ High‑Risk Combinations (Critical AMR + Critical Virulence)</h3>
+            <div class="alert-box alert-danger"><i class="fas fa-radiation"></i><div><strong>{len(high_risk)} samples</strong> carry both critical AMR and virulence genes.</div></div>
+            <div class="master-scrollable-container"><table id="highrisk-table" class="data-table"><thead><tr><th data-sort="string">Sample</th><th data-sort="string">MLST</th><th data-sort="string">spa</th><th data-sort="string">SCCmec</th><th data-sort="string">Critical AMR</th><th data-sort="string">Critical Virulence</th></tr></thead><tbody>
             """
-            for metric in metric_list:
-                val = metrics.get(metric, 'ND')
-                if isinstance(val, float):
-                    if val > 1e6:
-                        val = f"{val:,.0f}"
-                    elif val > 1000:
-                        val = f"{val:,.0f}"
-                    else:
-                        val = f"{val:.2f}"
-                html += f"                        <td>{val}</td>\n"
-            html += "                    </tr>\n"
+            for c in high_risk:
+                html += f"<tr><td><strong>{c['sample']}</strong></td><td>{c['mlst']}</td><td>{c['spa_type']}</td><td>{c['sccmec_type']}</td><td>{', '.join(c['critical_amr_genes'])}</td><td>{', '.join(c['critical_virulence_genes'])}</td></tr>"
+            html += "</tbody></table></div>"
         
-        html += """
-                </tbody>
-            </table>
-        </div>
-        """
+        # Gene co-occurrence (top 500)
+        cooc = patterns.get('gene_cooccurrence', {})
+        if cooc:
+            cooc_list = []
+            for g1, partners in cooc.items():
+                for g2, cnt in partners.items():
+                    cooc_list.append((g1, g2, cnt))
+            cooc_list.sort(key=lambda x: x[2], reverse=True)
+            html += "<h3>📈 Gene Co‑occurrence (Top 500)</h3><div class='master-scrollable-container'><table class='data-table'><thead><tr><th data-sort='string'>Gene 1</th><th data-sort='string'>Gene 2</th><th data-sort='number'>Co‑occurrence Count</th></tr></thead><tbody>"
+            for g1, g2, cnt in cooc_list[:500]:
+                html += f"<tr><td>{g1}</td><td>{g2}</td><td>{cnt}</td></tr>"
+            html += "</tbody></table></div>"
         
         return html
     
     def _generate_aiguide_section(self, kwargs: Dict) -> str:
-        """Generate AI Assistant Guide tab"""
+        """Generate AI assistant guide"""
         return """
         <div class="alert-box alert-info">
-            <i class="fas fa-lightbulb fa-2x"></i>
+            <i class="fas fa-robot fa-2x"></i>
             <div>
-                <h3>How to Use AI with This Report</h3>
-                <p>You can upload this HTML report (or its JSON data) to AI tools like ChatGPT, Claude, or Gemini to ask detailed questions about your S. aureus dataset.</p>
+                <h3>🤖 AI Assistant Guide – How to Use with ChatGPT, Claude, or Gemini</h3>
+                <p>You can upload this HTML report (or its JSON data) to AI tools to ask detailed questions about your S. aureus dataset.</p>
             </div>
         </div>
         
         <div style="margin: 20px 0;">
             <div class="database-section">
-                <h4><i class="fas fa-chart-line"></i> General Questions</h4>
-                <ul style="margin-left: 20px;">
-                    <li>What are the most common MLST sequence types in this dataset?</li>
-                    <li>Which spa types are dominant in MRSA vs MSSA?</li>
-                    <li>How many samples carry mecA? What are their STs and spa types?</li>
-                    <li>Are there any samples with vancomycin resistance genes (vanA/vanB)?</li>
-                    <li>What is the overall assembly quality (N50, GC%)?</li>
+                <h4><i class="fas fa-chart-line"></i> Example Questions</h4>
+                <ul><li>What are the most common MLST sequence types in this dataset?</li>
+                <li>Which spa types are dominant in MRSA vs MSSA?</li>
+                <li>How many samples carry mecA? What are their STs and spa types?</li>
+                <li>Are there any samples with vancomycin resistance genes (vanA/vanB)?</li>
+                <li>Which samples carry the PVL toxin genes (lukF/S-PV)?</li>
+                <li>List all samples with TSST-1 (tsst).</li>
+                <li>Show me the triple typing combinations (ST-spa-SCCmec) with more than 2 isolates.</li>
+                <li>Which resistance genes co-occur most frequently?</li>
                 </ul>
             </div>
-            
-            <div class="database-section">
-                <h4><i class="fas fa-virus"></i> Virulence Analysis</h4>
-                <ul style="margin-left: 20px;">
-                    <li>Which samples carry the PVL toxin genes (lukF/S-PV)?</li>
-                    <li>List all samples with TSST-1 (tsst).</li>
-                    <li>Which enterotoxins are most prevalent (sea, seb, sec, sed, see)?</li>
-                    <li>Are there samples with exfoliative toxins (eta, etb)?</li>
-                    <li>Which STs are associated with PVL-positive MRSA?</li>
-                </ul>
-            </div>
-            
-            <div class="database-section">
-                <h4><i class="fas fa-biohazard"></i> Resistance Patterns</h4>
-                <ul style="margin-left: 20px;">
-                    <li>What is the prevalence of macrolide resistance genes (erm, msrA, mphC)?</li>
-                    <li>Which STs are most associated with SCCmec type II vs IV?</li>
-                    <li>Are there samples with multidrug resistance profiles (e.g., mecA + erm + tet)?</li>
-                    <li>Which resistance genes co-occur most frequently?</li>
-                </ul>
-            </div>
-            
-            <div class="database-section">
-                <h4><i class="fas fa-project-diagram"></i> Pattern Discovery</h4>
-                <ul style="margin-left: 20px;">
-                    <li>Identify samples with high‑risk combinations (MRSA + PVL).</li>
-                    <li>Which ST‑spa combinations are associated with CA-MRSA vs HA-MRSA?</li>
-                    <li>Show me the distribution of SCCmec types across different STs.</li>
-                </ul>
-            </div>
-            
             <div class="database-section">
                 <h4><i class="fas fa-upload"></i> How to Upload Data</h4>
-                <p>If you are using a text-based AI, you can copy the relevant tables or the JSON data and paste them into the conversation. For example, you can say: "I'm sending you the sample overview table from the StaphScope report. Can you analyze the MRSA distribution?"</p>
-                <p>Alternatively, you can save the <strong>staphscope_ultimate_report.json</strong> file and ask the AI to parse it. Many AI tools accept file uploads.</p>
+                <p>Save the <strong>staphscope_ultimate_report.json</strong> file and upload it to the AI. Most AI tools accept file uploads, or you can copy‑paste relevant tables.</p>
             </div>
         </div>
         """
     
-    def _generate_export_section(self, kwargs: Dict) -> str:
-        """Generate export section"""
+    def _generate_citation_section(self, kwargs: Dict) -> str:
+        """Generate citation tab with colored references (larger font)"""
         return """
         <div class="alert-box alert-info">
-            <i class="fas fa-info-circle fa-2x"></i>
+            <i class="fas fa-quote-right fa-2x"></i>
             <div>
-                <h3>Export Data and Reports</h3>
-                <p>Download comprehensive data in various formats for further analysis and reporting.</p>
+                <h3>📚 How to Cite StaphScope and Its Dependencies</h3>
+                <p>If you use StaphScope in your research, please cite the main tool and the relevant third‑party tools and databases.</p>
             </div>
         </div>
-        
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin: 30px 0;">
-            <div class="dashboard-card card-export" onclick="exportTableToCSV('samples-table', 'sample_overview.csv')">
-                <div style="font-size: 2.5em; color: var(--export-color);"><i class="fas fa-file-csv"></i></div>
-                <div class="card-label">Sample Overview CSV</div>
-                <p style="font-size: 0.9em; margin-top: 10px;">All samples with MLST, spa type, SCCmec, MRSA status</p>
-            </div>
-            
-            <div class="dashboard-card card-export" onclick="exportTableToCSV('amr-table', 'amr_genes.csv')">
-                <div style="font-size: 2.5em; color: var(--export-color);"><i class="fas fa-biohazard"></i></div>
-                <div class="card-label">AMR Genes CSV</div>
-                <p style="font-size: 0.9em; margin-top: 10px;">All AMR genes with genomes and frequencies</p>
-            </div>
-            
-            <div class="dashboard-card card-export" onclick="exportTableToCSV('virulence-table', 'virulence_genes.csv')">
-                <div style="font-size: 2.5em; color: var(--export-color);"><i class="fas fa-virus"></i></div>
-                <div class="card-label">Virulence Genes CSV</div>
-                <p style="font-size: 0.9em; margin-top: 10px;">All virulence genes with genomes and frequencies</p>
-            </div>
-            
-            <div class="dashboard-card card-export" onclick="exportTableToCSV('plasmids-table', 'plasmid_replicons.csv')">
-                <div style="font-size: 2.5em; color: var(--export-color);"><i class="fas fa-plug"></i></div>
-                <div class="card-label">Plasmid Replicons CSV</div>
-                <p style="font-size: 0.9em; margin-top: 10px;">All plasmid replicons with genomes</p>
-            </div>
-            
-            <div class="dashboard-card card-export" onclick="exportTableToCSV('qc-table', 'fasta_qc.csv')">
-                <div style="font-size: 2.5em; color: var(--export-color);"><i class="fas fa-chart-line"></i></div>
-                <div class="card-label">FASTA QC CSV</div>
-                <p style="font-size: 0.9em; margin-top: 10px;">Assembly quality metrics</p>
-            </div>
-            
-            <div class="dashboard-card card-export" onclick="location.href='staphscope_ultimate_report.json'">
-                <div style="font-size: 2.5em; color: var(--export-color);"><i class="fas fa-file-code"></i></div>
-                <div class="card-label">Complete JSON Data</div>
-                <p style="font-size: 0.9em; margin-top: 10px;">All analysis data in structured JSON format</p>
+
+        <style>
+        .citation-card {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 12px;
+            border-left: 5px solid;
+            transition: transform 0.2s;
+            font-size: 1rem;  /* Increased base font size */
+        }
+        .citation-card:hover {
+            transform: translateX(5px);
+        }
+        .citation-card h4 {
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.2rem;  /* Larger heading */
+        }
+        .citation-card p {
+            font-size: 1rem;
+            line-height: 1.4;
+            margin: 8px 0;
+        }
+        .citation-card pre {
+            background: rgba(0,0,0,0.05);
+            padding: 12px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 0.95rem;  /* Increased from 0.85em */
+            font-family: 'Courier New', Courier, monospace;
+            margin-top: 12px;
+            line-height: 1.4;
+        }
+        .citation-card a {
+            font-size: 1rem;
+        }
+        /* Tool colors */
+        .citation-main { background: #FFF3E0; border-left-color: #FF9800; }
+        .citation-mlst { background: #E8F5E9; border-left-color: #4CAF50; }
+        .citation-pubmlst { background: #E3F2FD; border-left-color: #2196F3; }
+        .citation-abricate { background: #F3E5F5; border-left-color: #9C27B0; }
+        .citation-amrfinder { background: #FFEBEE; border-left-color: #F44336; }
+        .citation-sccmecfinder { background: #E0F2F1; border-left-color: #009688; }
+        .citation-spa { background: #FFF8E1; border-left-color: #FFC107; }
+        .citation-card { background: #F1F8E9; border-left-color: #8BC34A; }
+        .citation-resfinder { background: #FBE9E7; border-left-color: #FF5722; }
+        .citation-vfdb { background: #E8EAF6; border-left-color: #3F51B5; }
+        .citation-plasmidfinder { background: #EFEBE9; border-left-color: #795548; }
+        .citation-megares { background: #FCE4EC; border-left-color: #E91E63; }
+        </style>
+
+        <div class="citation-card citation-main">
+            <h4><i class="fas fa-star"></i> Main StaphScope Citation</h4>
+            <p>Beckley, B., Amarh, V. (2026). StaphScope: a species‑optimized computational pipeline for rapid and accessible <em>Staphylococcus aureus</em> genotyping and surveillance. <em>BMC Genomics</em>, 27:123.</p>
+            <p><strong>DOI</strong>: <a href="https://doi.org/10.1186/s12864-026-12609-x" target="_blank">10.1186/s12864-026-12609-x</a></p>
+            <pre>
+    @article{beckley2026staphscope,
+    title={StaphScope: a species‑optimized computational pipeline for rapid and accessible Staphylococcus aureus genotyping and surveillance},
+    author={Beckley, Brown and Amarh, Vincent},
+    journal={BMC Genomics},
+    volume={27},
+    pages={123},
+    year={2026},
+    doi={10.1186/s12864-026-12609-x}
+    }
+            </pre>
+        </div>
+
+        <div class="citation-card citation-mlst">
+            <h4><i class="fas fa-tools"></i> MLST (Torsten Seemann)</h4>
+            <p><a href="https://github.com/tseemann/mlst" target="_blank">https://github.com/tseemann/mlst</a></p>
+            <pre>
+    @software{seemann_mlst_2018,
+    author = {Seemann, T.},
+    title = {MLST: Scan contig files against traditional PubMLST typing schemes},
+    year = {2018},
+    publisher = {GitHub},
+    url = {https://github.com/tseemann/mlst}
+    }
+            </pre>
+        </div>
+
+        <div class="citation-card citation-pubmlst">
+            <h4><i class="fas fa-tools"></i> PubMLST (Jolley et al.)</h4>
+            <p><a href="https://pubmlst.org" target="_blank">https://pubmlst.org</a></p>
+            <pre>
+    @article{jolley_pubmlst_2018,
+    author = {Jolley, K. A. and Bray, J. E. and Maiden, M. C. J.},
+    title = {Open-access bacterial population genomics: {BIGSdb} software, the {PubMLST.org} website and their applications},
+    journal = {Wellcome Open Research},
+    volume = {3},
+    pages = {124},
+    year = {2018},
+    doi = {10.12688/wellcomeopenres.14826.1}
+    }
+            </pre>
+        </div>
+
+        <div class="citation-card citation-abricate">
+            <h4><i class="fas fa-tools"></i> ABRicate (Torsten Seemann)</h4>
+            <p><a href="https://github.com/tseemann/abricate" target="_blank">https://github.com/tseemann/abricate</a></p>
+            <pre>
+    @software{seemann_abricate_2018,
+    author = {Seemann, T.},
+    title = {ABRicate: Mass screening of contigs for antimicrobial resistance and virulence genes},
+    year = {2018},
+    publisher = {GitHub},
+    url = {https://github.com/tseemann/abricate}
+    }
+            </pre>
+        </div>
+
+        <div class="citation-card citation-amrfinder">
+            <h4><i class="fas fa-tools"></i> AMRFinderPlus (NCBI)</h4>
+            <p><a href="https://www.ncbi.nlm.nih.gov/pathogens/amr/" target="_blank">NCBI AMRFinderPlus</a></p>
+            <pre>
+    @article{feldgarden_amrfinderplus_2019,
+    author = {Feldgarden, M. et al.},
+    title = {AMRFinderPlus and the Reference Gene Catalog facilitate examination of the genomic links among antimicrobial resistance, stress response, and virulence},
+    journal = {Scientific Reports},
+    volume = {11},
+    pages = {12728},
+    year = {2019},
+    doi = {10.1038/s41598-021-91456-0}
+    }
+            </pre>
+        </div>
+
+    <div class="citation-card citation-spa">
+        <h4><i class="fas fa-tools"></i> spa Typing (Ridom)</h4>
+        <p><a href="https://spa.ridom.de" target="_blank">https://spa.ridom.de</a></p>
+        <p><strong>Database statistics (May 2026):</strong> 22,638 spa types, 863 repeats, 472,120 total strains, from 181 countries.</p>
+        <pre>
+    @article{mellmann_spa_typing_2005,
+    author = {Mellmann, A. et al.},
+    title = {Evidenzbasierte Hygienemassnahmen mittels spa-Typisierung bei MRSA-Häufungen im Krankenhaus},
+    journal = {Deutsche Medizinische Wochenschrift},
+    volume = {130},
+    number = {22},
+    pages = {1364-1368},
+    year = {2005},
+    doi = {10.1055/s-2005-868351}
+    }
+        </pre>
+    </div>
+    
+        <div class="citation-card citation-sccmecfinder">
+            <h4><i class="fas fa-tools"></i> SCCmecFinder (CGE)</h4>
+            <p><a href="https://cge.cbs.dtu.dk/services/SCCmecFinder/" target="_blank">CGE SCCmecFinder</a></p>
+            <pre>
+    @article{kaya_sccmecfinder_2018,
+    author = {Kaya, H. et al.},
+    title = {SCCmecFinder, a Web-Based Tool for Typing of Staphylococcal Cassette Chromosome mec in Staphylococcus aureus Using Whole-Genome Sequence Data},
+    journal = {mSphere},
+    volume = {3},
+    number = {1},
+    pages = {e00612-17},
+    year = {2018},
+    doi = {10.1128/mSphere.00612-17}
+    }
+            </pre>
+        </div>
+
+        <div class="citation-card citation-spa">
+            <h4><i class="fas fa-tools"></i> spa Typing (Ridom)</h4>
+            <p><a href="https://spa.ridom.de" target="_blank">https://spa.ridom.de</a></p>
+            <pre>
+    @article{mellmann_spa_typing_2005,
+    author = {Mellmann, A. et al.},
+    title = {Evidenzbasierte Hygienemassnahmen mittels spa-Typisierung bei MRSA-Häufungen im Krankenhaus},
+    journal = {Deutsche Medizinische Wochenschrift},
+    volume = {130},
+    number = {22},
+    pages = {1364-1368},
+    year = {2005},
+    doi = {10.1055/s-2005-868351}
+    }
+            </pre>
+        </div>
+
+        <div class="citation-card citation-card">
+            <h4><i class="fas fa-database"></i> CARD</h4>
+            <p>Comprehensive Antibiotic Resistance Database</p>
+            <pre>
+    @article{alcock_card_2023,
+    author = {Alcock, B. P. et al.},
+    title = {CARD 2023: expanded curation, support for machine learning, and resistome prediction at the Comprehensive Antibiotic Resistance Database},
+    journal = {Nucleic Acids Research},
+    volume = {51},
+    number = {D1},
+    pages = {D690-D699},
+    year = {2023},
+    doi = {10.1093/nar/gkac920}
+    }
+            </pre>
+        </div>
+
+        <div class="citation-card citation-resfinder">
+            <h4><i class="fas fa-database"></i> ResFinder</h4>
+            <pre>
+    @article{bortolaia_resfinder_2020,
+    author = {Bortolaia, V. et al.},
+    title = {ResFinder 4.0 for predictions of phenotypes from genotypes},
+    journal = {Journal of Antimicrobial Chemotherapy},
+    volume = {75},
+    number = {12},
+    pages = {3491-3500},
+    year = {2020},
+    doi = {10.1093/jac/dkaa345}
+    }
+            </pre>
+        </div>
+
+        <div class="citation-card citation-vfdb">
+            <h4><i class="fas fa-database"></i> VFDB – Virulence Factor Database</h4>
+            <pre>
+    @article{chen_vfdb_2016,
+    author = {Chen, L. et al.},
+    title = {VFDB 2016: hierarchical and refined dataset for big data analysis—10 years on},
+    journal = {Nucleic Acids Research},
+    volume = {44},
+    number = {D1},
+    pages = {D694-D697},
+    year = {2016},
+    doi = {10.1093/nar/gkv1239}
+    }
+            </pre>
+        </div>
+
+        <div class="citation-card citation-plasmidfinder">
+            <h4><i class="fas fa-database"></i> PlasmidFinder</h4>
+            <pre>
+    @article{carattoli_plasmidfinder_2014,
+    author = {Carattoli, A. et al.},
+    title = {In silico detection and typing of plasmids using PlasmidFinder and plasmid multilocus sequence typing},
+    journal = {Antimicrobial Agents and Chemotherapy},
+    volume = {58},
+    number = {7},
+    pages = {3895-3903},
+    year = {2014},
+    doi = {10.1128/AAC.02412-14}
+    }
+            </pre>
+        </div>
+
+        <div class="citation-card citation-megares">
+            <h4><i class="fas fa-database"></i> MEGARes 3.0</h4>
+            <pre>
+    @article{bonin_megares_2023,
+    author = {Bonin, N. et al.},
+    title = {MEGARes and AMR++, v3.0: an updated comprehensive database of antimicrobial resistance determinants and an improved software pipeline for classification using high-throughput sequencing},
+    journal = {Nucleic Acids Research},
+    volume = {51},
+    number = {D1},
+    pages = {D744-D752},
+    year = {2023},
+    doi = {10.1093/nar/gkac1047}
+    }
+            </pre>
+        </div>
+
+        <div class="alert-box alert-success">
+            <i class="fas fa-hand-peace"></i>
+            <div>
+                <strong>Suggested acknowledgement:</strong><br>
+                “Genomic analysis was performed using StaphScope [Beckley &amp; Amarh, 2026], which integrates MLST [Seemann, 2018] using the Pubmlst database [Jolley et al., 2018], ABRicate [Seemann, 2018], AMRFinderPlus [Feldgarden et al., 2019], and SCCmecFinder [Kaya et al., 2018] for comprehensive <em>S. aureus</em> characterization. Antimicrobial resistance genes were identified using the CARD [Alcock et al., 2023] and ResFinder [Bortolaia et al., 2020] databases.”
             </div>
         </div>
+        """
         
-        <h3><i class="fas fa-download"></i> Available Export Files</h3>
-        <div class="master-scrollable-container">
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>File</th>
-                        <th>Description</th>
-                        <th>Format</th>
-                        <th>Contents</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td><strong>staphscope_ultimate_report.html</strong></td>
-                        <td>This interactive HTML report</th>
-                        <td>HTML</th>
-                        <td>Complete analysis with all sections</th>
-                    </tr>
-                    <tr>
-                        <td><strong>staphscope_ultimate_report.json</strong></th>
-                        <td>Complete structured data</th>
-                        <td>JSON</th>
-                        <td>All analysis data for programmatic use</th>
-                    </tr>
-                    <tr>
-                        <td><strong>sample_overview.csv</strong></th>
-                        <td>Sample overview data</th>
-                        <td>CSV</th>
-                        <td>All samples with typing results</th>
-                    </tr>
-                    <tr>
-                        <td><strong>amr_genes.csv</strong></th>
-                        <td>AMR gene analysis</th>
-                        <td>CSV</th>
-                        <td>All AMR genes with genomes and frequencies</th>
-                    </tr>
-                    <tr>
-                        <td><strong>virulence_genes.csv</strong></th>
-                        <td>Virulence gene analysis</th>
-                        <td>CSV</th>
-                        <td>All virulence genes with genomes and frequencies</th>
-                    </tr>
-                    <tr>
-                        <td><strong>plasmid_replicons.csv</strong></th>
-                        <td>Plasmid replicon analysis</th>
-                        <td>CSV</th>
-                        <td>All plasmid replicons with genomes</th>
-                    </tr>
-                    <tr>
-                        <td><strong>fasta_qc.csv</strong></th>
-                        <td>FASTA QC metrics</th>
-                        <td>CSV</th>
-                        <td>Assembly quality metrics</th>
-                    </tr>
-                    <tr>
-                        <td><strong>pattern_discovery.csv</strong></th>
-                        <td>Pattern discovery results</th>
-                        <td>CSV</th>
-                        <td>Cross-genome patterns and associations</th>
-                    </tr>
-                </tbody>
-            </table>
+
+    def _generate_calltoaction_section(self, kwargs: Dict) -> str:
+        """Generate Call to Action tab with humorous ESKAPE tool lineup"""
+        return """
+        <div class="alert-box alert-info">
+            <i class="fas fa-bullhorn fa-2x"></i>
+            <div>
+                <h3>🚀 Call to Action – Help Us Fight AMR!</h3>
+                <p>If you find this report useful, please <strong>star our GitHub repository</strong> and share it with your colleagues. Your support drives further development (and keeps us caffeinated).</p>
+            </div>
+        </div>
+
+        <div style="text-align: center; margin: 40px 0;">
+            <i class="fas fa-star" style="font-size: 3em; color: #ffc107;"></i>
+            <i class="fas fa-star" style="font-size: 2.5em; color: #ffc107; margin-left: 5px;"></i>
+            <i class="fas fa-star" style="font-size: 2em; color: #ffc107; margin-left: 5px;"></i>
+            <h3>⭐ Star us on GitHub</h3>
+            <p><a href="https://github.com/bbeckley-hub/staphscope-typing-tool" target="_blank">https://github.com/bbeckley-hub/staphscope-typing-tool</a></p>
+        </div>
+
+        <div class="database-section">
+            <h4><i class="fas fa-laugh-beam"></i> The ESKAPE Rogues' Gallery – Our Other Tools</h4>
+            <p>We’ve built a whole zoo of pathogen‑specific pipelines – each one more obsessive about your favourite bug. Behold, the <strong>ESKAPE</strong> lineup (because one bug report is never enough):</p>
+            <ul style="margin-left: 20px; list-style-type: none;">
+                <li><strong><i class="fab fa-github"></i> EnteroMark</strong> – for <em>Enterococcus faecium</em> (VRE surveillance, the "E" in ESKAPE): <a href="https://github.com/bbeckley-hub/EnteroMark" target="_blank">github.com/bbeckley-hub/EnteroMark</a></li>
+                <li><strong>🧫 <i class="fab fa-github"></i> StaphScope</strong> – for <em>Staphylococcus aureus</em> (MRSA, the "S" – you're using it right now!): <a href="https://github.com/bbeckley-hub/staphscope-typing-tool" target="_blank">github.com/bbeckley-hub/staphscope-typing-tool</a></li>
+                <li><strong>🧬 <i class="fab fa-github"></i> Kleboscope</strong> – for <em>Klebsiella pneumoniae</em> (carbapenemase hunter, the "K"): <a href="https://github.com/bbeckley-hub/Kleboscope" target="_blank">github.com/bbeckley-hub/Kleboscope</a></li>
+                <li><strong>🧪 <i class="fab fa-github"></i> Acinetoscope</strong> – for <em>Acinetobacter baumannii</em> (WHO Critical Priority, the "A"): <a href="https://github.com/bbeckley-hub/acinetoscope" target="_blank">github.com/bbeckley-hub/acinetoscope</a></li>
+                <li><strong>🧴 <i class="fab fa-github"></i> Pseudoscope</strong> – for the mighty <em>Pseudomonas aeruginosa</em> (biofilm king, the "P"): <a href="https://github.com/bbeckley-hub/pseudoscope" target="_blank">github.com/bbeckley-hub/pseudoscope</a></li>
+                <li><strong>🧫 <i class="fab fa-github"></i> Enteroscope</strong> – for <em>Enterobacter cloacae</em> (the forgotten ESKAPE member, the final "E"): <a href="https://github.com/bbeckley-hub/enteroscope" target="_blank">github.com/bbeckley-hub/enteroscope</a></li>
+            </ul>
+            <p>And because we like to go the extra mile (and bug you), we also have <strong><i class="fab fa-github"></i> EcoliTyper</strong> for <em>E. coli</em> serotyping – because even non‑ESKAPE bugs deserve love: <a href="https://github.com/bbeckley-hub/EcoliTyper" target="_blank">github.com/bbeckley-hub/EcoliTyper</a></p>
+            <p>If you like what we’re doing, give them a ⭐ too – it helps us stay motivated (and caffeinated). We put the "fun" in "fungus" (even though most of these are bacteria).</p>
+        </div>
+
+        <div class="database-section">
+            <h4><i class="fas fa-chalkboard-user"></i> Collaborate & Contribute – Join the Resistance!</h4>
+            <p>We welcome bug reports, feature requests, and collaborations. Open an issue on GitHub or email <strong>brownbeckley94@gmail.com</strong>.</p>
+            <p><i class="fas fa-globe-africa"></i> <strong>University of Ghana Medical School</strong> – Putting African genomics on the map, one genome at a time.</p>
+            <p><i class="fas fa-microbe"></i> <strong>Fun fact:</strong> The ESKAPE pathogens are responsible for the majority of hospital‑acquired infections and are notoriously multi‑drug resistant. Our tools help you fight back – with code, not just antibiotics.</p>
+        </div>
+
+        <div class="alert-box alert-success">
+            <i class="fas fa-hand-holding-heart"></i>
+            <div>
+                <strong>Together we can beat AMR – one genome at a time. Now go forth and type!</strong>
+            </div>
         </div>
         """
 
+    def _generate_export_section(self, kwargs: Dict) -> str:
+        """Generate export section with links to CSV/JSON files"""
+        return """
+        <div class="alert-box alert-info">
+            <i class="fas fa-download fa-2x"></i>
+            <div>
+                <h3>📥 Export Data – Download Your Results</h3>
+                <p>Download all analysis tables in CSV format or the complete JSON data for downstream use.</p>
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin: 30px 0;">
+            <div class="dashboard-card card-export" onclick="exportTableToCSV('samples-table', 'sample_overview.csv')">
+                <div style="font-size: 2em; color: var(--export-color);"><i class="fas fa-table"></i></div>
+                <div class="card-label">Sample Overview CSV</div>
+                <p>All samples with MLST, spa, SCCmec, MRSA status</p>
+            </div>
+            <div class="dashboard-card card-export" onclick="exportTableToCSV('amr-table', 'amr_genes.csv')">
+                <div style="font-size: 2em; color: var(--export-color);"><i class="fas fa-biohazard"></i></div>
+                <div class="card-label">AMR Genes CSV</div>
+                <p>Gene‑centric AMR table with genome lists</p>
+            </div>
+            <div class="dashboard-card card-export" onclick="exportTableToCSV('vir-table', 'virulence_genes.csv')">
+                <div style="font-size: 2em; color: var(--export-color);"><i class="fas fa-virus"></i></div>
+                <div class="card-label">Virulence Genes CSV</div>
+                <p>Gene‑centric virulence table</p>
+            </div>
+            <div class="dashboard-card card-export" onclick="exportTableToCSV('bac-table', 'bacmet_genes.csv')">
+                <div style="font-size: 2em; color: var(--export-color);"><i class="fas fa-flask"></i></div>
+                <div class="card-label">BACMET Genes CSV</div>
+                <p>Biocide & heavy metal resistance genes</p>
+            </div>
+            <div class="dashboard-card card-export" onclick="exportTableToCSV('plasmid-table', 'plasmid_replicons.csv')">
+                <div style="font-size: 2em; color: var(--export-color);"><i class="fas fa-plug"></i></div>
+                <div class="card-label">Plasmid Replicons CSV</div>
+                <p>Plasmid replicon distribution</p>
+            </div>
+            <div class="dashboard-card card-export" onclick="exportTableToCSV('qc-table', 'fasta_qc.csv')">
+                <div style="font-size: 2em; color: var(--export-color);"><i class="fas fa-chart-line"></i></div>
+                <div class="card-label">FASTA QC CSV</div>
+                <p>Assembly quality metrics</p>
+            </div>
+            <div class="dashboard-card card-export" onclick="location.href='staphscope_ultimate_report.json'">
+                <div style="font-size: 2em; color: var(--export-color);"><i class="fas fa-file-code"></i></div>
+                <div class="card-label">Complete JSON Data</div>
+                <p>All analysis data in structured JSON format</p>
+            </div>
+        </div>
+
+        <div class="alert-box alert-warning">
+            <i class="fas fa-save"></i>
+            <div>
+                <strong>Note:</strong> The JSON file (<code>staphscope_ultimate_report.json</code>) is saved in the same directory as this HTML report. You can use it for custom scripts or upload to AI tools.
+            </div>
+        </div>
+        """
+# =============================================================================
+# STAPH ULTIMATE REPORTER CLASS
+# =============================================================================
 
 class StaphUltimateReporter:
     """MASTER CLASS: Generates ultimate gene-centric reports for S. aureus"""
@@ -3506,7 +3372,7 @@ class StaphUltimateReporter:
         # Metadata
         self.metadata = {
             "tool_name": "STAPHSCOPE Ultimate S. aureus Reporter",
-            "version": "2.0.0",
+            "version": "2.1.0",
             "author": "Brown Beckley <brownbeckley94@gmail.com>",
             "affiliation": "University of Ghana Medical School",
             "analysis_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -3582,7 +3448,7 @@ class StaphUltimateReporter:
         if html_files['amrfinder']:
             amr_by_sample, amr_gene_freq = self.parser.parse_amrfinder_report(html_files['amrfinder'][0])
         
-        # Parse ABRicate databases
+        # Parse ABRicate databases (including bacmet2)
         abricate_by_sample = defaultdict(dict)
         abricate_gene_freq = {}
         
@@ -3753,7 +3619,25 @@ class StaphUltimateReporter:
             virulence_file = self.output_dir / "virulence_genes.csv"
             df_virulence.to_csv(virulence_file, index=False)
         
-        # 4. Plasmid replicons (gene-centric)
+        # 4. BACMET genes (gene-centric)
+        bacmet_data = []
+        for db_name, genes in gene_centric.get('bacmet_databases', {}).items():
+            for gene_info in genes:
+                bacmet_data.append({
+                    'Gene': gene_info['gene'],
+                    'Database': gene_info['database'],
+                    'Count': gene_info['count'],
+                    'Frequency': gene_info['frequency'],
+                    'Percentage': f"{(gene_info['count']/len(integrated_data['samples']))*100:.1f}%" if len(integrated_data['samples']) > 0 else "0%",
+                    'Genomes': ';'.join(gene_info.get('genomes', []))
+                })
+        
+        if bacmet_data:
+            df_bacmet = pd.DataFrame(bacmet_data)
+            bacmet_file = self.output_dir / "bacmet_genes.csv"
+            df_bacmet.to_csv(bacmet_file, index=False)
+        
+        # 5. Plasmid replicons (gene-centric)
         plasmid_data = []
         for db_name, genes in gene_centric.get('plasmid_databases', {}).items():
             for gene_info in genes:
@@ -3771,7 +3655,7 @@ class StaphUltimateReporter:
             plasmids_file = self.output_dir / "plasmid_replicons.csv"
             df_plasmids.to_csv(plasmids_file, index=False)
         
-        # 5. FASTA QC
+        # 6. FASTA QC
         qc_data = integrated_data.get('qc_data', {})
         if qc_data:
             qc_rows = []
@@ -3783,7 +3667,7 @@ class StaphUltimateReporter:
             qc_file = self.output_dir / "fasta_qc.csv"
             df_qc.to_csv(qc_file, index=False)
         
-        # 6. Pattern discovery
+        # 7. Pattern discovery (including triple combinations)
         pattern_data = []
         patterns = integrated_data['patterns']
         
@@ -3797,6 +3681,14 @@ class StaphUltimateReporter:
         for combo, samples in patterns.get('mlst_spa_combinations', {}).items():
             pattern_data.append({
                 'Pattern_Type': 'MLST_spa_Combination',
+                'Combination': combo,
+                'Samples': ';'.join(samples),
+                'Count': len(samples)
+            })
+        
+        for combo, samples in patterns.get('triple_combinations', {}).items():
+            pattern_data.append({
+                'Pattern_Type': 'Triple_Typing_(ST_spa_SCCmec)',
                 'Combination': combo,
                 'Samples': ';'.join(samples),
                 'Count': len(samples)
@@ -3818,12 +3710,12 @@ class StaphUltimateReporter:
             patterns_file = self.output_dir / "pattern_discovery.csv"
             df_patterns.to_csv(patterns_file, index=False)
         
-        print(f"    ✅ CSV reports generated: sample_overview.csv, amr_genes.csv, virulence_genes.csv, plasmid_replicons.csv, fasta_qc.csv, pattern_discovery.csv")
+        print(f"    ✅ CSV reports generated: sample_overview.csv, amr_genes.csv, virulence_genes.csv, bacmet_genes.csv, plasmid_replicons.csv, fasta_qc.csv, pattern_discovery.csv")
     
     def run(self):
         """Run the complete analysis for S. aureus"""
         print("=" * 80)
-        print("🧬 STAPHSCOPE ULTIMATE S. AUREUS REPORTER v2.0.0")
+        print("🧬 STAPHSCOPE ULTIMATE S. AUREUS REPORTER v2.1.0")
         print("=" * 80)
         print(f"📁 Input directory: {self.input_dir}")
         
@@ -3861,6 +3753,7 @@ class StaphUltimateReporter:
         
         total_amr_genes = sum(len(genes) for genes in gene_centric.get('amr_databases', {}).values())
         total_virulence_genes = sum(len(genes) for genes in gene_centric.get('virulence_databases', {}).values())
+        total_bacmet_genes = sum(len(genes) for genes in gene_centric.get('bacmet_databases', {}).values())
         total_plasmids = sum(len(genes) for genes in gene_centric.get('plasmid_databases', {}).values())
         
         # Count MRSA
@@ -3879,34 +3772,37 @@ class StaphUltimateReporter:
         print(f"   • sample_overview.csv (Sample data)")
         print(f"   • amr_genes.csv (Gene-centric AMR data)")
         print(f"   • virulence_genes.csv (Gene-centric virulence data)")
+        print(f"   • bacmet_genes.csv (Biocide/heavy metal genes)")
         print(f"   • plasmid_replicons.csv (Plasmid replicon data)")
         if integrated_data.get('qc_data'):
             print(f"   • fasta_qc.csv (FASTA QC metrics)")
-        print(f"   • pattern_discovery.csv (Pattern analysis)")
+        print(f"   • pattern_discovery.csv (Pattern analysis including triple typing)")
         
         print(f"\n🔬 KEY FEATURES FOR S. AUREUS:")
-        print(f"   • Gene-centric approach: Genes shown with all genomes")
+        print(f"   • Gene-centric tables with scrollable genome lists (no truncation)")
         print(f"   • MRSA focused analysis: {mrsa_count} MRSA samples identified")
         print(f"   • Complete spa typing: {len(patterns.get('spa_type_distribution', {}))} unique spa types")
         print(f"   • SCCmec analysis: {len(patterns.get('sccmec_distribution', {}))} SCCmec types")
-        print(f"   • NO TRUNCATION: Complete genome lists for each gene")
+        print(f"   • BACMET (biocide & heavy metal) resistance tracking")
+        print(f"   • Triple typing combination (ST – spa – SCCmec)")
         print(f"   • FASTA QC metrics integrated")
-        print(f"   • Combination tables: ST-spa, ST-SCCmec, spa-SCCmec")
+        print(f"   • Detailed biology explanations for each tab")
         
         print(f"\n📈 ANALYSIS SUMMARY:")
         print(f"   • {total_samples} total S. aureus samples analyzed")
         print(f"   • {mrsa_count} MRSA samples ({mrsa_count/total_samples*100:.1f}%)")
         print(f"   • {total_amr_genes} AMR genes across all databases")
         print(f"   • {total_virulence_genes} virulence genes")
+        print(f"   • {total_bacmet_genes} BACMET (biocide/metal) genes")
         print(f"   • {total_plasmids} plasmid replicons")
         print(f"   • {high_risk} high-risk AMR+virulence combinations")
         
         print("\n🎯 Next steps:")
         print("   1. Open staphscope_ultimate_report.html in your browser")
-        print("   2. Use AMR and Virulence tabs to see genes with ALL their genomes")
+        print("   2. Use AMR, Virulence, and BACMET tabs to see genes with ALL their genomes (scrollable lists)")
         print("   3. Check MRSA analysis tab for MRSA-specific insights")
         print("   4. Use filter buttons to focus on key resistance/virulence genes")
-        print("   5. Explore combination tables under MLST, spa, SCCmec, and MRSA tabs")
+        print("   5. Examine triple typing combinations under Pattern Discovery tab")
         print("   6. Use print buttons on each section header to print specific sections")
         print("   7. Export data using the Export tab or individual CSV buttons")
         
@@ -3914,10 +3810,14 @@ class StaphUltimateReporter:
         return True
 
 
+# =============================================================================
+# MAIN FUNCTION
+# =============================================================================
+
 def main():
     """Main function for StaphScope Ultimate Reporter"""
     parser = argparse.ArgumentParser(
-        description='STAPHSCOPE Ultimate S. aureus Reporter - Gene-Centric Analysis',
+        description='STAPHSCOPE Ultimate S. aureus Reporter - Gene‑Centric Analysis',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -3931,7 +3831,7 @@ Affiliation: University of Ghana Medical School
     parser.add_argument('-i', '--input-dir', required=True,
                        help='Directory containing StaphScope HTML report files')
     parser.add_argument('-o', '--output-dir',
-                       help='Custom output directory')
+                       help='Custom output directory (optional)')
     
     args = parser.parse_args()
     

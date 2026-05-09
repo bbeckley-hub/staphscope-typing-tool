@@ -5,6 +5,7 @@ Complete MRSA/MSSA/LA-MRSA lineage reference for prediction engine
 Author: Brown Beckley <brownbeckley94@gmail.com>
 Scientific Review: Updated with literature-validated corrections
 Date: 2025
+Updated: 2026-05-09
 Send a quick mail for any issues or further explanations.
 Affiliation: University of Ghana Medical School-Department of Medical Bioichemistry
 """
@@ -296,6 +297,142 @@ LINEAGE_DATABASE = {
         "outbreak_potential": "MEDIUM",
         "risk_level": "MEDIUM",
         "key_references": ["PMID: 27605711", "PMID: 23887918", "PMID: 32822004"]
+    },
+
+    "CC49": {
+        "primary_name": "European Wildlife-associated Lineage",
+        "type": "Community-associated / Zoonotic MRSA",
+        "subtypes": ["Rare", "Wildlife", "Emerging"],
+        "sequence_types": [49, 699, 1255, 1260, 1410],
+        "common_spa_types": ["t208", "t377", "t936", "t1453"],
+        "sccmec_types": ["IV", "V"],
+        "geographic_distribution": {
+            "regions": ["Europe (Germany, UK, Scandinavia)"],
+            "prevalence": "Very Low",
+            "notes": "Primarily detected in wildlife (wild boar, deer, hedgehogs) with occasional human spillover"
+        },
+        "virulence_profile": {
+            "toxins": ["Variable; sometimes PVL-negative"],
+            "adhesins": ["fnbA", "clfA"],
+            "immune_evasion": ["Variable; may lack scn/chp"]
+        },
+        "resistance_profile": {
+            "antimicrobial_classes": ["Methicillin (in MRSA isolates)"],
+            "common_genes": ["mecA", "mecC (rare)"],
+            "typical_patterns": ["Susceptible to non‑β‑lactams in most cases"]
+        },
+        "clinical_significance": "Rare lineage with potential zoonotic transmission from wildlife; low human disease burden.",
+        "outbreak_potential": "LOW",
+        "risk_level": "LOW",
+        "key_references": ["PMID: 39047021", "PMID: 36232529"]
+    },
+
+    "CC188": {
+        "primary_name": "Rare Healthcare-associated Lineage",
+        "type": "Healthcare-associated MRSA / MSSA",
+        "subtypes": ["Sporadic", "Low prevalence"],
+        "sequence_types": [188, 778, 1258, 1482],
+        "common_spa_types": ["t189", "t284", "t1068", "t1316"],
+        "sccmec_types": ["IV", "V"],
+        "geographic_distribution": {
+            "regions": ["Europe, Middle East, sporadic global"],
+            "prevalence": "Very Low",
+            "notes": "Occasionally reported in hospital settings; more common as MSSA"
+        },
+        "virulence_profile": {
+            "toxins": ["Variable; eta/etb reported in some isolates"],
+            "adhesins": ["fnbA", "clfA", "clfB"]
+        },
+        "resistance_profile": {
+            "antimicrobial_classes": ["Methicillin (when MRSA)"],
+            "common_genes": ["mecA"],
+            "typical_patterns": ["Limited multidrug resistance"]
+        },
+        "clinical_significance": "Rare healthcare lineage; MSSA isolates more frequent than MRSA.",
+        "outbreak_potential": "LOW",
+        "risk_level": "LOW",
+        "key_references": ["PMID: 36232529", "PMID: 25485928"]
+    },
+
+    "CC599": {
+        "primary_name": "European Wildlife‑associated Lineage",
+        "type": "Community-associated / Zoonotic",
+        "subtypes": ["Rare", "Wildlife", "MSSA predominance"],
+        "sequence_types": [599, 606, 607, 700],
+        "common_spa_types": ["t529", "t536", "t1512"],
+        "sccmec_types": ["IV (rare MRSA)"],
+        "geographic_distribution": {
+            "regions": ["Europe (Germany, Poland, Switzerland)"],
+            "prevalence": "Very Low",
+            "notes": "Mostly MSSA; isolated from wild animals (deer, foxes)"
+        },
+        "virulence_profile": {
+            "toxins": ["Limited; typically PVL‑negative"],
+            "adhesins": ["fnbA", "clfA"]
+        },
+        "resistance_profile": {
+            "antimicrobial_classes": ["Methicillin (rare)"],
+            "common_genes": ["mecA (in MRSA variants)"],
+            "typical_patterns": ["Generally susceptible"]
+        },
+        "clinical_significance": "Rare zoonotic lineage with very limited human impact.",
+        "outbreak_potential": "LOW",
+        "risk_level": "LOW",
+        "key_references": [" PMID: 25034857", "PMID: 24465637"]
+    },
+
+    "CC692": {
+        "primary_name": "North American Wildlife Lineage",
+        "type": "Community-associated / Zoonotic",
+        "subtypes": ["Wildlife", "MSSA"],
+        "sequence_types": [692, 695, 1390],
+        "common_spa_types": ["t528", "t541", "t1443"],
+        "sccmec_types": ["Rarely MRSA"],
+        "geographic_distribution": {
+            "regions": ["North America (USA, Canada)"],
+            "prevalence": "Very Low",
+            "notes": "Isolated from wildlife (raccoons, opossums) and environmental samples"
+        },
+        "virulence_profile": {
+            "toxins": ["Limited"],
+            "adhesins": ["fnbA", "clfA"]
+        },
+        "resistance_profile": {
+            "antimicrobial_classes": ["None typical"],
+            "common_genes": ["None"],
+            "typical_patterns": ["Mostly susceptible to all antibiotics"]
+        },
+        "clinical_significance": "Rare environmental/wildlife lineage; no known outbreaks.",
+        "outbreak_potential": "LOW",
+        "risk_level": "LOW",
+        "key_references": ["PMID: 38257923"]
+    },
+
+    "CC707": {
+        "primary_name": "Australian Community‑associated CA‑MRSA",
+        "type": "Community-associated MRSA",
+        "subtypes": ["PVL-positive", "ST707", "Related to CC93"],
+        "sequence_types": [707, 708, 709, 905],
+        "common_spa_types": ["t202", "t334", "t573", "t1340"],
+        "sccmec_types": ["IV", "V"],
+        "geographic_distribution": {
+            "regions": ["Australia", "New Zealand", "Pacific Islands"],
+            "prevalence": "Low but emerging",
+            "notes": "Closely related to CC93 (Queensland clone); often PVL-positive"
+        },
+        "virulence_profile": {
+            "toxins": ["lukS-PV", "lukF-PV", "sea", "sek"],
+            "adhesins": ["fnbA", "clfA", "sdrC"]
+        },
+        "resistance_profile": {
+            "antimicrobial_classes": ["Methicillin"],
+            "common_genes": ["mecA"],
+            "typical_patterns": ["Often susceptible to non‑β‑lactams"]
+        },
+        "clinical_significance": "Community‑associated MRSA causing skin and soft tissue infections in Australia and Oceania.",
+        "outbreak_potential": "MEDIUM",
+        "risk_level": "MEDIUM",
+        "key_references": ["PMID: 27992523"]
     },
     
     "CC51": {
@@ -1212,6 +1349,34 @@ LINEAGE_DATABASE = {
         "risk_level": "LOW",
         "key_references": ["PMID: 39565128", "PMID: 29567305", "PMID: 18375551", "PMID: 36074767"]
     },
+
+    "CC152": {
+        "primary_name": "European/Middle Eastern CA-MRSA",
+        "type": "Community-associated MRSA",
+        "subtypes": ["PVL-positive", "ST152", "European CA-MRSA"],
+        "sequence_types": [152, 153, 154, 785, 1252, 1292, 1340],
+        "common_spa_types": ["t355", "t437", "t648", "t454", "t1057"],
+        "sccmec_types": ["IV", "V"],
+        "geographic_distribution": {
+            "regions": ["Europe (Romania, Hungary, Germany)", "Middle East", "Africa", "Emerging in Asia"],
+            "prevalence": "Medium (regionally dominant in some countries)",
+            "notes": "Often PVL-positive, community-associated, also reported in livestock"
+        },
+        "virulence_profile": {
+            "toxins": ["lukS-PV", "lukF-PV", "sea", "sel", "tst (occasional)"],
+            "adhesins": ["fnbA", "clfA"],
+            "immune_evasion": ["scn", "chp", "sak"]
+        },
+        "resistance_profile": {
+            "antimicrobial_classes": ["Methicillin", "Erythromycin", "Clindamycin"],
+            "common_genes": ["mecA", "erm(C)", "msrA"],
+            "typical_patterns": ["Community-associated resistance pattern", "Often erythromycin-resistant"]
+        },
+        "clinical_significance": "Community-associated MRSA causing skin and soft tissue infections, occasionally necrotizing pneumonia; also MSSA strains exist.",
+        "outbreak_potential": "MEDIUM",
+        "risk_level": "MEDIUM",
+        "key_references": ["PMID:  32611695", "PMID: 39565128", "PMID: 32805430", "PMID: 34382901"]
+    },
     
     "CC98": {
         "primary_name": "Livestock-associated Lineage",
@@ -1280,6 +1445,16 @@ SPECIALIZED_LINEAGES = {
             "clinical": "Skin infections, necrotizing fasciitis",
             "risk": "HIGH"
         },
+
+        "CC707-Australian": {
+            "st": 707,
+            "sccmec": "IV",
+            "spa": "t202",
+            "virulence": ["lukS-PV", "lukF-PV", "sea"],
+            "clinical": "Community skin infections in Australia",
+            "risk": "MEDIUM"
+        },
+
         "CC1153-Arabian": {
             "st": 1153,
             "sccmec": "V",
@@ -1453,6 +1628,9 @@ GEOGRAPHIC_LINEAGES = {
         "Arabian Gulf": {"cc": "CC1153", "prevalence": "High", "setting": "Community"},
         "Middle Eastern": {"cc": "CC80", "prevalence": "Medium", "setting": "Community"},
         "Gaza": {"cc": "CC22", "prevalence": "Medium", "setting": "Hospital"}
+    },
+
+    "CENTRAL/EASTERN EUROPE": {"Europe": { "cc": "CC152", "prevalence": "Medium", "setting": "Community"}
     },
 
     "SCANDINAVIA": {

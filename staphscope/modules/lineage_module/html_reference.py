@@ -5,6 +5,7 @@ StaphScope Lineage Reference HTML Generator
 Creates a comprehensive reference document with ALL database content
 Author: Brown Beckley <brownbeckley94@gmail.com>
 Date: 2025
+Updated: 2026-05-09
 Send a quick mail for any issues or further explanations.
 Affiliation: University of Ghana Medical School-Department of Medical Bioichemistry
 """
@@ -691,9 +692,9 @@ def generate_comprehensive_lineage_html(output_path="staphscope_lineage_referenc
             
             <div style="background: white; padding: 25px; border-radius: 10px; margin-bottom: 20px;">
                 <h3 style="color: var(--primary); margin-bottom: 15px;">Database Information</h3>
-                <p><strong>Version:</strong> 2025</p>
-                <p><strong>Last Updated:</strong> 20/10/2025</p>
-                <p><strong>Total Lineages:</strong> 44</p>
+                <p><strong>Version:</strong> 2026</p>
+                <p><strong>Last Updated:</strong> 09/05/2026</p>
+                <p><strong>Total Lineages:</strong> 50</p>
                 <p><strong>Coverage:</strong> Global S. aureus lineages including HA-MRSA, CA-MRSA, and LA-MRSA</p>
                 
                 <h4 style="color: var(--primary); margin: 20px 0 10px 0;">Database Structure</h4>

@@ -55,7 +55,7 @@ class StaphFASTAQC:
         # Metadata
         self.metadata = {
             "tool_name": "StaphScope FASTA QC Analysis",
-            "version": "1.2.1", 
+            "version": "1.2.2", 
             "authors": ["Brown Beckley"],
             "email": "brownbeckley94@gmail.com",
             "github": "https://github.com/bbeckley-hub",
