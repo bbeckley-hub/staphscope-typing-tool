@@ -143,7 +143,7 @@ StaphScope delivers:
 | ***spa* Typing** | Hypervariable region analysis of protein A gene | *spa* type, repeat patterns, alignment metrics | <1 min |
 | **SCC*mec* Typing** | Methicillin resistance cassette characterization | SCC*mec* type (I-XIII), *mec*/*ccr* complexes, confidence scores | 1-2 min |
 | **AMR Profiling** | Comprehensive resistance gene detection (AMRFinderPlus) | 5,000+ AMR genes, risk categorization, cross-sample patterns | 2-3 min |
-| **ABRicate Screening** | Multi-database virulence/plasmid detection (9 databases) | Plasmid replicons, virulence factors, clinical flags | 3-4 min |
+| **ABRicate Screening** | Multi-database virulence/plasmid detection (10 databases) | Plasmid replicons, virulence factors, clinical flags | 3-4 min |
 | **Visualization Suite** | Publication-ready graphics using seaborn, plotly, matplotlib | 14+ graph types in PDF, PNG, SVG, interactive HTML | 1-2 min |
 | **Lineage Database** | Global epidemiological context | 44 major lineages, geographical distribution, outbreak potential | Instant |
 
