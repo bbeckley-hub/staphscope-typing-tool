@@ -309,10 +309,9 @@ source ~/.bashrc
 # Add channels in correct order
 conda config --add channels conda-forge
 conda config --add channels bioconda
-conda config --add channels bbeckley-hub
 
 # Create and activate environment
-conda create -n staphscope python=3.9 staphscope -y
+conda create -n staphscope -c conda-forge -c bioconda staphscope -y
 conda activate staphscope
 
 # Verify installation
@@ -469,13 +468,13 @@ StaphScope generates a comprehensive, organized output directory:
 
 ```
 Staphscope/
-├── abricate_results/          # Multi-database screening (9 DBs)
+├── abricate_results/          # Multi-database screening (10 DBs)
 ├── amr_results/               # AMR gene profiling (AMRFinder+)
 ├── mlst_results/              # MLST typing
 ├── sccmec_results/            # SCCmec typing
 ├── spa_results/               # spa typing
 ├── lineage_results/           # Phylogenetic lineage
-├── qc_results/                # FASTA quality control
+├── fasta_qc_results/          # FASTA quality control
 ├── visualization_results/     # Publication-ready plots
 └── Staphscope_final_report/   # Consolidated reports (HTML/JSON/TSV)
 ```
@@ -711,7 +710,7 @@ staphscope --update-amr-db
 # Solution:
 conda remove staphscope
 conda clean --all
-conda install -c bbeckley-hub staphscope  # Fresh install
+conda install -c bioconda staphscope  # Fresh install
 
 # Issue: Web version not loading
 # Solution: Check internet connection or try a different browser.
