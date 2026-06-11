@@ -722,7 +722,6 @@ conda install -c bioconda staphscope  # Fresh install
 2. **Search closed issues**: Many problems already solved
 3. **Create new issue**: Include:
    - Full error message
-   - `staphscope --version`
    - Conda environment list (`conda list`)
    - Example command that failed
 4. **Email support**: brownbeckley94@gmail.com (response within 48 hours)
