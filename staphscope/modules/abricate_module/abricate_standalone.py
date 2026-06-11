@@ -6,7 +6,7 @@ Author: Beckley Brown <brownbeckley94@gmail.com>
 Affiliation: University of Ghana Medical School-Department of Medical Biochemistry
 Date: 2025
 Send a quick mail for any issues or further explanations.
-version-1.2.2
+version-1.2.3
 """
 
 import subprocess
@@ -39,7 +39,7 @@ class AbricateExecutor:
         # Then calculate resources - MAXIMUM SPEED MODE
         self.cpus = self._calculate_optimal_cpus(cpus)
         
-        # All databases to be used - including the ones you specified
+        # All databases to be used 
         self.required_databases = [
             'ncbi', 'card', 'resfinder', 'vfdb', 'argannot', 
             'plasmidfinder', 'megares', 'ecoh', 'ecoli_vf', 'bacmet2'
@@ -64,7 +64,7 @@ class AbricateExecutor:
         
         self.metadata = {
             "tool_name": "StaphScope ABRicate",
-            "version": "1.2.2", 
+            "version": "1.2.3", 
             "authors": ["Brown Beckley"],
             "email": "brownbeckley94@gmail.com",
             "github": "https://github.com/bbeckley-hub",
@@ -91,7 +91,7 @@ class AbricateExecutor:
         ]
     
     def get_random_quote(self):
-        """Get a random science quote - SAME AS IN SPA TYPING CODE"""
+        """Get a random science quote"""
         return random.choice(self.science_quotes)
     
     def _setup_logging(self):

@@ -3,10 +3,9 @@
 StaphScope AMRfinderPlus Standalone Module - BUNDLED VERSION with DYNAMIC DATABASE
 Comprehensive AMR analysis with HTML, TSV, and JSON reporting - MAXIMUM SPEED VERSION
 Author: Beckley Brown <brownbeckley94@gmail.com>
-Date: 2025 / Updated 2026
-Send a quick mail for any issues or further explanations.
+Date: 2025 / Updated 2026-06-10
 Affiliation: University of Ghana Medical School-Department of Medical Biochemistry
-Uses BUNDLED AMRFinderPlus 4.2.7 with LATEST DYNAMIC DATABASE
+Uses AMRFinderPlus 4.2.7 with LATEST DYNAMIC DATABASE
 """
 
 import subprocess
@@ -14,6 +13,7 @@ import sys
 import os
 import glob
 import logging
+import shutil
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import List, Dict, Any, Optional
@@ -30,35 +30,23 @@ class AMRfinderPlusExecutor:
     """AMRfinderPlus executor with DYNAMIC database detection and update capability"""
     
     def __init__(self, cpus: int = None):
-        # Setup logging FIRST
         self.logger = self._setup_logging()
-        
-        # Get module directory
         self.module_dir = os.path.dirname(os.path.abspath(__file__))
-        
-        # Initialize available_ram before calculating cpus
         self.available_ram = self._get_available_ram()
-        
-        # Then calculate resources - MAXIMUM SPEED MODE
         self.cpus = self._calculate_optimal_cpus(cpus)
         
-        # Set bundled resources paths
         self.bundled_amrfinder = os.path.join(self.module_dir, "bin", "amrfinder")
         self.bundled_update = os.path.join(self.module_dir, "bin", "amrfinder_update")
-        
-        # DYNAMIC DATABASE: find the latest dated folder (starts with 20)
         self.bundled_database = self._get_latest_database()
         
-        # If no database found, log warning but do not raise (analysis will be skipped later)
         if self.bundled_database is None:
-            self.logger.warning("No AMRfinderPlus database found. Please run with --update-db to download.")
+            self.logger.warning("No AMRfinderPlus database found. Please run with --update-db or --force-update to download.")
         
-        # Read database version or set to Unknown
         db_version = self._get_database_version() if self.bundled_database else "Unknown"
         
         self.metadata = {
             "tool_name": "StaphScope AMRfinderPlus (BUNDLED)",
-            "version": "1.2.2",   
+            "version": "1.2.3",
             "authors": ["Brown Beckley"],
             "email": "brownbeckley94@gmail.com",
             "github": "https://github.com/bbeckley-hub",
@@ -68,44 +56,24 @@ class AMRfinderPlusExecutor:
             "database_version": db_version
         }
         
-        # S. aureus specific high-risk and critical gene sets
         self.high_risk_genes = {
-            # Critical Beta-lactam resistance (MRSA)
             'mecA', 'mecC', 'blaZ',
-            
-            # Glycopeptide resistance (VISA/VRSA)
             'vanA', 'vanB', 'vanC', 'vanD', 'vanE', 'vanG',
-            
-            # MLSB resistance
             'ermA', 'ermB', 'ermC', 'ermF', 'ermT', 'ermY',
             'mphC', 'msrA',
-            
-            # Aminoglycoside resistance
             'aacA-aphD', 'aac(6\')-aph(2")', 'aph(3\')-III', 'ant(4\')-Ia',
             'aac(6\')-Ie-aph(2")-Ia',
-            
-            # Tetracycline resistance
             'tetK', 'tetL', 'tetM', 'tetO',
-            
-            # Fluoroquinolone resistance
             'grlA', 'grlB', 'gyrA', 'gyrB', 'norA', 'norB',
-            
-            # Oxazolidinone resistance (Linezolid)
             'cfr', 'optrA', 'poxtA',
-            
-            # Other critical resistance
             'dfrA', 'dfrG', 'cat', 'fosB', 'fusB', 'fusC', 'mupA',
-            
-            # Multi-drug efflux pumps
             'qacA', 'qacB', 'qacC', 'smr', 'sepA'
         }
 
-        # CRITICAL RISK genes - highest priority for S. aureus
         self.critical_risk_genes = {
             'mecA', 'mecC', 'vanA', 'vanB', 'cfr', 'optrA', 'poxtA'
         }
         
-        # SAME SCIENCE QUOTES AS ABRICATE FOR CONSISTENCY
         self.science_quotes = [
             {"text": "The important thing is not to stop questioning. Curiosity has its own reason for existing.", "author": "Albert Einstein"},
             {"text": "Science is not only a disciple of reason but also one of romance and passion.", "author": "Stephen Hawking"},
@@ -125,11 +93,9 @@ class AMRfinderPlusExecutor:
         ]
     
     def get_random_quote(self):
-        """Get a random science quote - SAME AS IN ABRICATE CODE"""
         return random.choice(self.science_quotes)
     
     def _setup_logging(self):
-        """Setup logging - must be called first in __init__"""
         logging.basicConfig(
             level=logging.INFO,
             format='%(asctime)s - %(levelname)s - %(message)s'
@@ -137,59 +103,48 @@ class AMRfinderPlusExecutor:
         return logging.getLogger(__name__)
     
     def _get_available_ram(self) -> int:
-        """Get available RAM in GB"""
         try:
             ram_gb = psutil.virtual_memory().available / (1024 ** 3)
             return ram_gb
         except Exception as e:
             self.logger.warning(f"Could not detect RAM: {e}")
-            return 8  # Assume 8GB as fallback
+            return 8
     
     def _calculate_optimal_cpus(self, user_cpus: int = None) -> int:
-        """Calculate optimal number of CPU cores for MAXIMUM SPEED"""
         if user_cpus is not None:
             self._log_resource_info(user_cpus)
             return user_cpus
             
         try:
-            # Get total PHYSICAL CPU cores (not logical threads)
             total_physical_cores = psutil.cpu_count(logical=False) or os.cpu_count() or 2
             
-            # MAXIMUM SPEED RULES - AGGRESSIVE CPU USAGE
             if total_physical_cores <= 4:
-                optimal_cpus = total_physical_cores  # Use ALL cores on small systems
+                optimal_cpus = total_physical_cores
             elif total_physical_cores <= 8:
-                optimal_cpus = total_physical_cores - 1  # Use 7/8, 6/7, etc.
+                optimal_cpus = total_physical_cores - 1
             elif total_physical_cores <= 16:
-                optimal_cpus = max(8, total_physical_cores - 1)  # Use 14/16, 13/15, etc.
+                optimal_cpus = max(8, total_physical_cores - 1)
             elif total_physical_cores <= 32:
-                optimal_cpus = max(16, total_physical_cores - 3)  # Use 29/32, 27/31, etc.
+                optimal_cpus = max(16, total_physical_cores - 3)
             else:
-                optimal_cpus = min(32, int(total_physical_cores * 0.95))  # Use 95% on huge systems
+                optimal_cpus = min(32, int(total_physical_cores * 0.95))
             
-            # Ensure at least 1 CPU and not more than available cores
             optimal_cpus = max(1, min(optimal_cpus, total_physical_cores))
-            
             self._log_resource_info(optimal_cpus, total_physical_cores)
             return optimal_cpus
             
         except Exception as e:
-            # Fallback to using all available cores for maximum speed
             self.logger.warning(f"Could not detect CPU cores, using maximum available: {e}")
             return os.cpu_count() or 4
     
     def _log_resource_info(self, cpus: int, total_cores: int = None):
-        """Log resource allocation information"""
         self.logger.info(f"Available RAM: {self.available_ram:.1f} GB")
-        
         if total_cores:
             self.logger.info(f"System CPU cores: {total_cores}")
             utilization = (cpus / total_cores) * 100
             self.logger.info(f"Using CPU cores: {cpus} ({utilization:.1f}% of available cores)")
         else:
             self.logger.info(f"Using user-specified CPU cores: {cpus}")
-        
-        # Performance recommendations - MAXIMUM SPEED FOCUS
         if cpus == 1:
             self.logger.info("💡 Performance: Single-core (max speed for 1-core systems)")
         elif cpus <= 4:
@@ -200,12 +155,10 @@ class AMRfinderPlusExecutor:
             self.logger.info("💡 Performance: MAXIMUM SPEED MODE 🚀")
     
     def _get_latest_database(self) -> Optional[str]:
-        """Find the latest dated database folder in data/amrfinder_db/ (starts with 20)"""
         db_root = os.path.join(self.module_dir, "data", "amrfinder_db")
         if not os.path.exists(db_root):
             self.logger.warning(f"Database root directory not found: {db_root}")
             return None
-        # Find all subdirectories starting with '20'
         candidates = []
         for item in os.listdir(db_root):
             full_path = os.path.join(db_root, item)
@@ -214,39 +167,44 @@ class AMRfinderPlusExecutor:
         if not candidates:
             self.logger.warning("No database folder starting with '20' found.")
             return None
-        # Sort lexicographically (YYYY-MM-DD works) and take the latest
         latest = sorted(candidates)[-1]
         latest_path = os.path.join(db_root, latest)
         self.logger.info(f"Using latest database: {latest_path}")
         return latest_path
     
     def _get_database_version(self) -> str:
-        """Read version.txt from the database folder or fallback to folder name"""
         if not self.bundled_database:
             return "Unknown"
         version_file = os.path.join(self.bundled_database, "version.txt")
         if os.path.exists(version_file):
             with open(version_file, 'r') as f:
                 return f.read().strip()
-        # Fallback to folder name
         return os.path.basename(self.bundled_database)
     
-    def update_database(self) -> bool:
-        """Download the latest AMRfinderPlus database using bundled amrfinder_update"""
+    def update_database(self, force: bool = False) -> bool:
         if not os.path.exists(self.bundled_update):
             self.logger.error(f"amrfinder_update not found at {self.bundled_update}")
             return False
         if not os.access(self.bundled_update, os.X_OK):
             self.logger.warning("amrfinder_update not executable, fixing permissions...")
             os.chmod(self.bundled_update, 0o755)
+        
         db_dir = os.path.join(self.module_dir, "data", "amrfinder_db")
         os.makedirs(db_dir, exist_ok=True)
+        
+        if force:
+            self.logger.info("Forcing full database update – removing old folders...")
+            for item in os.listdir(db_dir):
+                full_path = os.path.join(db_dir, item)
+                if os.path.isdir(full_path) and item.startswith('20'):
+                    self.logger.info(f"  Removing {item}")
+                    shutil.rmtree(full_path)
+        
         self.logger.info("Updating AMRfinderPlus database...")
         try:
             cmd = [self.bundled_update, "--database", db_dir]
             result = subprocess.run(cmd, capture_output=True, text=True, check=True)
             self.logger.info("Database update completed successfully.")
-            # Re‑detect latest database
             self.bundled_database = self._get_latest_database()
             if self.bundled_database:
                 self.metadata['database_version'] = self._get_database_version()
@@ -261,7 +219,6 @@ class AMRfinderPlusExecutor:
             return False
     
     def check_amrfinder_installed(self) -> bool:
-        """Check if BUNDLED AMRfinderPlus is available and database exists"""
         try:
             if not os.path.exists(self.bundled_amrfinder):
                 self.logger.error(f"Bundled AMRfinderPlus not found at: {self.bundled_amrfinder}")
@@ -271,7 +228,6 @@ class AMRfinderPlusExecutor:
                 self.logger.warning(f"Bundled AMRfinderPlus not executable, fixing permissions...")
                 os.chmod(self.bundled_amrfinder, 0o755)
             
-            # Test the bundled version
             result = subprocess.run(
                 [self.bundled_amrfinder, '--version'], 
                 capture_output=True, 
@@ -281,7 +237,6 @@ class AMRfinderPlusExecutor:
             version_line = result.stdout.strip()
             self.logger.info(f"Bundled AMRfinderPlus version: {version_line}")
             
-            # Check database
             if self.bundled_database and os.path.exists(self.bundled_database):
                 self.logger.info(f"✅ Bundled database found: {self.bundled_database}")
                 db_version_file = os.path.join(self.bundled_database, "version.txt")
@@ -294,56 +249,65 @@ class AMRfinderPlusExecutor:
                 return True
             else:
                 self.logger.warning(f"⚠️  Bundled database not found at expected location.")
-                self.logger.info("Please run with --update-db to download the latest database.")
+                self.logger.info("Please run with --update-db or --force-update to download the latest database.")
                 return False
             
         except (subprocess.CalledProcessError, FileNotFoundError) as e:
             self.logger.error(f"Bundled AMRfinderPlus check failed: {e}")
-            self.logger.error("This tool requires the bundled AMRfinderPlus in bin/ directory")
             return False
     
-    def run_amrfinder_single_genome(self, genome_file: str, output_dir: str) -> Dict[str, Any]:
-        """Run BUNDLED AMRfinderPlus on a single genome - MAXIMUM SPEED"""
+    def run_amrfinder_single_genome(self, genome_file: str, output_dir: str, 
+                                     min_identity: float = None, min_coverage: float = None,
+                                     report_mutations: bool = True) -> Dict[str, Any]:
         genome_name = Path(genome_file).stem
         output_file = os.path.join(output_dir, f"{genome_name}_amrfinder.txt")
-        
-        # USE ALL AVAILABLE CPU CORES for each genome - MAXIMUM SPEED!
         run_cpus = self.cpus
         
-        # Build command with BUNDLED resources
         cmd = [
             self.bundled_amrfinder,
-            '-n', genome_file,  # Nucleotide mode
+            '-n', genome_file,
             '--output', output_file,
             '--threads', str(run_cpus),
-            '--plus',  # Include virulence factors
+            '--plus',
             '--organism', 'Staphylococcus_aureus'
         ]
         
-        # Add bundled database if it exists
         if self.bundled_database and os.path.exists(self.bundled_database):
             cmd.extend(['--database', self.bundled_database])
             self.logger.info(f"Using bundled database: {self.bundled_database}")
         else:
             self.logger.warning("Using default AMRfinderPlus database location")
         
+        if min_identity is not None:
+            cmd.extend(['--ident_min', str(min_identity)])
+            self.logger.info(f"Using minimum identity: {min_identity}")
+        if min_coverage is not None:
+            cmd.extend(['--coverage_min', str(min_coverage)])
+            self.logger.info(f"Using minimum coverage: {min_coverage}")
+        
+        mut_file = None
+        if report_mutations:
+            mut_file = os.path.join(output_dir, f"{genome_name}_mutations.tsv")
+            cmd.extend(['--mutation_all', mut_file])
+            self.logger.info(f"Will report mutations to {mut_file}")
+        
         self.logger.info(f"Running BUNDLED AMRfinderPlus: {genome_name} (using {run_cpus} CPU cores)")
         self.logger.debug(f"Command: {' '.join(cmd)}")
         
         try:
             result = subprocess.run(cmd, capture_output=True, text=True, check=True)
-            
-            # Parse results for reporting
             hits = self._parse_amrfinder_output(output_file)
-            
-            # Create individual HTML report
             self._create_amrfinder_html_report(genome_name, hits, output_dir)
+            
+            if mut_file and os.path.exists(mut_file):
+                self._create_mutation_html_report(genome_name, mut_file, output_dir)
             
             return {
                 'genome': genome_name,
                 'output_file': output_file,
                 'hits': hits,
                 'hit_count': len(hits),
+                'mutations_file': mut_file,
                 'status': 'success'
             }
             
@@ -362,22 +326,17 @@ class AMRfinderPlusExecutor:
             }
     
     def _parse_amrfinder_output(self, amrfinder_file: str) -> List[Dict]:
-        """Parse AMRFinderPlus 4.2.4 output file into structured data"""
         hits = []
         try:
             with open(amrfinder_file, 'r') as f:
                 lines = f.readlines()
                 
-            if not lines or len(lines) < 2:  # Need at least header and one data line
+            if not lines or len(lines) < 2:
                 return hits
                 
-            # Parse header for AMRFinderPlus 4.2.4
             headers = lines[0].strip().split('\t')
-            
-            # Log the headers for debugging
             self.logger.debug(f"Found headers: {headers}")
             
-            # Parse data lines
             for line_num, line in enumerate(lines[1:], 2):
                 line = line.strip()
                 if not line:
@@ -387,18 +346,17 @@ class AMRfinderPlusExecutor:
                 if len(parts) >= len(headers):
                     hit = dict(zip(headers, parts))
                     
-                    # Map to consistent field names for AMRFinderPlus 4.2.4
                     processed_hit = {
                         'protein_id': hit.get('Protein id', ''),
                         'contig_id': hit.get('Contig id', ''),
                         'start': hit.get('Start', ''),
                         'stop': hit.get('Stop', ''),
                         'strand': hit.get('Strand', ''),
-                        'gene_symbol': hit.get('Element symbol', ''),  # New: Element symbol
-                        'sequence_name': hit.get('Element name', ''),  # New: Element name
+                        'gene_symbol': hit.get('Element symbol', ''),
+                        'sequence_name': hit.get('Element name', ''),
                         'scope': hit.get('Scope', ''),
-                        'element_type': hit.get('Type', ''),  # New: Type
-                        'element_subtype': hit.get('Subtype', ''),  # New: Subtype
+                        'element_type': hit.get('Type', ''),
+                        'element_subtype': hit.get('Subtype', ''),
                         'class': hit.get('Class', ''),
                         'subclass': hit.get('Subclass', ''),
                         'method': hit.get('Method', ''),
@@ -412,12 +370,8 @@ class AMRfinderPlusExecutor:
                         'hmm_id': hit.get('HMM accession', ''),
                         'hmm_description': hit.get('HMM description', '')
                     }
-                    
-                    # Also store original hit for debugging
                     processed_hit['_original'] = hit
-                    
                     hits.append(processed_hit)
-                    
                 else:
                     self.logger.warning(f"Line {line_num} has {len(parts)} parts, expected {len(headers)}: {line[:100]}...")
                     
@@ -429,20 +383,243 @@ class AMRfinderPlusExecutor:
         self.logger.info(f"Parsed {len(hits)} AMR hits from {amrfinder_file}")
         return hits
     
-    def _create_amrfinder_html_report(self, genome_name: str, hits: List[Dict], output_dir: str):
-        """Create comprehensive HTML report for AMRfinderPlus results with beautiful styling"""
-        
-        # Analyze AMR results for S. aureus
-        analysis = self._analyze_saureus_amr_results(hits)
-        
-        # Get initial random quote
+    def _parse_mutations_file(self, mut_file: str) -> List[Dict]:
+        return self._parse_amrfinder_output(mut_file)
+    
+    def _create_mutation_html_report(self, genome_name: str, mutations_file: str, output_dir: str):
+        mutations = self._parse_mutations_file(mutations_file)
+        if not mutations:
+            self.logger.info(f"No mutations found for {genome_name}, skipping mutation HTML.")
+            return
+
         random_quote = self.get_random_quote()
-        
-        # Get current timestamp
+        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        html = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STAPHSCOPE - Mutation Report: {genome_name}</title>
+    <style>
+        * {{
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }}
+        body {{
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #7e22ce 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #ffffff;
+            padding: 20px;
+            min-height: 100vh;
+        }}
+        .container {{
+            max-width: 1400px;
+            margin: 0 auto;
+        }}
+        .header {{
+            text-align: center;
+            margin-bottom: 30px;
+        }}
+        .ascii-container {{
+            background: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            border: 2px solid rgba(0, 255, 0, 0.3);
+        }}
+        .ascii-art {{
+            font-family: 'Courier New', monospace;
+            font-size: 10px;
+            line-height: 1.1;
+            white-space: pre;
+            color: #00ff00;
+            text-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+            overflow-x: auto;
+        }}
+        .quote-container {{
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            text-align: center;
+            min-height: 100px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: opacity 0.5s ease-in-out;
+        }}
+        .quote-text {{
+            font-size: 18px;
+            font-style: italic;
+            margin-bottom: 10px;
+            color: #ffffff;
+        }}
+        .quote-author {{
+            font-size: 14px;
+            color: #fbbf24;
+            font-weight: bold;
+        }}
+        .report-section {{
+            background: rgba(255, 255, 255, 0.95);
+            color: #1f2937;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }}
+        .report-section h2 {{
+            color: #1e3a8a;
+            border-bottom: 3px solid #3b82f6;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }}
+        .table-responsive {{
+            width: 100%;
+            overflow-x: auto;
+            margin: 20px 0;
+        }}
+        .mutation-table {{
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            min-width: 1200px;
+        }}
+        .mutation-table th {{
+            background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: bold;
+        }}
+        .mutation-table td {{
+            padding: 10px;
+            border-bottom: 1px solid #e5e7eb;
+        }}
+        .mutation-table tr:nth-child(even) {{
+            background-color: #f8fafc;
+        }}
+        .footer {{
+            text-align: center;
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            font-size: 14px;
+        }}
+        .timestamp {{
+            color: #fbbf24;
+            font-weight: bold;
+        }}
+        .authorship {{
+            margin-top: 15px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            font-size: 12px;
+        }}
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <div class="ascii-container">
+            <div class="ascii-art">███████╗████████╗ █████╗ ██████╗ ██╗  ██╗███████╗ ██████╗ ██████╗ ██████╗ ███████╗
+██╔════╝╚══██╔══╝██╔══██╗██╔══██╗██║  ██║██╔════╝██╔════╝██╔═══██╗██╔══██╗██╔════╝
+███████╗   ██║   ███████║██████╔╝███████║███████╗██║     ██║   ██║██████╔╝█████╗  
+╚════██║   ██║   ██╔══██║██╔═══╝ ██╔══██║╚════██║██║     ██║   ██║██╔═══╝ ██╔══╝  
+███████║   ██║   ██║  ██║██║     ██║  ██║███████║╚██████╗╚██████╔╝██║     ███████╗
+╚══════╝   ╚═╝   ╚═╝  ╚═╝╚═╝     ╚═╝  ╚═╝╚══════╝ ╚═════╝ ╚═════╝ ╚═╝     ╚══════╝</div>
+        </div>
+        <div class="quote-container" id="quoteContainer">
+            <div class="quote-text" id="quoteText">"{random_quote['text']}"</div>
+            <div class="quote-author" id="quoteAuthor">— {random_quote['author']}</div>
+        </div>
+    </div>
+
+    <div class="report-section">
+        <h2>🧬 Point Mutation Report: {genome_name}</h2>
+        <p>All point mutations detected by AMRfinderPlus (including synonymous variants).</p>
+        <div class="table-responsive">
+            <table class="mutation-table">
+                <thead>
+                    <tr>
+                        <th>Gene Symbol</th><th>Mutation</th><th>Class</th><th>Subclass</th>
+                        <th>Contig</th><th>Start</th><th>Stop</th><th>Strand</th>
+                        <th>Coverage (%)</th><th>Identity (%)</th><th>Accession</th>
+                    </tr>
+                </thead>
+                <tbody>
+"""
+        for m in mutations:
+            html += f"""
+                    <tr>
+                        <td>{m.get('gene_symbol', '')}</td>
+                        <td>{m.get('element_name', '')}</td>
+                        <td>{m.get('class', '')}</td>
+                        <td>{m.get('subclass', '')}</td>
+                        <td>{m.get('contig_id', '')}</td>
+                        <td>{m.get('start', '')}</td>
+                        <td>{m.get('stop', '')}</td>
+                        <td>{m.get('strand', '')}</td>
+                        <td>{m.get('coverage', '')}</td>
+                        <td>{m.get('identity', '')}</td>
+                        <td>{m.get('accession', '')}</td>
+                    </tr>
+"""
+        html += f"""
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p><strong>STAPHSCOPE</strong> - Mutation Analysis Module</p>
+        <p class="timestamp">Generated: {current_time}</p>
+        <div class="authorship">
+            <p><strong>Technical Support & Inquiries:</strong></p>
+            <p>Author: Brown Beckley | GitHub: bbeckley-hub</p>
+            <p>Email: brownbeckley94@gmail.com</p>
+            <p>Affiliation: University of Ghana Medical School - Department of Medical Biochemistry</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    const quotes = {json.dumps(self.science_quotes)};
+    const quoteContainer = document.getElementById('quoteContainer');
+    const quoteText = document.getElementById('quoteText');
+    const quoteAuthor = document.getElementById('quoteAuthor');
+    function getRandomQuote() {{ return quotes[Math.floor(Math.random() * quotes.length)]; }}
+    function displayQuote() {{
+        quoteContainer.style.opacity = '0';
+        setTimeout(() => {{
+            const quote = getRandomQuote();
+            quoteText.textContent = '"' + quote.text + '"';
+            quoteAuthor.textContent = '— ' + quote.author;
+            quoteContainer.style.opacity = '1';
+        }}, 500);
+    }}
+    setInterval(displayQuote, 10000);
+</script>
+</body>
+</html>"""
+        out_file = os.path.join(output_dir, f"{genome_name}_mutations.html")
+        with open(out_file, 'w') as f:
+            f.write(html)
+        self.logger.info(f"✓ Mutation HTML report: {out_file}")
+
+    def _create_amrfinder_html_report(self, genome_name: str, hits: List[Dict], output_dir: str):
+        analysis = self._analyze_saureus_amr_results(hits)
+        random_quote = self.get_random_quote()
         current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         
-        # ==================== YOUR ORIGINAL HTML STARTS HERE ====================
-        # (No changes – exactly as you provided)
         html_content = f"""
 <!DOCTYPE html>
 <html lang="en">
@@ -723,7 +900,6 @@ class AMRfinderPlusExecutor:
             font-size: 0.9em;
         }}
         
-        /* FIX FOR REVIEWER: Make product column responsive with word wrapping */
         .product-cell {{
             white-space: normal !important;
             word-wrap: break-word;
@@ -731,7 +907,6 @@ class AMRfinderPlusExecutor:
             min-width: 200px;
         }}
         
-        /* FIX FOR REVIEWER: Make tables responsive */
         .table-responsive {{
             width: 100%;
             overflow-x: auto;
@@ -804,7 +979,6 @@ class AMRfinderPlusExecutor:
         </div>
 """
         
-        # Critical resistance alerts
         if analysis['critical_risk_genes'] > 0:
             html_content += f"""
         <div class="report-section" style="border-left: 4px solid #dc2626;">
@@ -819,7 +993,6 @@ class AMRfinderPlusExecutor:
         </div>
 """
         
-        # High-risk genes warning
         if analysis['high_risk_genes'] > 0 and analysis['critical_risk_genes'] == 0:
             html_content += f"""
         <div class="report-section" style="border-left: 4px solid #f59e0b;">
@@ -834,7 +1007,6 @@ class AMRfinderPlusExecutor:
         </div>
 """
         
-        # Resistance Mechanism Breakdown
         if any(analysis['resistance_mechanisms'].values()):
             html_content += """
         <div class="report-section">
@@ -877,7 +1049,6 @@ class AMRfinderPlusExecutor:
         </div>
 """
         
-        # Resistance classes summary
         if analysis['resistance_classes']:
             html_content += """
         <div class="report-section">
@@ -897,11 +1068,11 @@ class AMRfinderPlusExecutor:
             for class_name, genes in analysis['resistance_classes'].items():
                 gene_list = ", ".join(genes)
                 html_content += f"""
-                    <tr>
-                        <td><strong>{class_name}</strong></td>
-                        <td>{len(genes)}</td>
-                        <td class="product-cell">{gene_list}</td>
-                    </tr>
+                        <tr>
+                            <td><strong>{class_name}</strong></td>
+                            <td>{len(genes)}</td>
+                            <td class="product-cell">{gene_list}</td>
+                        </tr>
 """
             
             html_content += """
@@ -911,7 +1082,6 @@ class AMRfinderPlusExecutor:
         </div>
 """
         
-        # Detailed AMR genes table
         if hits:
             html_content += """
         <div class="report-section">
@@ -933,7 +1103,6 @@ class AMRfinderPlusExecutor:
 """
             
             for hit in hits:
-                # Determine row class based on risk level
                 row_class = "present"
                 gene_symbol = hit.get('gene_symbol', '')
                 if gene_symbol in analysis['critical_risk_list']:
@@ -941,7 +1110,6 @@ class AMRfinderPlusExecutor:
                 elif gene_symbol in analysis['high_risk_list']:
                     row_class = "high-risk"
                 
-                # Show full sequence name without truncation
                 sequence_display = hit.get('sequence_name', '')
                 
                 html_content += f"""
@@ -970,7 +1138,6 @@ class AMRfinderPlusExecutor:
         </div>
 """
         
-        # Footer
         html_content += f"""
         <div class="footer">
             <p><strong>STAPHSCOPE</strong> - AMRfinderPlus Analysis Module</p>
@@ -1006,13 +1173,11 @@ class AMRfinderPlusExecutor:
             }}, 500);
         }}
 
-        // Rotate quotes every 10 seconds
         setInterval(displayQuote, 10000);
     </script>
 </body>
 </html>"""
         
-        # Write HTML report
         html_file = os.path.join(output_dir, f"{genome_name}_amrfinder_report.html")
         with open(html_file, 'w') as f:
             f.write(html_content)
@@ -1020,8 +1185,6 @@ class AMRfinderPlusExecutor:
         self.logger.info(f"S. aureus AMRfinderPlus HTML report generated: {html_file}")
     
     def _analyze_saureus_amr_results(self, hits: List[Dict]) -> Dict[str, Any]:
-        """Analyze AMR results specifically for S. aureus with enhanced risk assessment"""
-        
         analysis = {
             'total_genes': len(hits),
             'resistance_classes': {},
@@ -1031,15 +1194,15 @@ class AMRfinderPlusExecutor:
             'high_risk_list': [],
             'critical_risk_list': [],
             'resistance_mechanisms': {
-                'mrsa': [],                    # Methicillin resistance
-                'glycopeptide_resistance': [], # Vancomycin resistance
-                'oxazolidinone_resistance': [], # Linezolid resistance
-                'mlsb_resistance': [],         # Macrolide-Lincosamide-Streptogramin B
-                'aminoglycoside_resistance': [], # Aminoglycoside resistance
-                'tetracycline_resistance': [], # Tetracycline resistance
-                'fluoroquinolone_resistance': [], # Fluoroquinolone resistance
-                'efflux_pumps': [],            # Multi-drug efflux pumps
-                'other_amr': []                # Other resistance mechanisms
+                'mrsa': [],
+                'glycopeptide_resistance': [],
+                'oxazolidinone_resistance': [],
+                'mlsb_resistance': [],
+                'aminoglycoside_resistance': [],
+                'tetracycline_resistance': [],
+                'fluoroquinolone_resistance': [],
+                'efflux_pumps': [],
+                'other_amr': []
             }
         }
         
@@ -1050,22 +1213,18 @@ class AMRfinderPlusExecutor:
             if not gene_symbol:
                 continue
             
-            # Categorize resistance mechanism
             self._categorize_resistance_mechanism(gene_symbol, resistance_class, analysis)
             
-            # Check for critical risk genes
             if gene_symbol in self.critical_risk_genes:
                 analysis['critical_risk_genes'] += 1
                 if gene_symbol not in analysis['critical_risk_list']:
                     analysis['critical_risk_list'].append(gene_symbol)
             
-            # Check for high-risk genes (includes critical ones)
             if gene_symbol in self.high_risk_genes:
                 analysis['high_risk_genes'] += 1
                 if gene_symbol not in analysis['high_risk_list']:
                     analysis['high_risk_list'].append(gene_symbol)
             
-            # Group by resistance class
             if resistance_class:
                 if resistance_class not in analysis['resistance_classes']:
                     analysis['resistance_classes'][resistance_class] = []
@@ -1076,33 +1235,16 @@ class AMRfinderPlusExecutor:
         return analysis
 
     def _categorize_resistance_mechanism(self, gene_symbol: str, resistance_class: str, analysis: Dict[str, Any]):
-        """Categorize genes by resistance mechanism for S. aureus"""
-        
-        # MRSA markers
         mrsa_genes = {'mecA', 'mecC'}
-        
-        # Glycopeptide resistance (VISA/VRSA)
         glycopeptide_genes = {'vanA', 'vanB', 'vanC', 'vanD', 'vanE', 'vanG'}
-        
-        # Oxazolidinone resistance (Linezolid)
         oxazolidinone_genes = {'cfr', 'optrA', 'poxtA'}
-        
-        # MLSB resistance
         mlsb_genes = {'ermA', 'ermB', 'ermC', 'ermF', 'ermT', 'ermY', 'mphC', 'msrA'}
-        
-        # Aminoglycoside resistance
         aminoglycoside_genes = {
             'aacA-aphD', 'aac(6\')-aph(2")', 'aph(3\')-III', 'ant(4\')-Ia',
             'aac(6\')-Ie-aph(2")-Ia'
         }
-        
-        # Tetracycline resistance
         tetracycline_genes = {'tetK', 'tetL', 'tetM', 'tetO'}
-        
-        # Fluoroquinolone resistance
         fluoroquinolone_genes = {'grlA', 'grlB', 'gyrA', 'gyrB', 'norA', 'norB'}
-        
-        # Efflux pumps
         efflux_pump_genes = {'qacA', 'qacB', 'qacC', 'smr', 'sepA'}
         
         if gene_symbol in mrsa_genes:
@@ -1125,17 +1267,11 @@ class AMRfinderPlusExecutor:
             analysis['resistance_mechanisms']['other_amr'].append(gene_symbol)
     
     def create_amr_summary(self, all_results: Dict[str, Any], output_base: str):
-        """Create comprehensive AMR summary files and HTML reports for all S. aureus samples"""
         self.logger.info("Creating S. aureus AMR summary files and HTML reports...")
         
-        # Create TSV summary files
         summary_file = os.path.join(output_base, "staph_amrfinder_summary.tsv")
-        
         with open(summary_file, 'w') as f:
-            # Write header
             f.write("Genome\tGene_Symbol\tSequence_Name\tClass\tSubclass\tCoverage\tIdentity\tScope\tElement_Type\tAccession\tContig\tStart\tStop\n")
-            
-            # Write data for all genomes
             for genome_name, result in all_results.items():
                 for hit in result['hits']:
                     row = [
@@ -1154,43 +1290,27 @@ class AMRfinderPlusExecutor:
                         hit.get('stop', '')
                     ]
                     f.write('\t'.join(str(x) for x in row) + '\n')
-        
         self.logger.info(f"✓ S. aureus AMR summary file created: {summary_file}")
         
-        # Create statistics summary
         stats_file = os.path.join(output_base, "staph_amrfinder_statistics_summary.tsv")
         with open(stats_file, 'w') as f:
             f.write("Genome\tTotal_AMR_Genes\tHigh_Risk_Genes\tCritical_Risk_Genes\tResistance_Classes\tGene_List\n")
-            
             for genome_name, result in all_results.items():
-                # Get unique genes
                 genes = list(set(hit.get('gene_symbol', '') for hit in result['hits'] if hit.get('gene_symbol')))
                 gene_list = ",".join(genes)
-                
-                # Count high-risk and critical genes
                 high_risk_count = sum(1 for gene in genes if gene in self.high_risk_genes)
                 critical_risk_count = sum(1 for gene in genes if gene in self.critical_risk_genes)
-                
-                # Get resistance classes
                 classes = list(set(hit.get('class', '') for hit in result['hits'] if hit.get('class')))
                 class_list = ",".join(classes)
-                
                 f.write(f"{genome_name}\t{result['hit_count']}\t{high_risk_count}\t{critical_risk_count}\t{class_list}\t{gene_list}\n")
-        
         self.logger.info(f"✓ S. aureus AMR statistics summary created: {stats_file}")
         
-        # Create comprehensive HTML summary report for staph_amrfinder_summary.tsv
         self._create_summary_html_report(all_results, output_base)
-        
-        # NEW: Create JSON summaries
         self.create_amr_json_summaries(all_results, output_base)
         self.create_amr_master_json_summary(all_results, output_base)
     
     def create_amr_json_summaries(self, all_results: Dict[str, Any], output_base: str):
-        """Create JSON summary files for AMR genes across all genomes."""
         self.logger.info("Creating JSON AMR summaries...")
-        
-        # Collect all hits with genome information
         all_hits = []
         for genome_name, result in all_results.items():
             for hit in result['hits']:
@@ -1202,20 +1322,17 @@ class AMRfinderPlusExecutor:
             self.logger.info("No AMR hits found, skipping JSON summaries")
             return
         
-        # Calculate gene frequency
         gene_frequency = {}
         for hit in all_hits:
             gene = hit['gene_symbol']
             if not gene:
                 continue
-                
             if gene not in gene_frequency:
                 gene_frequency[gene] = {
                     'count': 0,
                     'genomes': set(),
                     'details': []
                 }
-            
             gene_frequency[gene]['count'] += 1
             gene_frequency[gene]['genomes'].add(hit['genome'])
             gene_frequency[gene]['details'].append({
@@ -1228,11 +1345,9 @@ class AMRfinderPlusExecutor:
                 'accession': hit['accession']
             })
         
-        # Convert sets to lists for JSON serialization
         for gene in gene_frequency:
             gene_frequency[gene]['genomes'] = list(gene_frequency[gene]['genomes'])
         
-        # Create JSON structure
         json_summary = {
             'metadata': {
                 'tool': 'StaphScope AMRfinderPlus',
@@ -1248,20 +1363,16 @@ class AMRfinderPlusExecutor:
             },
             'gene_frequency': gene_frequency,
             'summary_by_genome': self._create_amr_genome_summary(all_results),
-            'hits': all_hits[:1000]  # Include first 1000 hits to keep file manageable
+            'hits': all_hits[:1000]
         }
         
-        # Write JSON file
         json_file = os.path.join(output_base, "staph_amrfinder_summary.json")
         with open(json_file, 'w') as f:
             json.dump(json_summary, f, indent=2, default=str)
-        
         self.logger.info(f"✓ Created JSON summary: {json_file}")
     
     def _create_amr_genome_summary(self, all_results: Dict) -> Dict:
-        """Create summary of AMR hits by genome."""
         genome_summary = {}
-        
         for genome_name, result in all_results.items():
             if genome_name not in genome_summary:
                 genome_summary[genome_name] = {
@@ -1271,18 +1382,13 @@ class AMRfinderPlusExecutor:
                     'high_risk_genes': [],
                     'resistance_classes': set()
                 }
-            
             for hit in result['hits']:
                 gene = hit['gene_symbol']
                 if not gene:
                     continue
-                    
                 genome_summary[genome_name]['genes'].add(gene)
-                
                 if hit['class']:
                     genome_summary[genome_name]['resistance_classes'].add(hit['class'])
-                
-                # Classify genes
                 if gene in self.critical_risk_genes:
                     if gene not in genome_summary[genome_name]['critical_risk_genes']:
                         genome_summary[genome_name]['critical_risk_genes'].append(gene)
@@ -1290,18 +1396,13 @@ class AMRfinderPlusExecutor:
                     if gene not in genome_summary[genome_name]['high_risk_genes']:
                         genome_summary[genome_name]['high_risk_genes'].append(gene)
         
-        # Convert sets to lists
         for genome in genome_summary:
             genome_summary[genome]['genes'] = list(genome_summary[genome]['genes'])
             genome_summary[genome]['resistance_classes'] = list(genome_summary[genome]['resistance_classes'])
-        
         return genome_summary
     
     def create_amr_master_json_summary(self, all_results: Dict[str, Any], output_base: str):
-        """Create a master JSON summary for AMR genes with cross-genome patterns."""
         self.logger.info("Creating master JSON summary for AMR genes...")
-        
-        # Collect overall statistics
         master_summary = {
             'metadata': {
                 'tool': 'StaphScope AMRfinderPlus Module',
@@ -1318,27 +1419,19 @@ class AMRfinderPlusExecutor:
             'cross_genome_patterns': {}
         }
         
-        # Analyze each genome
         genomes_with_critical = 0
         genomes_with_high_risk = 0
         
         for genome_name, result in all_results.items():
-            # Collect genes for this genome
             genes = [hit['gene_symbol'] for hit in result['hits'] if hit['gene_symbol']]
             unique_genes = set(genes)
-            
-            # Get resistance classes
             classes = set(hit['class'] for hit in result['hits'] if hit['class'])
-            
-            # Check for critical and high-risk genes
             has_critical = any(gene in unique_genes for gene in self.critical_risk_genes)
             has_high_risk = any(gene in unique_genes for gene in self.high_risk_genes)
-            
             if has_critical:
                 genomes_with_critical += 1
             if has_high_risk:
                 genomes_with_high_risk += 1
-            
             master_summary['genome_summaries'][genome_name] = {
                 'total_hits': result['hit_count'],
                 'unique_genes': len(unique_genes),
@@ -1347,8 +1440,6 @@ class AMRfinderPlusExecutor:
                 'resistance_classes': list(classes),
                 'genes': list(unique_genes)
             }
-            
-            # Track critical findings
             if has_critical:
                 critical_genes_found = [g for g in unique_genes if g in self.critical_risk_genes]
                 if 'genomes_with_critical' not in master_summary['critical_findings']:
@@ -1358,14 +1449,12 @@ class AMRfinderPlusExecutor:
                     'critical_genes': critical_genes_found
                 })
         
-        # Find cross-genome patterns (genes found in multiple genomes)
         all_hits_by_gene = {}
         for genome_name, result in all_results.items():
             for hit in result['hits']:
                 gene = hit['gene_symbol']
                 if not gene:
                     continue
-                    
                 if gene not in all_hits_by_gene:
                     all_hits_by_gene[gene] = {
                         'count': 0,
@@ -1373,13 +1462,11 @@ class AMRfinderPlusExecutor:
                         'classes': set(),
                         'details': []
                     }
-                
                 all_hits_by_gene[gene]['count'] += 1
                 if genome_name not in all_hits_by_gene[gene]['genomes']:
                     all_hits_by_gene[gene]['genomes'].append(genome_name)
                 if hit['class']:
                     all_hits_by_gene[gene]['classes'].add(hit['class'])
-                
                 all_hits_by_gene[gene]['details'].append({
                     'genome': genome_name,
                     'sequence_name': hit['sequence_name'],
@@ -1387,22 +1474,19 @@ class AMRfinderPlusExecutor:
                     'identity': hit['identity']
                 })
         
-        # Convert sets to lists
         for gene in all_hits_by_gene:
             all_hits_by_gene[gene]['classes'] = list(all_hits_by_gene[gene]['classes'])
         
-        # Find common genes (present in >1 genome)
         common_genes = {}
         for gene, data in all_hits_by_gene.items():
-            if data['count'] > 1:  # Gene found in multiple genomes
+            if data['count'] > 1:
                 common_genes[gene] = data
         
-        # Get top genes
         top_genes = sorted(
             [(gene, data) for gene, data in all_hits_by_gene.items()],
             key=lambda x: x[1]['count'],
             reverse=True
-        )[:20]  # Top 20 most frequent genes
+        )[:20]
         
         master_summary['cross_genome_patterns'] = {
             'total_genes_found': len(all_hits_by_gene),
@@ -1417,18 +1501,13 @@ class AMRfinderPlusExecutor:
             }
         }
         
-        # Write master JSON
         json_file = os.path.join(output_base, "staph_amrfinder_master_summary.json")
         with open(json_file, 'w') as f:
             json.dump(master_summary, f, indent=2, default=str)
-        
         self.logger.info(f"✓ Created master JSON summary: {json_file}")
         return master_summary
     
     def _create_summary_html_report(self, all_results: Dict[str, Any], output_base: str):
-        """Create comprehensive HTML summary report with pattern discovery"""
-        
-        # Collect all data for pattern analysis
         all_hits = []
         for genome_name, result in all_results.items():
             for hit in result['hits']:
@@ -1436,17 +1515,14 @@ class AMRfinderPlusExecutor:
                 hit_with_genome['genome'] = genome_name
                 all_hits.append(hit_with_genome)
         
-        # Calculate statistics
         total_genomes = len(all_results)
         total_hits = len(all_hits)
         
-        # Track critical and high-risk genes across all genomes
         critical_genes_found = set()
         high_risk_genes_found = set()
         genomes_with_critical = 0
         genomes_with_high_risk = 0
         
-        # Calculate genes per genome and gene frequency
         genes_per_genome = {}
         gene_frequency = {}
         
@@ -1456,33 +1532,22 @@ class AMRfinderPlusExecutor:
                 gene = hit.get('gene_symbol', '')
                 if gene:
                     genome_genes.add(gene)
-                    
-                    # Track gene frequency
                     if gene not in gene_frequency:
                         gene_frequency[gene] = set()
                     gene_frequency[gene].add(genome_name)
-            
             genes_per_genome[genome_name] = genome_genes
-            
-            # Check for critical and high-risk genes
             has_critical = any(gene in genome_genes for gene in self.critical_risk_genes)
             has_high_risk = any(gene in genome_genes for gene in self.high_risk_genes)
-            
             if has_critical:
                 genomes_with_critical += 1
                 critical_genes_found.update(genome_genes.intersection(self.critical_risk_genes))
-            
             if has_high_risk:
                 genomes_with_high_risk += 1
                 high_risk_genes_found.update(genome_genes.intersection(self.high_risk_genes))
         
-        # Get initial random quote
         random_quote = self.get_random_quote()
-        
-        # Get current timestamp
         current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         
-        # ==================== YOUR ORIGINAL SUMMARY HTML STARTS HERE ====================
         html_content = f"""
 <!DOCTYPE html>
 <html lang="en">
@@ -1755,7 +1820,6 @@ class AMRfinderPlusExecutor:
             font-size: 0.9em;
         }}
         
-        /* FIX FOR REVIEWER: Make sequence column responsive with word wrapping */
         .sequence-cell {{
             white-space: normal !important;
             word-wrap: break-word;
@@ -1763,7 +1827,6 @@ class AMRfinderPlusExecutor:
             min-width: 200px;
         }}
         
-        /* FIX FOR REVIEWER: Make tables responsive */
         .table-responsive {{
             width: 100%;
             overflow-x: auto;
@@ -1774,7 +1837,6 @@ class AMRfinderPlusExecutor:
             min-width: 800px;
         }}
         
-        /* Frequency classes for gene prevalence */
         .frequency-high {{ background-color: #fee2e2; font-weight: bold; border-left: 4px solid #dc2626; }}
         .frequency-medium-high {{ background-color: #fef3c7; border-left: 4px solid #f59e0b; }}
         .frequency-medium {{ background-color: #d1fae5; border-left: 4px solid #10b981; }}
@@ -1826,7 +1888,6 @@ class AMRfinderPlusExecutor:
         </div>
 """
         
-        # CRITICAL RISK ALERT
         if critical_genes_found:
             html_content += f"""
         <div class="report-section" style="border-left: 4px solid #dc2626;">
@@ -1844,7 +1905,6 @@ class AMRfinderPlusExecutor:
         </div>
 """
         
-        # High-risk genes summary
         if high_risk_genes_found and not critical_genes_found:
             html_content += f"""
         <div class="report-section" style="border-left: 4px solid #f59e0b;">
@@ -1859,7 +1919,6 @@ class AMRfinderPlusExecutor:
         </div>
 """
         
-        # Genes by Genome table
         html_content += """
         <div class="report-section">
             <h2 style="color: #1e3a8a; border-bottom: 3px solid #3b82f6; padding-bottom: 10px;">🔍 Genes by Genome</h2>
@@ -1880,17 +1939,15 @@ class AMRfinderPlusExecutor:
             genes = genes_per_genome.get(genome, set())
             critical_genes = [g for g in genes if g in self.critical_risk_genes]
             high_risk_genes = [g for g in genes if g in self.high_risk_genes and g not in self.critical_risk_genes]
-            
             critical_display = ", ".join(critical_genes) if critical_genes else "None"
             high_risk_display = ", ".join(high_risk_genes) if high_risk_genes else "None"
-            
             html_content += f"""
-                    <tr>
-                        <td><strong>{genome}</strong></td>
-                        <td>{len(genes)}</td>
-                        <td class="sequence-cell">{critical_display}</td>
-                        <td class="sequence-cell">{high_risk_display}</td>
-                    </tr>
+                        <tr>
+                            <td><strong>{genome}</strong></td>
+                            <td>{len(genes)}</td>
+                            <td class="sequence-cell">{critical_display}</td>
+                            <td class="sequence-cell">{high_risk_display}</td>
+                        </tr>
 """
         
         html_content += """
@@ -1915,13 +1972,10 @@ class AMRfinderPlusExecutor:
                     <tbody>
 """
         
-        # Calculate gene frequency
         for gene, genomes in sorted(gene_frequency.items(), key=lambda x: len(x[1]), reverse=True):
             frequency = len(genomes)
             genome_list = ", ".join(sorted(genomes))
             frequency_percent = (frequency / total_genomes) * 100 if total_genomes > 0 else 0
-            
-            # Determine risk level
             if gene in self.critical_risk_genes:
                 risk_level = '<span class="risk-badge">CRITICAL</span>'
             elif gene in self.high_risk_genes:
@@ -1929,7 +1983,6 @@ class AMRfinderPlusExecutor:
             else:
                 risk_level = '<span class="success-badge">Standard</span>'
             
-            # Color coding based on frequency
             if frequency_percent >= 75:
                 frequency_class = "frequency-high"
                 prevalence_badge = '<span class="risk-badge">Very High</span>'
@@ -1947,13 +2000,13 @@ class AMRfinderPlusExecutor:
                 prevalence_badge = '<span class="success-badge">Rare</span>'
             
             html_content += f"""
-                    <tr class="{frequency_class}">
-                        <td><strong>{gene}</strong></td>
-                        <td>{frequency} ({frequency_percent:.1f}%)</td>
-                        <td>{prevalence_badge}</td>
-                        <td>{risk_level}</td>
-                        <td class="sequence-cell">{genome_list}</td>
-                    </tr>
+                        <tr class="{frequency_class}">
+                            <td><strong>{gene}</strong></td>
+                            <td>{frequency} ({frequency_percent:.1f}%)</td>
+                            <td>{prevalence_badge}</td>
+                            <td>{risk_level}</td>
+                            <td class="sequence-cell">{genome_list}</td>
+                        </tr>
 """
         
         html_content += f"""
@@ -1996,81 +2049,62 @@ class AMRfinderPlusExecutor:
             }}, 500);
         }}
 
-        // Rotate quotes every 10 seconds
         setInterval(displayQuote, 10000);
     </script>
 </body>
 </html>"""
         
-        # Write summary HTML report
         html_file = os.path.join(output_base, "staph_amrfinder_summary_report.html")
         with open(html_file, 'w') as f:
             f.write(html_content)
-        
         self.logger.info(f"✓ S. aureus AMRfinderPlus summary HTML report created: {html_file}")
     
-    def process_single_genome(self, genome_file: str, output_base: str = "amrfinder_results") -> Dict[str, Any]:
-        """Process a single genome with BUNDLED AMRfinderPlus"""
+    def process_single_genome(self, genome_file: str, output_base: str = "amrfinder_results",
+                              min_identity: float = None, min_coverage: float = None,
+                              report_mutations: bool = True) -> Dict[str, Any]:
         genome_name = Path(genome_file).stem
         results_dir = os.path.join(output_base, genome_name)
-        
         self.logger.info(f"=== PROCESSING GENOME: {genome_name} ===")
-        
-        # Create output directory
         os.makedirs(results_dir, exist_ok=True)
-        
-        # Run AMRfinderPlus
-        result = self.run_amrfinder_single_genome(genome_file, results_dir)
-        
+        result = self.run_amrfinder_single_genome(genome_file, results_dir,
+                                                  min_identity=min_identity,
+                                                  min_coverage=min_coverage,
+                                                  report_mutations=report_mutations)
         status_icon = "✓" if result['status'] == 'success' else "✗"
         self.logger.info(f"{status_icon} {genome_name}: {result['hit_count']} AMR hits")
-        
         return result
     
-    def process_multiple_genomes(self, genome_pattern: str, output_base: str = "amrfinder_results") -> Dict[str, Any]:
-        """Process multiple genomes using wildcard pattern - MAXIMUM SPEED"""
+    def process_multiple_genomes(self, genome_pattern: str, output_base: str = "amrfinder_results",
+                                 min_identity: float = None, min_coverage: float = None,
+                                 report_mutations: bool = True) -> Dict[str, Any]:
         
-        # Check BUNDLED AMRfinderPlus installation
         if not self.check_amrfinder_installed():
             raise RuntimeError("BUNDLED AMRfinderPlus not properly installed")
         
-        # Find genome files (support all FASTA extensions)
         fasta_patterns = [genome_pattern, f"{genome_pattern}.fasta", f"{genome_pattern}.fa", 
                          f"{genome_pattern}.fna", f"{genome_pattern}.faa"]
-        
         genome_files = []
         for pattern in fasta_patterns:
             genome_files.extend(glob.glob(pattern))
-        
-        # Remove duplicates
         genome_files = list(set(genome_files))
         
         if not genome_files:
             raise FileNotFoundError(f"No FASTA files found matching pattern: {genome_pattern}")
         
         self.logger.info(f"Found {len(genome_files)} genomes: {[Path(f).name for f in genome_files]}")
-        
-        # Create output directory
         os.makedirs(output_base, exist_ok=True)
         
-        # Process genomes with threading - MAXIMUM SPEED CONFIGURATION
         all_results = {}
-        
-        # Calculate optimal concurrent genomes - BE AGGRESSIVE FOR SPEED
-        max_concurrent = max(1, min(self.cpus, len(genome_files), int(self.available_ram / 1.5)))  # 1.5GB per genome
-        
+        max_concurrent = max(1, min(self.cpus, len(genome_files), int(self.available_ram / 1.5)))
         self.logger.info(f"🚀 MAXIMUM SPEED: Using {max_concurrent} concurrent genome processing jobs")
         self.logger.info(f"   Each AMRfinderPlus instance uses {self.cpus} threads internally")
-        self.logger.info(f"   This provides maximum throughput for multiple genome analysis")
         
         with ThreadPoolExecutor(max_workers=max_concurrent) as executor:
-            # Submit all tasks
             future_to_genome = {
-                executor.submit(self.process_single_genome, genome, output_base): genome 
+                executor.submit(self.process_single_genome, genome, output_base,
+                                min_identity, min_coverage, report_mutations): genome 
                 for genome in genome_files
             }
-            
-            # Collect results as they complete
             for future in as_completed(future_to_genome):
                 genome = future_to_genome[future]
                 try:
@@ -2086,68 +2120,356 @@ class AMRfinderPlusExecutor:
                         'status': 'failed'
                     }
         
-        # Create AMR summary files and HTML reports after processing all genomes
         self.create_amr_summary(all_results, output_base)
+        self.create_mutation_summary(all_results, output_base)
         
         self.logger.info("=== S. AUREUS AMR ANALYSIS COMPLETE ===")
         self.logger.info(f"Processed {len(all_results)} genomes")
         self.logger.info(f"Results saved to: {output_base}")
-        
         return all_results
+    
+    def create_mutation_summary(self, all_results: Dict[str, Any], output_base: str):
+        self.logger.info("Creating mutation batch summaries...")
+        all_mutations = []
+        genome_mutation_counts = {}
+        for genome_name, result in all_results.items():
+            if 'mutations_file' in result and result['mutations_file'] and os.path.exists(result['mutations_file']):
+                muts = self._parse_mutations_file(result['mutations_file'])
+                if muts:
+                    genome_mutation_counts[genome_name] = len(muts)
+                    for m in muts:
+                        m_copy = m.copy()
+                        m_copy['genome'] = genome_name
+                        all_mutations.append(m_copy)
+                else:
+                    genome_mutation_counts[genome_name] = 0
+            else:
+                genome_mutation_counts[genome_name] = 0
+        
+        if not all_mutations:
+            self.logger.info("No mutations found in any genome; skipping mutation summaries.")
+            return
+        
+        tsv_file = os.path.join(output_base, "mutation_summary.tsv")
+        with open(tsv_file, 'w') as f:
+            fieldnames = ['genome', 'gene_symbol', 'element_name', 'class', 'subclass',
+                          'contig_id', 'start', 'stop', 'strand', 'coverage', 'identity', 'accession']
+            f.write('\t'.join(fieldnames) + '\n')
+            for m in all_mutations:
+                row = [m.get('genome', ''),
+                       m.get('gene_symbol', ''),
+                       m.get('element_name', ''),
+                       m.get('class', ''),
+                       m.get('subclass', ''),
+                       m.get('contig_id', ''),
+                       m.get('start', ''),
+                       m.get('stop', ''),
+                       m.get('strand', ''),
+                       m.get('coverage', ''),
+                       m.get('identity', ''),
+                       m.get('accession', '')]
+                f.write('\t'.join(str(x) for x in row) + '\n')
+        self.logger.info(f"✓ Mutation TSV: {tsv_file}")
+        
+        self._create_mutation_summary_html(all_mutations, genome_mutation_counts, output_base)
+        self._create_mutation_json_summaries(all_mutations, genome_mutation_counts, output_base)
+    
+    def _create_mutation_summary_html(self, all_mutations: List[Dict], genome_counts: Dict[str, int], output_base: str):
+        gene_freq = {}
+        for m in all_mutations:
+            gene = m.get('gene_symbol', 'unknown')
+            mutation = m.get('element_name', '')
+            key = f"{gene}_{mutation}" if mutation else gene
+            if key not in gene_freq:
+                gene_freq[key] = {'count': 0, 'genomes': set(), 'gene': gene, 'mutation': mutation,
+                                  'class': m.get('class',''), 'subclass': m.get('subclass','')}
+            gene_freq[key]['count'] += 1
+            gene_freq[key]['genomes'].add(m.get('genome',''))
+        for k in gene_freq:
+            gene_freq[k]['genomes'] = ', '.join(sorted(gene_freq[k]['genomes']))
+        sorted_freq = sorted(gene_freq.values(), key=lambda x: x['count'], reverse=True)
+        
+        random_quote = self.get_random_quote()
+        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        
+        html = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STAPHSCOPE - Mutation Batch Summary</title>
+    <style>
+        * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+        body {{
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #7e22ce 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #ffffff;
+            padding: 20px;
+            min-height: 100vh;
+        }}
+        .container {{ max-width: 1400px; margin: 0 auto; }}
+        .header {{ text-align: center; margin-bottom: 30px; }}
+        .ascii-container {{
+            background: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            border: 2px solid rgba(0, 255, 0, 0.3);
+        }}
+        .ascii-art {{
+            font-family: 'Courier New', monospace;
+            font-size: 10px;
+            line-height: 1.1;
+            white-space: pre;
+            color: #00ff00;
+            text-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+            overflow-x: auto;
+        }}
+        .quote-container {{
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            text-align: center;
+            min-height: 100px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: opacity 0.5s ease-in-out;
+        }}
+        .quote-text {{ font-size: 18px; font-style: italic; margin-bottom: 10px; color: #ffffff; }}
+        .quote-author {{ font-size: 14px; color: #fbbf24; font-weight: bold; }}
+        .report-section {{
+            background: rgba(255, 255, 255, 0.95);
+            color: #1f2937;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }}
+        .report-section h2 {{
+            color: #1e3a8a;
+            border-bottom: 3px solid #3b82f6;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }}
+        .summary-table {{
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 14px;
+        }}
+        .summary-table th {{
+            background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: bold;
+        }}
+        .summary-table td {{
+            padding: 12px;
+            border-bottom: 1px solid #e5e7eb;
+        }}
+        .summary-table tr:nth-child(even) {{ background-color: #f8fafc; }}
+        .summary-table tr:hover {{ background-color: #e0f2fe; }}
+        .table-responsive {{ width: 100%; overflow-x: auto; margin: 20px 0; }}
+        .sequence-cell {{ white-space: normal !important; word-wrap: break-word; max-width: 400px; min-width: 200px; }}
+        .footer {{
+            text-align: center;
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            font-size: 14px;
+        }}
+        .timestamp {{ color: #fbbf24; font-weight: bold; }}
+        .authorship {{ margin-top: 15px; padding: 15px; background: rgba(255, 255, 255, 0.1); border-radius: 8px; font-size: 12px; }}
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <div class="ascii-container">
+            <div class="ascii-art">███████╗████████╗ █████╗ ██████╗ ██╗  ██╗███████╗ ██████╗ ██████╗ ██████╗ ███████╗
+██╔════╝╚══██╔══╝██╔══██╗██╔══██╗██║  ██║██╔════╝██╔════╝██╔═══██╗██╔══██╗██╔════╝
+███████╗   ██║   ███████║██████╔╝███████║███████╗██║     ██║   ██║██████╔╝█████╗  
+╚════██║   ██║   ██╔══██║██╔═══╝ ██╔══██║╚════██║██║     ██║   ██║██╔═══╝ ██╔══╝  
+███████║   ██║   ██║  ██║██║     ██║  ██║███████║╚██████╗╚██████╔╝██║     ███████╗
+╚══════╝   ╚═╝   ╚═╝  ╚═╝╚═╝     ╚═╝  ╚═╝╚══════╝ ╚═════╝ ╚═════╝ ╚═╝     ╚══════╝</div>
+        </div>
+        <div class="quote-container" id="quoteContainer">
+            <div class="quote-text" id="quoteText">"{random_quote['text']}"</div>
+            <div class="quote-author" id="quoteAuthor">— {random_quote['author']}</div>
+        </div>
+    </div>
 
+    <div class="report-section">
+        <h2>🧬 Mutation Summary Across All Genomes</h2>
+        <p>Total genomes with mutations: {len([c for c in genome_counts.values() if c > 0])} / {len(genome_counts)}<br>
+        Total mutation events: {len(all_mutations)}</p>
+    </div>
+
+    <div class="report-section">
+        <h2>📊 Mutation Frequency by Gene/Mutation</h2>
+        <div class="table-responsive">
+            <table class="summary-table">
+                <thead>
+                    <tr><th>Gene</th><th>Mutation</th><th>Count</th><th>Genomes</th><th>Class</th><th>Subclass</th></tr>
+                </thead>
+                <tbody>
+"""
+        for item in sorted_freq:
+            html += f"""
+                    <tr>
+                        <td><strong>{item['gene']}</strong></td>
+                        <td>{item['mutation']}</td>
+                        <td>{item['count']}</td>
+                        <td class="sequence-cell">{item['genomes']}</td>
+                        <td>{item['class']}</td>
+                        <td>{item['subclass']}</td>
+                    </tr>
+"""
+        html += """
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p><strong>STAPHSCOPE</strong> - Mutation Batch Summary Module</p>
+        <p class="timestamp">Generated: """ + current_time + """</p>
+        <div class="authorship">
+            <p><strong>Technical Support & Inquiries:</strong></p>
+            <p>Author: Brown Beckley | GitHub: bbeckley-hub</p>
+            <p>Email: brownbeckley94@gmail.com</p>
+            <p>Affiliation: University of Ghana Medical School - Department of Medical Biochemistry</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    const quotes = """ + json.dumps(self.science_quotes) + """;
+    const quoteContainer = document.getElementById('quoteContainer');
+    const quoteText = document.getElementById('quoteText');
+    const quoteAuthor = document.getElementById('quoteAuthor');
+    function getRandomQuote() { return quotes[Math.floor(Math.random() * quotes.length)]; }
+    function displayQuote() {
+        quoteContainer.style.opacity = '0';
+        setTimeout(() => {
+            const quote = getRandomQuote();
+            quoteText.textContent = '"' + quote.text + '"';
+            quoteAuthor.textContent = '— ' + quote.author;
+            quoteContainer.style.opacity = '1';
+        }, 500);
+    }
+    setInterval(displayQuote, 10000);
+</script>
+</body>
+</html>"""
+        out_file = os.path.join(output_base, "mutation_summary.html")
+        with open(out_file, 'w') as f:
+            f.write(html)
+        self.logger.info(f"✓ Mutation HTML summary: {out_file}")
+    
+    def _create_mutation_json_summaries(self, all_mutations: List[Dict], genome_counts: Dict[str, int], output_base: str):
+        genome_summary = {genome: {'total_mutations': count} for genome, count in genome_counts.items()}
+        gene_mutation_map = defaultdict(lambda: {'count': 0, 'genomes': set(), 'details': []})
+        for m in all_mutations:
+            gene = m.get('gene_symbol', 'unknown')
+            mut_name = m.get('element_name', '')
+            key = f"{gene}_{mut_name}"
+            gene_mutation_map[key]['count'] += 1
+            gene_mutation_map[key]['genomes'].add(m.get('genome',''))
+            gene_mutation_map[key]['details'].append({
+                'genome': m.get('genome'),
+                'gene': gene,
+                'mutation': mut_name,
+                'class': m.get('class'),
+                'subclass': m.get('subclass'),
+                'contig': m.get('contig_id'),
+                'start': m.get('start'),
+                'stop': m.get('stop')
+            })
+        for v in gene_mutation_map.values():
+            v['genomes'] = list(v['genomes'])
+        master_json = {
+            'metadata': {
+                'tool': 'StaphScope AMRfinderPlus Mutation Module',
+                'version': self.metadata['version'],
+                'analysis_date': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                'total_genomes_analyzed': len(genome_counts),
+                'total_mutations_detected': len(all_mutations)
+            },
+            'genome_summary': genome_summary,
+            'mutation_frequency': {k: {'count': v['count'], 'genomes': v['genomes']} for k, v in gene_mutation_map.items()},
+            'all_mutations': all_mutations
+        }
+        json_file = os.path.join(output_base, "mutation_master_summary.json")
+        with open(json_file, 'w') as f:
+            json.dump(master_json, f, indent=2, default=str)
+        self.logger.info(f"✓ Mutation master JSON: {json_file}")
 
 def main():
-    """Command line interface"""
     parser = argparse.ArgumentParser(
-        description='StaphScope AMRfinderPlus Analysis - S. aureus Antimicrobial Resistance - BUNDLED VERSION',
+        description='StaphScope AMRfinderPlus Analysis - S. aureus Antimicrobial Resistance',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
   # Run on all S. aureus FASTA files (auto-detect optimal CPU cores - MAXIMUM SPEED)
   python staph_amrfinder.py "*.fna"
   
-  # Run on specific pattern with auto CPU detection
-  python staph_amrfinder.py "MRSA_*.fasta"
+  # Run with custom identity and coverage thresholds
+  python staph_amrfinder.py "*.fna" --min-identity 0.95 --min-coverage 0.9
   
-  # Force specific number of CPU cores
-  python staph_amrfinder.py "*.fa" --cpus 16
-
-  # Update database only
-  python staph_amrfinder.py --update-db
-
+  # Skip mutation reporting (mutations are reported by default)
+  python staph_amrfinder.py "*.fna" --skip-mutations
+  
+  # Force update database to the latest version (overwrites old)
+  python staph_amrfinder.py --force-update
+  
   # Show current database version
   python staph_amrfinder.py --db-version
-
-MAXIMUM SPEED RESOURCE MANAGEMENT:
-  • 1-4 cores: Uses ALL CPU cores (100% utilization)
-  • 5-8 cores: Uses (cores-1) for optimal performance  
-  • 9-16 cores: Uses (cores-2) for high performance
-  • 17-32 cores: Uses (cores-4) for maximum throughput
-  • 32+ cores: Uses 85% of cores (capped at 32)
-
-Supported FASTA extensions: .fasta, .fa, .fna, .faa
         """
     )
     
-    # Make pattern optional (nargs='?') so that --update-db and --db-version work without it
     parser.add_argument('pattern', nargs='?', help='File pattern for S. aureus genomes (e.g., "*.fasta", "genomes/*.fna")')
     parser.add_argument('--cpus', '-c', type=int, default=None, 
                        help='Number of CPU cores to use (default: auto-detect optimal for MAXIMUM SPEED)')
     parser.add_argument('--output', '-o', default='staph_amrfinder_results', 
                        help='Output directory (default: staph_amrfinder_results)')
+    parser.add_argument('--min-identity', type=float, default=None,
+                       help='Minimum identity (0..1) for hits. Default: AMRfinder auto threshold')
+    parser.add_argument('--min-coverage', type=float, default=None,
+                       help='Minimum coverage of reference (0..1). Default: 0.5')
+    parser.add_argument('--skip-mutations', action='store_true',
+                       help='Skip point mutation reporting (mutations are reported by default)')
     parser.add_argument('--update-db', action='store_true', 
-                       help='Update AMRfinderPlus database to latest version and exit')
+                       help='Update AMRfinderPlus database to latest version (incremental) and exit')
+    parser.add_argument('--force-update', action='store_true', 
+                       help='Force complete database update (overwrites existing folders) and exit')
     parser.add_argument('--db-version', action='store_true', 
                        help='Show current database version and exit')
     
     args = parser.parse_args()
     
-    # Handle database operations without requiring pattern
-    if args.update_db or args.db_version:
+    if args.update_db or args.force_update or args.db_version:
         executor = AMRfinderPlusExecutor(cpus=args.cpus)
+        if args.force_update:
+            print("Forcing full database update (this will overwrite existing database)...")
+            success = executor.update_database(force=True)
+            if success:
+                print("Database updated successfully.")
+            else:
+                print("Database update failed.")
+            sys.exit(0)
         if args.update_db:
-            print("Updating AMRfinderPlus database...")
-            success = executor.update_database()
+            print("Updating AMRfinderPlus database (incremental)...")
+            success = executor.update_database(force=False)
             if success:
                 print("Database updated successfully.")
             else:
@@ -2158,18 +2480,19 @@ Supported FASTA extensions: .fasta, .fa, .fna, .faa
             print(f"Database path: {executor.bundled_database or 'Not found'}")
             sys.exit(0)
     
-    # For analysis, pattern is required
     if not args.pattern:
-        parser.error("Please provide a file pattern for genomes (or use --update-db / --db-version)")
+        parser.error("Please provide a file pattern for genomes (or use --update-db / --force-update / --db-version)")
     
     executor = AMRfinderPlusExecutor(cpus=args.cpus)
     
     try:
-        results = executor.process_multiple_genomes(args.pattern, args.output)
+        results = executor.process_multiple_genomes(args.pattern, args.output,
+                                                    min_identity=args.min_identity,
+                                                    min_coverage=args.min_coverage,
+                                                    report_mutations=not args.skip_mutations)
         
-        # Print summary
         executor.logger.info("\n" + "="*50)
-        executor.logger.info("🧫 StaphScope AMRfinderPlus FINAL SUMMARY (BUNDLED)")
+        executor.logger.info("🧫 StaphScope AMRfinderPlus FINAL SUMMARY")
         executor.logger.info("="*50)
         
         total_hits = 0
@@ -2178,12 +2501,9 @@ Supported FASTA extensions: .fasta, .fa, .fna, .faa
         
         for genome_name, result in results.items():
             total_hits += result['hit_count']
-            
-            # Count high-risk and critical genes
             genes = [hit.get('gene_symbol') for hit in result['hits'] if hit.get('gene_symbol')]
             high_risk_count += sum(1 for gene in genes if gene in executor.high_risk_genes)
             critical_risk_count += sum(1 for gene in genes if gene in executor.critical_risk_genes)
-            
             executor.logger.info(f"✓ {genome_name}: {result['hit_count']} AMR hits")
         
         executor.logger.info("\n📊 S. AUREUS SUMMARY STATISTICS:")
@@ -2193,24 +2513,23 @@ Supported FASTA extensions: .fasta, .fa, .fna, .faa
         executor.logger.info(f"   CRITICAL RISK genes detected: {critical_risk_count}")
         executor.logger.info(f"   Average AMR hits per genome: {total_hits / len(results) if results else 0:.1f}")
         
-        # Show summary file locations
         executor.logger.info("\n📁 SUMMARY FILES CREATED:")
         executor.logger.info(f"   Comprehensive AMR data: {args.output}/staph_amrfinder_summary.tsv")
         executor.logger.info(f"   Statistics summary: {args.output}/staph_amrfinder_statistics_summary.tsv")
         executor.logger.info(f"   JSON summary: {args.output}/staph_amrfinder_summary.json")
         executor.logger.info(f"   Master JSON summary: {args.output}/staph_amrfinder_master_summary.json")
         executor.logger.info(f"   Summary HTML report: {args.output}/staph_amrfinder_summary_report.html")
+        executor.logger.info(f"   Mutation TSV: {args.output}/mutation_summary.tsv")
+        executor.logger.info(f"   Mutation HTML summary: {args.output}/mutation_summary.html")
+        executor.logger.info(f"   Mutation master JSON: {args.output}/mutation_master_summary.json")
         
-        # Performance summary
         executor.logger.info("\n⚡ MAXIMUM SPEED PERFORMANCE SUMMARY:")
         executor.logger.info(f"   CPU cores utilized: {executor.cpus} cores")
         executor.logger.info(f"   Available RAM: {executor.available_ram:.1f} GB")
         executor.logger.info("   Processing mode: MAXIMUM SPEED CONCURRENT MODE 🚀")
-        executor.logger.info("   Strategy: Process multiple genomes concurrently with optimal core allocation")
         executor.logger.info(f"   Bundled AMRfinderPlus: {executor.metadata['amrfinder_version']}")
         executor.logger.info(f"   Bundled database: {executor.metadata['database_version']}")
         
-        # Critical risk warning if detected
         if critical_risk_count > 0:
             executor.logger.info("\n🚨 CRITICAL RISK ALERT: Last-resort antibiotic resistance genes detected!")
             executor.logger.info("   Immediate clinical attention and infection control measures required.")
@@ -2223,7 +2542,6 @@ Supported FASTA extensions: .fasta, .fa, .fna, .faa
         import traceback
         executor.logger.error(traceback.format_exc())
         sys.exit(1)
-
 
 if __name__ == "__main__":
     main()

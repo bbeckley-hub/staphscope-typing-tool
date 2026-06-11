@@ -2,7 +2,7 @@
 """
 StaphScope spa Typing Module - Fixed Version with Dynamic Path Discovery
 Author: Brown Beckley <brownbeckley94@gmail.com>
-Date: 2025
+Date: 2026-06-10
 Send a quick mail for any issues or further explanations.
 Affiliation: University of Ghana Medical School-Department of Medical Bioichemistry
 """
@@ -19,8 +19,8 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import List, Dict, Any
 import re
 from datetime import datetime
-import random  # Added for rotating quotes
-import json  # Added for JSON output
+import random  
+import json 
 
 class SpaTypingAnalyzer:
     """Comprehensive spa typing analyzer with beautiful HTML reporting"""

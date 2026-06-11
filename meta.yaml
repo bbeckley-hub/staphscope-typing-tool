@@ -1,5 +1,5 @@
 {% set name = "staphscope" %}
-{% set version = "1.2.2" %}
+{% set version = "1.2.3" %}
 
 package:
   name: {{ name|lower }}
@@ -10,7 +10,7 @@ source:
 
 build:
   noarch: python
-  number: 0
+  number: 1
   script: "{{ PYTHON }} -m pip install . -vv"
   entry_points:
     - staphscope = staphscope.staphscope:main
@@ -36,7 +36,7 @@ requirements:
     - matplotlib>=3.5.0
     - seaborn>=0.12.0
     - scipy>=1.10.1
-    # Optional/extra (for full features)
+    # Optional/extra 
     - plotly>=5.10.0
     # Bioinformatic tools
     - abricate >=1.2.0
