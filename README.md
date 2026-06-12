@@ -633,9 +633,6 @@ abricate --setupdb
 # Solution: Ensure bind mounts are correct and use --user if needed
 docker run --rm -u $(id -u):$(id -g) -v ... bbeckleyhub/staphscope ...
 
-# Issue: "TypeError" in summary reporter (v1.2.2)
-# Solution: Upgrade to v1.2.3 – the bug is fixed.
-
 # Issue: Cross‑run contamination in /tmp
 # Solution: Use --keep-temp only for debugging; otherwise temp dirs are auto‑deleted.
 ```
