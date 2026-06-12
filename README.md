@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/bbeckley-hub/staphscope-typing-tool/main/staphscope.png" alt="StaphScopw Banner" width="100%">
+  <img src="https://raw.githubusercontent.com/bbeckley-hub/staphscope-typing-tool/main/staphscope.png" alt="StaphScope Banner" width="100%">
 </p>
 
 <div align="center">
@@ -17,8 +17,6 @@
 ![License](https://anaconda.org/bbeckley-hub/staphscope/badges/license.svg)
 [![DOI](https://img.shields.io/badge/DOI-10.1186%2Fs12864--026--12609--x-blue)](https://doi.org/10.1186/s12864-026-12609-x)
 
-
-
 [![Docker Pulls](https://img.shields.io/docker/pulls/bbeckleyhub/staphscope)](https://hub.docker.com/r/bbeckleyhub/staphscope)
 [![Docker Image Size](https://img.shields.io/docker/image-size/bbeckleyhub/staphscope/latest)](https://hub.docker.com/r/bbeckleyhub/staphscope)
 [![Docker Version](https://img.shields.io/docker/v/bbeckleyhub/staphscope?sort=semver)](https://hub.docker.com/r/bbeckleyhub/staphscope)
@@ -27,20 +25,17 @@
 [![Stage](https://img.shields.io/badge/status-active-brightgreen)](#)
 ![Conda Downloads](https://img.shields.io/conda/dn/bioconda/staphscope?label=Conda%20Downloads)
 
-
 [![Powered by 🧠](https://img.shields.io/badge/powered%20by-science%20🔬-purple)](https://github.com/bbeckley-hub/staphscope-typing-tool)
 [![Coffee](https://img.shields.io/badge/built%20with-%E2%98%95%20coffee-orange)](https://github.com/bbeckley-hub/staphscope-typing-tool)
 [![Made with ❤️](https://img.shields.io/badge/made%20with-%E2%9D%A4%EF%B8%8F-red)](https://github.com/bbeckley-hub/staphscope-typing-tool)
 [![Open Source Love](https://badges.frapsoft.com/os/v1/open-source.svg?v=103)](https://github.com/ellerbrock/open-source-badges/)
 [![Made for Research](https://img.shields.io/badge/made%20for-Research-0066cc.svg)](https://github.com/bbeckley-hub)
 
-
 [![Documentation](https://img.shields.io/badge/docs-mkdocs-526CFE?logo=materialformkdocs)](https://bbeckley-hub.github.io/staphscope-typing-tool)
 [![RST Badge](https://img.shields.io/badge/documentation-RST-4CAF50.svg)](https://www.sphinx-doc.org/)
 [![Last Commit](https://img.shields.io/github/last-commit/bbeckley-hub/staphscope-typing-tool)](https://github.com/bbeckley-hub/staphscope-typing-tool/commits)
 [![Contributors](https://img.shields.io/github/contributors/bbeckley-hub/staphscope-typing-tool)](https://github.com/bbeckley-hub/staphscope-typing-tool/graphs/contributors)
 [![Security: bandit](https://img.shields.io/badge/security-bandit-yellow.svg)](https://github.com/PyCQA/bandit)
-
 
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Imports: isort](https://img.shields.io/badge/%20imports-isort-%231674b1?style=flat&labelColor=ef8336)](https://pycqa.github.io/isort/)
@@ -56,22 +51,18 @@
 [![Lineages](https://img.shields.io/badge/Lineages-50%20major-673AB7.svg)](https://github.com/bbeckley-hub/staphscope-typing-tool)
 [![AI Ready](https://img.shields.io/badge/AI-Ready%20Reports-00C853.svg)](https://github.com/bbeckley-hub/staphscope-typing-tool#ai-integration-guide)
 
-
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![Conda](https://img.shields.io/badge/conda-✓-green.svg)](https://docs.conda.io/en/latest/)
 [![MIT License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![GitHub Issues](https://img.shields.io/github/issues/bbeckley-hub/staphscope-typing-tool)](https://github.com/bbeckley-hub/staphscope-typing-tool/issues)
+[![GitHub Issues](https://img.shields.io/badge/issues-Open-orange)](https://github.com/bbeckley-hub/staphscope-typing-tool/issues)
 [![GitHub Stars](https://img.shields.io/github/stars/bbeckley-hub/staphscope-typing-tool)](https://github.com/bbeckley-hub/staphscope-typing-tool/stargazers)
 [![Sample Report](https://img.shields.io/badge/📊-View_Sample_Report-blue)](https://htmlpreview.github.io/?https://bbeckley-hub.github.io/staphscope-typing-tool/#summary)
 ![Profile Views](https://komarev.com/ghpvc/?username=bbeckley-hub&label=Profile%20Views&color=0e75b6&style=flat)
 [![Google Scholar](https://img.shields.io/badge/Google%20Scholar-Profile-4285F4?style=flat&logo=googlescholar&logoColor=white)](https://scholar.google.com/citations?user=CYNOsqIAAAAJ&hl=en)
 
-
-
 ![GitHub stats](https://github-readme-stats.vercel.app/api?username=bbeckley-hub&show_icons=true&theme=radical)
 ![Top Langs](https://github-readme-stats.vercel.app/api/top-langs/?username=bbeckley-hub&layout=compact&theme=radical)
 [![GitHub Streak](https://streak-stats.demolab.com?user=bbeckley-hub&theme=radical&date_format=j%20M%5B%20Y%5D)](https://git.io/streak-stats)
-
 
 **Two ways to use StaphScope:**  
 🖥️ **Command-line tool** for high-throughput, local analysis  
@@ -81,14 +72,24 @@
 
 ---
 
+## 🎉 **What’s New in v1.2.3** (June 2026)
+
+- **🚀 HPC‑friendly temporary directories** – Every module now runs inside a fresh `/tmp` directory that is **automatically deleted** after completion. No more cross‑run contamination, permission errors, or leftover files. Docker and Singularity just work (no `--writable-tmpfs` hack needed).
+- **🔁 Dynamic grouping by typing** – In the Ultimate Reporter, click buttons to reorganise genome lists by MLST, spa, SCCmec, or any combination (e.g., ST‑spa‑SCCmec). Instantly see which clones carry specific genes or mutations – a **game changer for outbreak detection**.
+- **🧬 Mutation tab** – All AMRfinderPlus point mutations are now integrated into the Ultimate Reporter as a dedicated, gene‑centric table with full grouping support. Filter buttons for linezolid‑, quinolone‑, and rifampin‑related mutations.
+- **⚙️ AMR fine‑tuning flags** – New options: `--amr-min-identity`, `--amr-min-coverage`, `--skip-amr-mutations`, `--amr-force-update`. Finally control those hit thresholds.
+
+---
+
 ## 📋 **Table of Contents**
 
 - [🎯 Overview](#-overview)
 - [✨ Key Features](#-key-features)
+- [🆕 What’s New in v1.2.3](#-whats-new-in-v123-june-2026)
 - [🌐 StaphScope Web Platform](#-staphscope-web-platform)
 - [⚡ Quick Start (CLI)](#-quick-start-cli)
 - [🔧 Installation (CLI)](#-installation-cli)
-- [🐳 Staphscope Docker Usage](#-Staphscope-docker-usage)
+- [🐳 Staphscope Docker & Singularity Usage](#-staphscope-docker--singularity-usage)
 - [🔗 Integrated External Tools & Dependencies](#-integrated-external-tools--dependencies)
 - [🚀 Usage Guide (CLI)](#-usage-guide-cli)
 - [📁 Output Structure](#-output-structure)
@@ -104,29 +105,29 @@
 - [🙏 Acknowledgements](#-acknowledgements)
 - [👥 Authors & Contact](#-authors--contact)
 - [📄 License](#-license)
-- [📚 Third-Party Tool Citations](#-Third-Party-Tool-Citations)
+- [📚 Third-Party Tool Citations](#-third-party-tool-citations)
 
 ---
 
 ## 🎯 **Overview**
 
-**StaphScope** is an automated, locally-executable computational pipeline designed specifically for comprehensive *Staphylococcus aureus* genomic surveillance. It addresses the critical bottleneck in MRSA (Methicillin-Resistant *S. aureus*) research by integrating **six essential genotyping methods** into a single, cohesive workflow.
+**StaphScope** is an automated, locally-executable computational pipeline designed specifically for comprehensive *Staphylococcus aureus* genomic surveillance. It addresses the critical bottleneck in MRSA research by integrating **six essential genotyping methods** into a single, cohesive workflow.
 
 ### 🌍 **The Problem**
-- **Fragmented Bioinformatics**: Traditional MRSA analysis requires 5+ separate tools with conflicting dependencies
-- **Resource Barriers**: Web-based services need constant internet and raise data privacy concerns
-- **Time Constraints**: Generalist platforms take hours; outbreaks need answers in minutes
-- **Interpretation Challenges**: Raw data without epidemiological context limits actionable insights
+- **Fragmented Bioinformatics**: Traditional MRSA analysis requires 5+ separate tools with conflicting dependencies.
+- **Resource Barriers**: Web-based services need constant internet and raise data privacy concerns.
+- **Time Constraints**: Generalist platforms take hours; outbreaks need answers in minutes.
+- **Interpretation Challenges**: Raw data without epidemiological context limits actionable insights.
 
 ### 💡 **Our Solution**
 StaphScope delivers:
-- **✅ Single-command installation** via Conda
-- **✅ 10-14 minute complete analysis** (24 samples, 16 cores)
-- **✅ 100% local execution** with data privacy
-- **✅ Intelligent resource management** using Python's psutil library
-- **✅ Interactive HTML reports** with epidemiological context
-- **✅ Automated MRSA/MSSA classification** with confidence scoring
-- **✅ Web-based interface** for non-bioinformaticians
+- **✅ Single-command installation** via Conda.
+- **✅ 10-14 minute complete analysis** (24 samples, 16 cores).
+- **✅ 100% local execution** with data privacy.
+- **✅ Intelligent resource management** using Python's psutil library.
+- **✅ Interactive HTML reports** with epidemiological context.
+- **✅ Automated MRSA/MSSA classification** with confidence scoring.
+- **✅ Web-based interface** for non-bioinformaticians.
 
 **Perfect for**: Clinical labs, outbreak investigations, research studies, and public health surveillance.
 
@@ -138,35 +139,61 @@ StaphScope delivers:
 
 | Module | 🎯 Purpose | 📊 Key Outputs | ⚡ Speed |
 |--------|------------|----------------|----------|
-| **FASTA QC** | Comprehensive quality control (N50/N70/N90, GC%, contig stats) | HTML, TSV, JSON reports with visual summaries | <30 sec |
-| **MLST Typing** | Phylogenetic classification via 7 housekeeping genes | ST, CC, allele profiles, epidemiological context | <1 min |
-| ***spa* Typing** | Hypervariable region analysis of protein A gene | *spa* type, repeat patterns, alignment metrics | <1 min |
-| **SCC*mec* Typing** | Methicillin resistance cassette characterization | SCC*mec* type (I-XIII), *mec*/*ccr* complexes, confidence scores | 1-2 min |
-| **AMR Profiling** | Comprehensive resistance gene detection (AMRFinderPlus) | 5,000+ AMR genes, risk categorization, cross-sample patterns | 2-3 min |
-| **ABRicate Screening** | Multi-database virulence/plasmid detection (10 databases) | Plasmid replicons, virulence factors, clinical flags | 3-4 min |
-| **Visualization Suite** | Publication-ready graphics using seaborn, plotly, matplotlib | 14+ graph types in PDF, PNG, SVG, interactive HTML | 1-2 min |
-| **Lineage Database** | Global epidemiological context | 44 major lineages, geographical distribution, outbreak potential | Instant |
+| **FASTA QC** | Comprehensive quality control (N50, GC%, contig stats) | HTML, TSV, JSON reports | <30 sec |
+| **MLST Typing** | Phylogenetic classification via 7 housekeeping genes | ST, CC, allele profiles | <1 min |
+| ***spa* Typing** | Hypervariable region analysis of protein A gene | *spa* type, repeat patterns | <1 min |
+| **SCC*mec* Typing** | Methicillin resistance cassette characterization | SCC*mec* type (I-XIII), confidence scores | 1-2 min |
+| **AMR Profiling** | Comprehensive resistance gene detection (AMRFinderPlus) | 5,000+ AMR genes, risk categorization | 2-3 min |
+| **ABRicate Screening** | Multi-database virulence/plasmid detection (10 DBs) | Plasmid replicons, virulence factors | 3-4 min |
+| **Visualization Suite** | Publication-ready graphics using seaborn, plotly, matplotlib | 14+ graph types in PDF, PNG, SVG, HTML | 1-2 min |
+| **Lineage Database** | Global epidemiological context | 50 major lineages, geographical distribution | Instant |
 
 ### 🛡️ **MRSA-Specific Innovations**
-- **Automated MRSA Classification**: Based on concurrent *mecA/mecC* + SCC*mec* detection
-- **Clinical Gene Flagging**: Automatic highlighting of PVL, enterotoxins, *van* genes
-- **Risk Assessment**: Categorizes genes as 'Critical Risk' (e.g., *mecA*, *vanA*) or 'High Risk'
-- **Cross-Genome Pattern Discovery**: Summarizes gene frequencies across entire sample sets
-- **Curated Lineage Database**: 44 major lineages with HA-MRSA, CA-MRSA, LA-MRSA classifications
+- **Automated MRSA Classification**: Based on concurrent *mecA/mecC* + SCC*mec* detection.
+- **Clinical Gene Flagging**: Automatic highlighting of PVL, enterotoxins, *van* genes.
+- **Risk Assessment**: Categorizes genes as 'Critical Risk' (e.g., *mecA*, *vanA*) or 'High Risk'.
+- **Cross-Genome Pattern Discovery**: Summarizes gene frequencies across entire sample sets.
+- **Curated Lineage Database**: 50 major lineages with HA-MRSA, CA-MRSA, LA-MRSA classifications.
 
-### 🚀 **Performance Advantages**
-- **8-10× faster** than Bactopia for *S. aureus*-specific analyses
-- **Linear scaling** with sample numbers (R² = 0.931)
-- **Dynamic resource allocation** using Python psutil
-- **Low memory footprint**: Runs on 4GB RAM, scales to HPC clusters
+### 🚀 **v1.2.3 Exclusive Features**
 
-## 📊 Sample Output
+#### 🔁 **Dynamic Grouping by Typing**
+In the Ultimate Reporter, every gene‑centric table (AMR, Virulence, BACMET, Plasmids, Mutations) now includes a row of grouping buttons:
+- **MLST** – group by sequence type
+- **spa** – group by spa type
+- **SCCmec** – group by SCCmec type
+- **ST‑spa**, **ST‑SCCmec**, **spa‑SCCmec** – two‑way combinations
+- **Triple (ST‑spa‑SCCmec)** – the holy trinity of *S. aureus* typing
 
-See a complete interactive report generated by StaphScope:
+Click any button and the genome list reorganises instantly – genomes are grouped under sub‑headers (e.g., “ST5”, “ST8”).  
+**Why this matters:**  
+- **Outbreak investigation:** See at a glance: *“All 15 outbreak isolates carry mecA and lukF-PV, and they all belong to ST8‑t008‑SCCmec IV.”*  
+- **Population structure:** Identify which clones carry specific resistance or virulence genes.  
+- **Co‑selection studies:** See if biocide resistance (qac) is limited to a particular SCCmec type.  
 
-[![Sample Report](https://img.shields.io/badge/📊-View_Sample_Report-blue)](https://htmlpreview.github.io/?https://bbeckley-hub.github.io/staphscope-typing-tool/#summary)
+#### 🧬 **Mutation Tab**  
+All AMRfinderPlus point mutations now live in a dedicated tab, with the same gene‑centric, groupable format:
+- **Columns:** Gene, Mutation, Class, Subclass, Count, scrollable genome list.
+- **Filter buttons:** “Linezolid‑related”, “Quinolone‑related”, “Rifampin‑related”, plus direct links to `gyrA`, `parC`, `rpoB`, `23S`.
+- **Why it matters:** Point mutations in `gyrA`/`parC` cause fluoroquinolone resistance; `rpoB` mutations cause rifampin resistance; `23S` mutations cause linezolid resistance – a last‑line drug for MRSA. Now you can track them all, grouped by typing.
 
-*The report includes AMR and virulence gene tables, filter buttons, combination tables, and FASTA QC metrics.*
+#### ⚙️ **AMR Fine‑Tuning Flags**
+New command‑line options give you precise control over AMR detection:
+```bash
+--amr-min-identity 0.95   # Minimum percent identity (default: AMRfinder auto)
+--amr-min-coverage 0.9    # Minimum coverage of reference gene (default: 0.5)
+--skip-amr-mutations      # Disable point mutation reporting (enabled by default)
+--amr-force-update        # Force complete redownload of AMR database
+--update-amr-db           # Incremental update of AMR database
+--force-update-amr-db     # Force full update (overwrites old)
+```
+
+#### 🖥️ **Singularity / HPC Made Easy**
+Because all writes now go to `/tmp`, you no longer need `--writable-tmpfs` (or any special flags). Just run:
+```bash
+singularity run staphscope.sif -i "/data/*.fasta" -o /data/output
+```
+All temporary files are ephemeral and owned by you.
 
 ---
 
@@ -212,7 +239,7 @@ conda activate staphscope
 mamba create -n staphscope -c conda-forge -c bioconda staphscope -y
 mamba activate staphscope
 
-# Method 3: From source (Needs external databases) stick to Conda or Docker
+# Method 3: From source (advanced – needs external databases)
 git clone https://github.com/bbeckley-hub/staphscope-typing-tool.git
 cd staphscope-typing-tool
 conda env create -f environment.yml
@@ -228,59 +255,6 @@ staphscope -i genome.fasta -o results/
 # Batch processing (24 genomes)
 staphscope -i "*.fna" -o batch_results --threads 16
 # Complete in ~14 minutes! 🎉
-```
-
----
-
-## STAPHSCOPE TERMINAL DISPLAY
-
-```
-usage: staphscope [-h] -i INPUT -o OUTPUT [-t THREADS] [--skip-amr]
-                  [--skip-abricate] [--skip-mlst] [--skip-spa] [--skip-sccmec]
-                  [--skip-lineage] [--skip-comprehensive]
-
-StaphScope: Complete S. aureus Typing Pipeline
-
-optional arguments:
-  -h, --help            show this help message and exit
-  -i INPUT, --input INPUT
-                        Input FASTA file(s) - can use glob patterns like
-                        "*.fna" or "*.fasta"
-  -o OUTPUT, --output OUTPUT
-                        Output directory for all results
-  -t THREADS, --threads THREADS
-                        Number of threads (default: 2)
-  --skip-amr            Skip AMR analysis (AMRfinderPlus)
-  --skip-abricate       Skip ABRicate analysis
-  --skip-mlst           Skip MLST analysis
-  --skip-spa            Skip spa typing analysis
-  --skip-sccmec         Skip SCCmec analysis
-  --skip-lineage        Skip lineage reference generation
-  --skip-comprehensive  Skip comprehensive report generation (MLST + spa +
-                        SCCmec)
-
-Examples:
-  staphscope -i genome.fna -o results/
-  staphscope -i "*.fna" -o batch_results --threads 8
-  staphscope -i "*.fasta" -o analysis --threads 16 --skip-lineage
-  staphscope -i "genome*.fa" -o results/ --threads 4 --skip-comprehensive
-
-Supported FASTA formats: .fna, .fasta, .fa, .fn
-
-Analysis Modules:
-  • MLST (Multi-Locus Sequence Typing)
-  • spa typing (Staphylococcal Protein A)  
-  • SCCmec typing (Methicillin Resistance Cassette)
-  • AMR profiling (Antimicrobial Resistance)
-  • ABRicate (Comprehensive resistance/Plasmid/virulence)
-  • Lineage reference database
-  • Comprehensive report (MLST + spa + SCCmec summary)
-
-Output: Comprehensive results for all analyses in organized directories
-Please run abricate --setupdb for recent gene annotations!!!
-⭐ Star us on GitHub if you find this tool useful!
-
-Transforming fragmented genomic data into coherent biological narratives 🧬✨
 ```
 
 ---
@@ -318,22 +292,22 @@ conda activate staphscope
 staphscope --help
 ```
 
-#### **3. Update Databases (Recommended) for conda users only**
+#### **3. Update Databases (Recommended)**
 ```bash
+# For ABRicate databases
 abricate --setupdb
 
-staphscope --update-amr-db   # Updates AMR database only (Please run prior first analysis)
-
-
+# For AMR database (first run or manual update)
+staphscope --update-amr-db   # incremental
+# or
+staphscope --force-update-amr-db   # full overwrite
 ```
 
 ---
 
-## 🐳 **Staphscope Docker Usage**
+## 🐳 **StaphScope Docker & Singularity Usage**
 
-
-## 📦 Quick Start
-
+### **Docker (standard)**
 ```bash
 # Pull the latest image
 docker pull bbeckleyhub/staphscope:latest
@@ -348,71 +322,29 @@ docker run --rm \
   bbeckleyhub/staphscope:latest \
   -i "*.fasta" -o /data/output -t 4
 
-# Outputs
+# Fix ownership (if needed)
 sudo chown -R $USER:$USER ./output
-
 ```
 
-## 🖥️ Singularity for HPC (no `sudo`, correct ownership)
-
-On HPC clusters that support [Singularity/Apptainer](https://sylabs.io/singularity/), you can run StaphScope **without `sudo`** and output files will be owned by your user automatically.
-
-> **Important:** StaphScope writes temporary files inside its own installation directory (e.g., `/opt/staphscope/...`). Singularity mounts containers as read‑only by default, so you **must** add the `--writable-tmpfs` flag to allow these writes. The flag creates an ephemeral, writable overlay in memory – no permanent changes are made to the container.
-
-### Option A: Direct pull (if network allows)
+### **Singularity / Apptainer (HPC clusters – no `sudo`, correct ownership)**
+Because StaphScope v1.2.3 writes all temporary files to `/tmp`, **you no longer need the `--writable-tmpfs` flag** (unless your cluster restricts `/tmp`). Just:
 
 ```bash
+# Pull the SIF image
 singularity pull staphscope.sif docker://bbeckleyhub/staphscope:latest
+
+# Run (bind your data directory)
+singularity run -B $(pwd):/data staphscope.sif -i "/data/*.fasta" -o /data/output
+
+# If your cluster restricts `/tmp`, add `--writable-tmpfs` for safety:
 singularity run --writable-tmpfs -B $(pwd):/data staphscope.sif -i "/data/*.fasta" -o /data/output
 ```
 
-### Option B: Convert from a local Docker image (when `singularity pull` fails)
-
-If you encounter TLS timeouts or other network errors (common on some HPCs), convert an existing Docker image to a Singularity SIF file on a machine with Docker, then transfer the `.sif` file to the HPC.
-
-**Step 1 – on a machine with Docker (e.g., your laptop):**
-
-```bash
-docker pull bbeckleyhub/staphscope:latest
-docker save bbeckleyhub/staphscope:latest -o staphscope.tar
-singularity build staphscope.sif docker-archive://staphscope.tar
-```
-
-Now copy `staphscope.sif` to your HPC home or project directory (e.g., using `scp`).
-
-**Step 2 – on the HPC (no sudo needed):**
-
-```bash
-singularity run --writable-tmpfs -B $(pwd):/data staphscope.sif -i "/data/*.fasta" -o /data/output
-```
-
-### Explanation of flags
-
-| Flag | Purpose |
-|------|---------|
-| `--writable-tmpfs` | Creates a temporary writable overlay – **required** for StaphScope to write intermediate files to `/opt/...` |
-| `-B $(pwd):/data` | Binds your current directory to `/data` inside the container (input files are read from here, output is written here) |
-| `-i "/data/*.fasta"` | Input pattern – use quotes to prevent shell expansion on the host |
-| `-o /data/output` | Output directory (will appear as `./output` on your host) |
-
-### Additional options
-
-You can use any StaphScope flag, e.g.:
-
-```bash
-singularity run --writable-tmpfs -B $(pwd):/data staphscope.sif \
-    -i "/data/*.fasta" -o /data/output --threads 8 --skip-amr
-```
-
-### Verify it works
-
-After a successful run, you will see output indicating each module completed. All result files in `./output` will be owned by **your HPC user** – no `sudo chown` needed.
+All result files will be owned by your HPC user – no `sudo chown` needed.
 
 ---
 
 ## 🔗 **Integrated External Tools & Dependencies**
-
-StaphScope integrates several powerful open-source tools and databases. These are **not bundled directly in this repository**. Instead, they are automatically installed as **dependencies via Conda** (as defined in `environment.yml`). The MIT license that applies to the StaphScope pipeline code does not cover these external tools. Each tool is used under the terms of its own license, and we gratefully acknowledge their authors.
 
 | Tool/Database | Purpose | Source | License |
 |---------------|---------|--------|---------|
@@ -421,7 +353,7 @@ StaphScope integrates several powerful open-source tools and databases. These ar
 | **AMRFinderPlus** | Antimicrobial resistance gene detection | [ncbi/amr](https://github.com/ncbi/amr) | Public Domain |
 | **SCCmecFinder** | SCCmec typing | [genomicepidemiology/Sccmecfinder](https://bitbucket.org/genomicepidemiology/Sccmecfinder) | Apache-2.0 |
 | **spa typing** | *spa* gene typing | [spa.ridom.de](https://spa.ridom.de/) | Free for academic use |
-| **PubMedST** | MLST allele database | [pubmlst.org](https://pubmlst.org/organisms/staphylococcus-aureus) | Open access for research |
+| **PubMLST** | MLST allele database | [pubmlst.org](https://pubmlst.org/organisms/staphylococcus-aureus) | Open access for research |
 
 ---
 
@@ -437,6 +369,9 @@ staphscope -i "*.fna" -o results_2025 --threads 8
 
 # Skip specific modules
 staphscope -i sample.fna -o results --skip-spa --skip-lineage
+
+# AMR with custom thresholds and no mutations
+staphscope -i "*.fna" -o results --amr-min-identity 0.95 --amr-min-coverage 0.9 --skip-amr-mutations
 ```
 
 ### **Input Formats**
@@ -460,6 +395,11 @@ staphscope -i "outbreak/*.fasta" -o /tmp/urgent_analysis --skip-lineage
 # Results in ~4 minutes
 ```
 
+#### **Force AMR database update before analysis**
+```bash
+staphscope -i "*.fna" -o results --amr-force-update
+```
+
 ---
 
 ## 📁 **Output Structure**
@@ -467,23 +407,34 @@ staphscope -i "outbreak/*.fasta" -o /tmp/urgent_analysis --skip-lineage
 StaphScope generates a comprehensive, organized output directory:
 
 ```
-Staphscope/
+batch_results/
 ├── abricate_results/          # Multi-database screening (10 DBs)
-├── amr_results/               # AMR gene profiling (AMRFinder+)
+├── fasta_qc_results/          # FASTA quality control
+├── lineage_results/           # Phylogenetic lineage reference
 ├── mlst_results/              # MLST typing
 ├── sccmec_results/            # SCCmec typing
 ├── spa_results/               # spa typing
-├── lineage_results/           # Phylogenetic lineage
-├── fasta_qc_results/          # FASTA quality control
-├── visualization_results/     # Publication-ready plots
-└── Staphscope_final_report/   # Consolidated reports (HTML/JSON/TSV)
+├── staph_amrfinder_results/   # AMR gene profiling (incl. mutation files)
+├── Staphscope_final_report/   # Consolidated final reports (only source)
+│   ├── staphscope_comprehensive_report.html
+│   ├── staphscope_comprehensive_report.json
+│   ├── staphscope_comprehensive_report.tsv
+│   └── STAPHSCOPE_ULTIMATE_REPORTS/
+│       ├── staphscope_ultimate_report.html
+│       ├── staphscope_ultimate_report.json
+│       ├── amr_genes.csv
+│       ├── virulence_genes.csv
+│       ├── bacmet_genes.csv
+│       ├── mutations.csv
+│       ├── plasmid_replicons.csv
+│       ├── sample_overview.csv
+│       ├── pattern_discovery.csv
+│       └── fasta_qc.csv
+├── STAPHSCOPE_VISUALIZATIONS/ # Publication‑ready plots (PNG, SVG, PDF)
+└── staphscope_run.log         # Detailed log file
 ```
 
-Each module contains:
-- **Per-sample directories** with raw outputs
-- **Summary files** (TSV/JSON) for cross-sample analysis
-- **Interactive HTML reports** for visualization
-- **Master reports** combining all results
+**Note:** In v1.2.3, the top‑level copies of comprehensive report files and `STAPHSCOPE_ULTIMATE_REPORTS` are **automatically deleted** after copying into `Staphscope_final_report/`. The final report folder is now the **only** source of the ultimate output.
 
 ---
 
@@ -509,12 +460,13 @@ Each module contains:
 - **Subtyping**: Types IV and V community-associated cassettes
 
 ### **5. AMR Profiling**
-- **Tool**: NCBI-AMRFinderPlus v4.2.4
+- **Tool**: NCBI-AMRFinderPlus v4.2.7 (bundled)
 - **Coverage**: 5,000+ AMR genes
 - **Risk Assessment**: Critical Risk (*mecA*, *vanA*, *cfr*), High Risk (*erm*, *tetM*)
+- **Mutation reporting**: All point mutations (synonymous + non‑synonymous) by default
 
 ### **6. ABRicate Screening**
-- **Databases**: VFDB, ResFinder, CARD, PlasmidFinder, MegaRes, NCBI, ARG-ANNOT, ECOH, EcoLi_VF
+- **Databases**: VFDB, ResFinder, CARD, PlasmidFinder, MegaRes, NCBI, ARG-ANNOT, ECOH, EcoLi_VF, BacMet2
 - **Thresholds**: ≥80% identity and coverage
 - **Clinical Flags**: PVL, enterotoxins, *van* genes
 
@@ -549,7 +501,7 @@ Each module contains:
 ## 🔬 **Validation & Accuracy**
 
 ### **Reference Strain Validation**
-**100% concordance** with gold-standard reference genomes:
+**100% concordance** with gold‑standard reference genomes:
 
 | Reference Strain | Expected Type | StaphScope Result |
 |------------------|---------------|-------------------|
@@ -571,7 +523,7 @@ Each module contains:
 
 ## 🆚 **Tool Comparison**
 
-| Feature | StaphScope | Bactopia | Nullarbor | Mykrobe |
+| Feature | StaphScope v1.2.3 | Bactopia | Nullarbor | Mykrobe |
 |---------|------------|----------|-----------|---------|
 | **Analysis Focus** | 🎯 *S. aureus*-optimized | Multi-species | Multi-species | Multi-species |
 | **Input Format** | Assembled genomes | Raw reads | Raw reads | Raw reads |
@@ -579,6 +531,8 @@ Each module contains:
 | **Execution** | Local CLI + Web GUI | Local/Cluster | Local | CLI + Web GUI |
 | **Parallelization** | Auto-resource detection | Pipeline-level | Sample-level | Single-threaded |
 | **MRSA Features** | Integrated classification + lineage DB | General typing | General typing | Resistance only |
+| **Dynamic Grouping** | ✅ By MLST/spa/SCCmec/triple | ❌ | ❌ | ❌ |
+| **Mutation Tab** | ✅ Full point mutation table | ❌ | ❌ | ❌ |
 | **Critical Gene Flagging** | ✅ *mecA*, PVL, *van* genes | ❌ | ❌ | ❌ |
 | **Resource Needs** | Low-moderate (2+ GB) | High (HPC recommended) | High (Cluster) | Low-moderate |
 | **Web Interface** | ✅ StaphScope Web | ❌ | ❌ | ✅ Mykrobe web |
@@ -587,7 +541,7 @@ Each module contains:
 
 ## 🤖 **AI Integration Guide**
 
-StaphScope generates comprehensive HTML reports that are **perfect for AI analysis**. Here's how to use AI tools to get more from your data.
+StaphScope generates comprehensive HTML and JSON reports that are **perfect for AI analysis**. Here's how to use AI tools to get more from your data.
 
 ### 🚀 Quick Start
 1. **Install any AI browser extension** (ChatGPT, Claude, Gemini)
@@ -601,18 +555,21 @@ StaphScope generates comprehensive HTML reports that are **perfect for AI analys
 - "What is the clinical significance of ST5 vs ST8?"
 - "Which samples are MRSA and what ST are they?"
 
-**For AMR Genes:**
-- "Explain the mecA gene and its importance"
-- "Which samples have multiple resistance genes?"
-- "What treatment implications do these genes have?"
+**For AMR Genes (using grouping):**
+- "Which STs carry mecA? Use the grouping button 'MLST' in the AMR tab and tell me what you see."
+- "List all samples with vancomycin resistance genes and their SCCmec types."
 
 **For Virulence Factors:**
-- "Which samples carry PVL toxin?"
-- "Are there any high-risk virulence combinations?"
+- "Which samples carry PVL toxin? Group them by spa type."
+- "Are there any high‑risk virulence combinations with TSST‑1?"
+
+**For Mutations:**
+- "Which STs carry the linezolid‑resistant 23S rRNA G2576T mutation?"
+- "Show me all gyrA mutations and group them by SCCmec type."
 
 **For Pattern Discovery:**
 - "Are there correlations between ST and specific genes?"
-- "Identify any concerning patterns in this dataset"
+- "What are the most frequent triple typing combinations (ST‑spa‑SCCmec)?"
 
 ### 📊 Pro Tips
 - **Provide context**: "I'm analyzing *S. aureus* genomics data..."
@@ -621,7 +578,7 @@ StaphScope generates comprehensive HTML reports that are **perfect for AI analys
 - **Request summaries**: "Summarize the resistance profile of sample XYZ"
 
 ### ⚡ Why This Works
-StaphScope reports are structured with clear tables and organized data that AI can easily understand. Each gene is shown with all genomes that contain it, making pattern analysis straightforward.
+StaphScope reports are structured with clear tables and organized data that AI can easily understand. The **grouping feature** makes it trivial for AI to identify clone‑specific patterns.
 
 > *"AI provides powerful insights but always verify critical findings with domain experts."*
 
@@ -629,70 +586,33 @@ StaphScope reports are structured with clear tables and organized data that AI c
 
 ## 🔮 **Future Development**
 
-### **🚀 Upcoming Features (2025-2026)**
-```python
-# Planned machine learning module
-staphscope --ml-predict --input results.json --model outbreak_risk
-
-# Raw read support (in development)
-staphscope --raw-reads sample_R1.fastq sample_R2.fastq --assembler shovill
-```
-
-### **Machine Learning Module**
-- **Outbreak Prediction**: Identify emerging patterns and transmission networks
-- **Phenotype Inference**: Predict virulence, transmissibility from genotype
-- **Risk Scoring**: Automated risk assessment for clinical isolates
-- **Anomaly Detection**: Flag novel or unexpected genetic combinations
-
-### **Expansion Plans**
-1. **Raw Read Support**: Direct FASTQ analysis with integrated assembly (Snippy)
-2. **Real-Time Updates**: Live database synchronization
-3. **Plugin System**: Community-contributed analysis modules
-4. **Database Contributions**: User-submitted lineage updates
-5. **Translation Support**: Help translate the interface
+### **🚀 Upcoming Features (2026-2027)**
+- **Raw read support** – Direct FASTQ analysis with integrated assembly (Snippy).
+- **Machine learning module** – Outbreak prediction, phenotype inference, risk scoring.
+- **Real‑time database updates** – Live synchronization of lineage and AMR databases.
+- **Plugin system** – Community‑contributed analysis modules.
 
 ---
 
 ## ❓ **Frequently Asked Questions**
 
-### **General Questions**
-
 **Q: Is StaphScope free to use?**  
-A: Yes! StaphScope is open-source under the MIT License. Free for academic, clinical, and commercial use.
+A: Yes! Open‑source under MIT License. Free for academic, clinical, and commercial use.
 
 **Q: What makes StaphScope different from other tools?**  
-A: StaphScope is *S. aureus*-optimized, integrates 6 analysis types in one workflow, runs 8-10× faster than generalist tools, and includes a curated global lineage database.
+A: *S. aureus*-optimized, integrates 6 analysis types, runs 8‑10× faster, and now includes **dynamic grouping by typing** and a **mutation tab** – features no other tool offers.
 
 **Q: Can I use StaphScope for clinical diagnosis?**  
-A: StaphScope is a research tool. While highly accurate, results should be validated with orthogonal methods for clinical decision-making.
+A: StaphScope is a research tool. While highly accurate, results should be validated with orthogonal methods for clinical decision‑making.
 
 **Q: Which version should I use – CLI or Web?**  
-A: Use the **Web version** for convenience, small batches (≤10 files), and if you prefer a graphical interface. Use the **CLI version** for large batches (100+ genomes), integration into pipelines, or when working with sensitive data locally.
+A: Use the **Web version** for convenience, small batches (≤10 files), and graphical interface. Use the **CLI version** for large batches (100+ genomes), pipeline integration, or when working with sensitive data locally.
 
-### **Technical Questions**
+**Q: Why does v1.2.3 no longer require `--writable-tmpfs` in Singularity?**  
+A: All modules now write temporary files to `/tmp` (not to the installation directory). Containers mount `/tmp` as writable by default, so no special flags are needed.
 
-**Q: Why only assembled genomes? When will raw read support be added?**  
-A: We focused first on assembled genomes for speed and simplicity. Raw read support is our #1 priority for 2026 development.
-
-**Q: How often are databases updated?**  
-A: We have planned sequential releases when database updates are needed. The lineage database is manually curated every 6 months. Users can run `abricate --setupdb` anytime.
-
-**Q: Can I run StaphScope on Windows?**  
-A: Yes, via WSL2 (Windows Subsystem for Linux). Native Windows support is planned.
-
-**Q: How do I handle very large batches (1000+ genomes)?**  
-A: Use the CLI with glob patterns and appropriate threading. StaphScope scales linearly.
-
-### **Analysis Questions**
-
-**Q: What does "Not Assigned" mean for SCCmec typing?**  
-A: This indicates insufficient evidence for cassette classification—usually MSSA or novel SCCmec types.
-
-**Q: How is MRSA status determined?**  
-A: MRSA = positive for both SCCmec element AND *mecA* or *mecC* gene. MSSA = lacks either criterion.
-
-**Q: Are virulence factors from other species filtered out?**  
-A: Yes! The ABRicate module uses *S. aureus*-optimized thresholds and databases to minimize cross-species false positives.
+**Q: How do I use the new grouping feature?**  
+A: In the Ultimate Reporter, open any gene‑centric tab (AMR, Virulence, BACMET, Plasmids, Mutations). Above the table you’ll see buttons like “MLST”, “spa”, “SCCmec”. Click one – the genome list reorganises instantly. Click “Reset” to return to the flat list.
 
 ---
 
@@ -701,20 +621,23 @@ A: Yes! The ABRicate module uses *S. aureus*-optimized thresholds and databases 
 ### **Common Issues & Solutions**
 
 ```bash
-# Issue: Database errors
+# Issue: AMR database missing or outdated
+# Solution:
+staphscope --force-update-amr-db
+
+# Issue: ABRicate database not found
 # Solution:
 abricate --setupdb
-staphscope --update-amr-db
 
-# Issue: Missing dependencies
-# Solution:
-conda remove staphscope
-conda clean --all
-conda install -c bioconda staphscope  # Fresh install
+# Issue: Permission errors in Docker
+# Solution: Ensure bind mounts are correct and use --user if needed
+docker run --rm -u $(id -u):$(id -g) -v ... bbeckleyhub/staphscope ...
 
-# Issue: Web version not loading
-# Solution: Check internet connection or try a different browser.
-# The service may be temporarily down; check GitHub for updates.
+# Issue: "TypeError" in summary reporter (v1.2.2)
+# Solution: Upgrade to v1.2.3 – the bug is fixed.
+
+# Issue: Cross‑run contamination in /tmp
+# Solution: Use --keep-temp only for debugging; otherwise temp dirs are auto‑deleted.
 ```
 
 ### **Getting Help**
@@ -768,13 +691,14 @@ Please also cite the essential tools that make StaphScope possible (see BibTeX i
 
 StaphScope stands on the shoulders of giants. We are deeply grateful to:
 
-- **Torsten Seemann** for MLST, ABRicate, and countless foundational tools
-- **NCBI team** for AMRFinderPlus
-- **CGE team** for SCCmecFinder and database curation
-- **PubMedST, Ridom, CARD, VFDB** for essential databases
-- **Python community** for Biopython, pandas, plotly, seaborn, matplotlib
-- **Early adopters and beta testers** for invaluable feedback
-- **Peer reviewers & Editorial Team @BMC GENOMICS** for their constructive feedback, which significantly strengthened this tool and it manuscript. 
+- **Torsten Seemann** for MLST, ABRicate, and countless foundational tools.
+- **NCBI team** for AMRFinderPlus.
+- **CGE team** for SCCmecFinder and database curation.
+- **PubMedST, Ridom, CARD, VFDB** for essential databases.
+- **Python community** for Biopython, pandas, plotly, seaborn, matplotlib.
+- **Early adopters and beta testers** for invaluable feedback.
+- **Peer reviewers & Editorial Team @ BMC GENOMICS** for their constructive feedback, which significantly strengthened this tool and its manuscript.
+
 > *"If we ever meet in person, the drinks are on me!" – Brown Beckley*
 
 ---
@@ -810,17 +734,7 @@ The StaphScope pipeline code (the workflow engine, report generation, HTML templ
 The web interface is also open-source and available under the MIT License in its [separate repository](https://github.com/bbeckley-hub/staphscope-web).
 
 ### Third-Party Tools
-StaphScope executes several external bioinformatics tools, which are installed as Conda dependencies. Each tool is the property of its respective developers and is used under its own license:
-
-| Tool | License |
-|------|---------|
-| `mlst` (Torsten Seemann) | GPL v2 |
-| `ABRicate` (Torsten Seemann) | GPL v2 |
-| `AMRFinderPlus` (NCBI) | Public Domain |
-| `SCCmecFinder` (CGE) | Apache-2.0 |
-| `spa typing` (Ridom) | Free for academic use |
-
-By using StaphScope, you agree to comply with the licenses of these third-party tools.
+StaphScope executes several external bioinformatics tools, which are installed as Conda dependencies. Each tool is the property of its respective developers and is used under its own license. By using StaphScope, you agree to comply with the licenses of these third-party tools.
 
 ---
 
@@ -1015,6 +929,7 @@ When citing StaphScope in your publications, please include the main StaphScope 
 
 > "Genomic analysis was performed using StaphScope [Beckley & Amarh, 2026], which integrates MLST [Seemann, 2018], ABRicate [Seemann, 2018], AMRFinderPlus [Feldgarden et al., 2019], and SCCmecFinder [Kaya et al., 2018] for comprehensive *S. aureus* characterization. Antimicrobial resistance genes were identified using the CARD [Alcock et al., 2023] and ResFinder [Bortolaia et al., 2020] databases."
 
+
 ---
 
 <div align="center">
@@ -1043,4 +958,3 @@ Antimicrobial resistance (AMR) represents one of the most significant global hea
 **Together, we can enhance global AMR monitoring and develop more effective treatment strategies.**
 
 </div>
-
