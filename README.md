@@ -476,7 +476,7 @@ batch_results/
 - **Formats**: PNG, SVG, PDF, interactive HTML
 
 ### **8. Lineage Database**
-- **Content**: 44 major *S. aureus* lineages (18 HA-MRSA, 19 CA-MRSA, 7 LA-MRSA)
+- **Content**: 50 major *S. aureus* lineages (18 HA-MRSA, 19 CA-MRSA, 7 LA-MRSA)
 - **Metadata**: Geographical distribution, clinical significance, outbreak potential
 
 ---
