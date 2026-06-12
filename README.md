@@ -302,12 +302,12 @@ staphscope --update-amr-db   # incremental
 # or
 staphscope --force-update-amr-db   # full overwrite
 ```
-
 ---
 
-## 🐳 **StaphScope Docker & Singularity Usage**
+## 🐳 **StaphScope Docker & Singularity Usage – avoid the padlock 🔓**
 
-### **Docker (standard)**
+By default, Docker runs containers as `root`, so any files written to bind‑mounted directories will be owned by `root:root` – resulting in padlock icons and the need for `sudo chown`. **The fix is simple:** add `-u $(id -u):$(id -g)` to run the container with your host user’s UID/GID.
+
 ```bash
 # Pull the latest image
 docker pull bbeckleyhub/staphscope:latest
@@ -315,32 +315,58 @@ docker pull bbeckleyhub/staphscope:latest
 # Test installation
 docker run --rm bbeckleyhub/staphscope:latest --help
 
-# Analyze your data
+# ✅ Recommended (no padlock, no sudo chown)
 docker run --rm \
-  -v $(pwd)/genomes:/data/input \
-  -v $(pwd)/results:/data/output \
+  -u $(id -u):$(id -g) \
+  -v $(pwd):/data \
   bbeckleyhub/staphscope:latest \
-  -i "*.fasta" -o /data/output -t 4
+  -i "/data/*.fasta" -o /data/output -t 4
 
-# Fix ownership (if needed)
-sudo chown -R $USER:$USER ./output
+# ❌ Old way (creates root‑owned files)
+docker run --rm \
+  -v $(pwd):/data \
+  bbeckleyhub/staphscope:latest \
+  -i "/data/*.fasta" -o /data/output -t 4
+# Then you need: sudo chown -R $USER:$USER ./output
 ```
 
-### **Singularity / Apptainer (HPC clusters – no `sudo`, correct ownership)**
-Because StaphScope v1.2.3 writes all temporary files to `/tmp`, **you no longer need the `--writable-tmpfs` flag** (unless your cluster restricts `/tmp`). Just:
+**Why `-u $(id -u):$(id -g)`?**  
+- It tells Docker to run the container’s process with the same UID and primary GID as your host user.  
+- All files created in the mounted volume will be owned by **you** – no padlock, no permission errors, no cleanup.
+
+> **Note for macOS / Windows (Docker Desktop):** UID/GID mapping works out‑of‑the‑box. The same command works fine.
+
+---
+
+### **Singularity / Apptainer (HPC clusters – no `sudo`, correct ownership)**  
+
+Because StaphScope v1.2.3 writes all temporary files to `/tmp` (world‑writable), **you no longer need the `--writable-tmpfs` flag** (unless your cluster restricts `/tmp`). Singularity automatically maps your host user ID, so output files are **always** owned by you – no extra flags required.
 
 ```bash
-# Pull the SIF image
+# Pull the SIF image (once)
 singularity pull staphscope.sif docker://bbeckleyhub/staphscope:latest
 
-# Run (bind your data directory)
+# Run – files are owned by your HPC user automatically
 singularity run -B $(pwd):/data staphscope.sif -i "/data/*.fasta" -o /data/output
 
 # If your cluster restricts `/tmp`, add `--writable-tmpfs` for safety:
 singularity run --writable-tmpfs -B $(pwd):/data staphscope.sif -i "/data/*.fasta" -o /data/output
 ```
 
-All result files will be owned by your HPC user – no `sudo chown` needed.
+**Why Singularity users have no padlock:**  
+- Singularity/Apptainer **never** runs as root on HPC clusters; it always maps your host UID/GID into the container.  
+- The `-B` bind‑mount preserves ownership, so all output files are created with your user credentials.
+
+---
+
+### **Summary for HPC admins and Docker users**
+
+| Platform | Command (recommended) | Ownership of output files |
+|----------|----------------------|---------------------------|
+| **Docker** | `docker run --rm -u $(id -u):$(id -g) -v "$PWD:/data" bbeckleyhub/staphscope ...` | Your user |
+| **Singularity** | `singularity run -B "$PWD:/data" staphscope.sif ...` | Your user (automatically) |
+
+No more `sudo chown`, no more padlock icons, no more angry HPC emails.
 
 ---
 
