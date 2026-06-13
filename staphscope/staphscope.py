@@ -105,7 +105,6 @@ class StaphScopeOrchestrator:
 
     def run_module_in_temp(self, module_name: str, fasta_files: List[Path],
                            cmd_str: str, result_subdir: str = None) -> bool:
-        """Copy entire module and FASTA files to temp dir, run command, copy results."""
         module_orig = self.get_module_path(module_name)
         if not module_orig.exists():
             self.banner.display_error(f"Module directory not found: {module_orig}")
@@ -156,9 +155,6 @@ class StaphScopeOrchestrator:
             if not self.keep_temp:
                 shutil.rmtree(temp_dir, ignore_errors=True)
 
-    # -------------------------------------------------------------------------
-    # Modules that need QUOTED patterns (because they use internal glob.glob)
-    # -------------------------------------------------------------------------
     def run_fasta_qc_analysis(self, fasta_files: List[Path], output_dir: Path, threads: int) -> bool:
         pattern = self.get_file_pattern(fasta_files)
         cmd = f"{sys.executable} fasta_qc_module/staph_fasta_qc.py {pattern} -o fasta_qc_results -c {threads}"
@@ -190,11 +186,7 @@ class StaphScopeOrchestrator:
         cmd = f"{sys.executable} abricate_module/abricate_standalone.py {pattern}"
         return self.run_module_in_temp("abricate_module", fasta_files, cmd, "abricate_results")
 
-    # -------------------------------------------------------------------------
-    # Modules that need UNQUOTED patterns (because they rely on shell expansion)
-    # -------------------------------------------------------------------------
     def run_mlst_analysis(self, fasta_files: List[Path], output_dir: Path, threads: int) -> bool:
-        """Custom MLST runner: copy module contents to root of temp dir."""
         pattern_with_quotes = self.get_file_pattern(fasta_files)
         pattern_unquoted = pattern_with_quotes.strip('"')
         temp_dir = tempfile.mkdtemp(prefix="staphscope_mlst_")
@@ -231,7 +223,6 @@ class StaphScopeOrchestrator:
                 shutil.rmtree(temp_dir, ignore_errors=True)
 
     def run_sccmec_analysis(self, fasta_files: List[Path], output_dir: Path, threads: int) -> bool:
-        """Custom SCCmec runner: copy module contents to root of temp dir."""
         pattern_with_quotes = self.get_file_pattern(fasta_files)
         pattern_unquoted = pattern_with_quotes.strip('"')
         temp_dir = tempfile.mkdtemp(prefix="staphscope_sccmec_")
@@ -277,9 +268,6 @@ class StaphScopeOrchestrator:
             if not self.keep_temp:
                 shutil.rmtree(temp_dir, ignore_errors=True)
 
-    # -------------------------------------------------------------------------
-    # spa typing (does not depend on pattern)
-    # -------------------------------------------------------------------------
     def run_spa_typing(self, fasta_files: List[Path], output_dir: Path, threads: int) -> bool:
         temp_dir = tempfile.mkdtemp(prefix="staphscope_spa_")
         try:
@@ -343,9 +331,6 @@ class StaphScopeOrchestrator:
             if not self.keep_temp:
                 shutil.rmtree(temp_dir, ignore_errors=True)
 
-    # -------------------------------------------------------------------------
-    # Helper methods
-    # -------------------------------------------------------------------------
     def find_fasta_files(self, input_path: str) -> List[Path]:
         self.banner.display_info(f"Searching for files with pattern: {input_path}")
         if '*' in input_path or '?' in input_path:
@@ -423,20 +408,14 @@ class StaphScopeOrchestrator:
             self.banner.display_warning("AMR database not found or outdated. Attempting automatic update...")
             return self.update_amr_database(force=False)
 
-    # -------------------------------------------------------------------------
-    # Unified comprehensive and ultimate reporter (TEMP DIRECTORY + CLEANUP)
-    # -------------------------------------------------------------------------
     def run_comprehensive_and_ultimate_reports(self, output_dir: Path) -> bool:
-        """Run both comprehensive report and ultimate reporter in a temporary copy of the summary_module."""
         temp_dir_str = tempfile.mkdtemp(prefix="staphscope_summary_")
-        temp_dir = Path(temp_dir_str)                       # <-- FIX: convert to Path
+        temp_dir = Path(temp_dir_str)
         self.logger.info(f"Temporary directory for summary reports: {temp_dir}")
         try:
-            # 1. Copy entire summary_module to temp dir
             summary_module_path = self.get_module_path("summary_module")
             shutil.copytree(summary_module_path, temp_dir, dirs_exist_ok=True)
 
-            # 2. Copy required TSV files (MLST, spa, SCCmec) to temp dir root
             required_tsvs = [
                 ("mlst_results", "mlst_summary.tsv"),
                 ("spa_results", "spa_summary.tsv"),
@@ -450,7 +429,6 @@ class StaphScopeOrchestrator:
                 else:
                     self.logger.warning(f"Required TSV not found: {src}")
 
-            # 3. Copy required HTML files to temp dir root
             required_htmls = [
                 ("staph_amrfinder_results", "staph_amrfinder_summary_report.html"),
                 ("staph_amrfinder_results", "mutation_summary.html"),
@@ -472,7 +450,6 @@ class StaphScopeOrchestrator:
                 else:
                     self.logger.warning(f"Required HTML not found: {src}")
 
-            # 4. Run comprehensive report
             self.banner.display_info("Running comprehensive report...")
             cmd_comp = [sys.executable, "comprehensive_report.py"]
             result_comp = subprocess.run(cmd_comp, cwd=temp_dir, capture_output=True, text=True)
@@ -488,7 +465,6 @@ class StaphScopeOrchestrator:
                         shutil.copy2(src, dst)
                         self.logger.info(f"Copied {src.name} to output directory")
 
-            # 5. Run ultimate reporter
             self.banner.display_info("Running ultimate reporter...")
             cmd_ultimate = [sys.executable, "staphscope_ultimate_reporter.py", "-i", "."]
             result_ultimate = subprocess.run(cmd_ultimate, cwd=temp_dir, capture_output=True, text=True)
@@ -515,9 +491,6 @@ class StaphScopeOrchestrator:
                 shutil.rmtree(temp_dir, ignore_errors=True)
                 self.logger.info(f"Removed temporary directory: {temp_dir}")
 
-    # -------------------------------------------------------------------------
-    # Final directory aggregation (copies comprehensive files to Staphscope_final_report)
-    # -------------------------------------------------------------------------
     def copy_summary_results_to_final_directory(self, output_dir: Path):
         try:
             self.banner.display_info("Copying summary results to final directory...")
@@ -554,19 +527,15 @@ class StaphScopeOrchestrator:
         except Exception as e:
             self.banner.display_error(f"Error copying summary results: {str(e)}")
 
-    # -------------------------------------------------------------------------
-    # copy_html_files_to_visualization_module and run_visualization_analysis
-    # 
-    # -------------------------------------------------------------------------
-    def copy_html_files_to_visualization_module(self, output_dir: Path) -> bool:
+    def run_visualization_analysis(self, output_dir: Path) -> bool:
+        temp_dir_str = tempfile.mkdtemp(prefix="staphscope_visualization_")
+        temp_dir = Path(temp_dir_str)
+        self.logger.info(f"Temporary directory for visualization: {temp_dir}")
         try:
-            self.banner.display_info("Copying HTML files to visualization module...")
-            vis_module_path = self.get_module_path("visualization_module")
-            vis_script = vis_module_path / "staphscope_visualizer.py"
-            if not vis_script.exists():
-                self.banner.display_error(f"Visualization script not found at: {vis_script}")
-                return False
-            files_to_copy = [
+            vis_module_orig = self.get_module_path("visualization_module")
+            shutil.copytree(vis_module_orig, temp_dir, dirs_exist_ok=True)
+
+            required_files = [
                 (output_dir / "staph_amrfinder_results", "staph_amrfinder_summary_report.html"),
                 (output_dir / "abricate_results", "staph_card_summary_report.html"),
                 (output_dir / "abricate_results", "staph_plasmidfinder_summary_report.html"),
@@ -578,62 +547,54 @@ class StaphScopeOrchestrator:
                 (output_dir / "Staphscope_final_report", "staphscope_comprehensive_report.html"),
             ]
             copied_count = 0
-            for source_dir, html_file in files_to_copy:
-                source_path = source_dir / html_file
-                target_path = vis_module_path / html_file
-                if source_path.exists():
-                    shutil.copy2(source_path, target_path)
+            for source_dir, filename in required_files:
+                src = source_dir / filename
+                if src.exists():
+                    shutil.copy2(src, temp_dir / filename)
                     copied_count += 1
-                    self.banner.display_info(f"  ✓ Copied: {html_file}")
+                    self.logger.info(f"Copied {filename} to temporary visualization directory")
                 else:
-                    self.banner.display_warning(f"  ⚠️  Not found: {html_file}")
-            self.banner.display_info(f"Copied {copied_count} files")
-            comprehensive_path = vis_module_path / "staphscope_comprehensive_report.html"
-            if not comprehensive_path.exists():
-                self.banner.display_error("Comprehensive report not found - required for visualization")
-                return False
-            return True
-        except Exception as e:
-            self.banner.display_error(f"Error copying HTML files to visualization module: {str(e)}")
-            return False
+                    self.logger.warning(f"Required file not found: {src}")
+            self.banner.display_info(f"Copied {copied_count} files to temporary visualization module")
 
-    def run_visualization_analysis(self, output_dir: Path) -> bool:
-        vis_module_path = self.get_module_path("visualization_module")
-        try:
-            vis_script = vis_module_path / "staphscope_visualizer.py"
+            vis_script = temp_dir / "staphscope_visualizer.py"
             if not vis_script.exists():
                 self.banner.display_error(f"Visualization script not found at: {vis_script}")
                 return False
-            if not self.copy_html_files_to_visualization_module(output_dir):
-                self.banner.display_warning("Some HTML files missing for visualization, but proceeding anyway...")
-            cmd = [sys.executable, str(vis_script)]
-            self.banner.display_info("Running visualization module...")
-            result = subprocess.run(cmd, capture_output=True, text=True, cwd=vis_module_path)
-            if result.returncode == 0:
-                self.banner.display_success("Visualization completed successfully!")
-                vis_output_dir = vis_module_path / "STAPHSCOPE_VISUALIZATIONS"
-                if vis_output_dir.exists() and vis_output_dir.is_dir():
-                    target_vis_dir = output_dir / "STAPHSCOPE_VISUALIZATIONS"
-                    if target_vis_dir.exists():
-                        shutil.rmtree(target_vis_dir)
-                    shutil.copytree(vis_output_dir, target_vis_dir)
-                    vis_files = list(vis_output_dir.rglob("*"))
-                    html_files = [f for f in vis_files if f.suffix == '.html']
-                    image_files = [f for f in vis_files if f.suffix in ['.png', '.jpg', '.jpeg', '.svg']]
-                    self.banner.display_success(f"✅ Visualizations copied to: {target_vis_dir}")
-                    self.banner.display_info(f"   📊 {len(html_files)} HTML reports")
-                    self.banner.display_info(f"   🖼️  {len(image_files)} visualization images")
-                return True
-            else:
-                self.banner.display_warning("Visualization had issues")
-                return True
-        except Exception as e:
-            self.banner.display_error(f"Visualization failed: {str(e)}")
-            return False
 
-    # -------------------------------------------------------------------------
-    # Sequential analyses runner
-    # -------------------------------------------------------------------------
+            self.banner.display_info("Running visualization module...")
+            cmd = [sys.executable, str(vis_script)]
+            result = subprocess.run(cmd, cwd=temp_dir, capture_output=True, text=True)
+
+            if result.returncode != 0:
+                self.logger.error(f"Visualization failed:\n{result.stderr}")
+                self.banner.display_warning("Visualization had issues")
+                return False
+
+            self.banner.display_success("Visualization completed successfully!")
+
+            vis_output_dir = temp_dir / "STAPHSCOPE_VISUALIZATIONS"
+            if vis_output_dir.exists() and vis_output_dir.is_dir():
+                target_vis_dir = self.user_output_dir / "STAPHSCOPE_VISUALIZATIONS"
+                if target_vis_dir.exists():
+                    shutil.rmtree(target_vis_dir)
+                shutil.copytree(vis_output_dir, target_vis_dir)
+                vis_files = list(vis_output_dir.rglob("*"))
+                html_files = [f for f in vis_files if f.suffix == '.html']
+                image_files = [f for f in vis_files if f.suffix in ['.png', '.jpg', '.jpeg', '.svg']]
+                self.banner.display_success(f"✅ Visualizations copied to: {target_vis_dir}")
+                self.banner.display_info(f"   📊 {len(html_files)} HTML reports")
+                self.banner.display_info(f"   🖼️  {len(image_files)} visualization images")
+            return True
+
+        except Exception as e:
+            self.logger.error(f"Visualization exception: {e}\n{traceback.format_exc()}")
+            return False
+        finally:
+            if not self.keep_temp:
+                shutil.rmtree(temp_dir, ignore_errors=True)
+                self.logger.info(f"Removed temporary directory: {temp_dir}")
+
     def run_sequential_analyses(self, fasta_files: List[Path], output_dir: Path, threads: int,
                                skip_modules: Dict[str, bool],
                                amr_min_identity: float, amr_min_coverage: float,
@@ -671,9 +632,6 @@ class StaphScopeOrchestrator:
             print()
         return results
 
-    # -------------------------------------------------------------------------
-    # Main analysis entry point
-    # -------------------------------------------------------------------------
     def run_complete_analysis(self, input_path: str, output_dir: str, threads: int = 1,
                              skip_modules: Dict[str, bool] = None,
                              skip_comprehensive: bool = False,
@@ -746,7 +704,6 @@ class StaphScopeOrchestrator:
                 analysis_results["Comprehensive & Ultimate Reports"] = summary_success
                 if summary_success:
                     self.copy_summary_results_to_final_directory(output_path)
-                    # --- Remove top-level duplicates (keep only Staphscope_final_report) ---
                     for dup in ["staphscope_comprehensive_report.html",
                                 "staphscope_comprehensive_report.json",
                                 "staphscope_comprehensive_report.tsv"]:
