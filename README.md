@@ -10,7 +10,7 @@
 
 #### **Complete MRSA/MSSA genomic analysis in minutes — not hours**
 
-
+[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md)
 ![Version](https://anaconda.org/bbeckley-hub/staphscope/badges/version.svg)
 ![Latest Release Date](https://anaconda.org/bbeckley-hub/staphscope/badges/latest_release_date.svg)
 ![Platforms](https://anaconda.org/bbeckley-hub/staphscope/badges/platforms.svg)
