@@ -96,7 +96,6 @@
 - [🔍 Analytical Modules](#-analytical-modules)
 - [📈 Performance Benchmarks](#-performance-benchmarks)
 - [🔬 Validation & Accuracy](#-validation--accuracy)
-- [🆚 Tool Comparison](#-tool-comparison)
 - [🤖 AI Integration Guide](#-ai-integration-guide)
 - [🔮 Future Development](#-future-development)
 - [❓ Frequently Asked Questions](#-frequently-asked-questions)
@@ -552,25 +551,6 @@ batch_results/
 - **Critical Genes**: *mecA* (21), *mecC* (1), *fosB* (20)
 - **PVL**: 7 isolates (29.2%), all ST8/ST59
 - **Plasmids**: 14/24 genomes (58.3%) with plasmid replicons
-
----
-
-## 🆚 **Tool Comparison**
-
-| Feature | StaphScope v1.2.3 | Bactopia | Nullarbor | Mykrobe |
-|---------|------------|----------|-----------|---------|
-| **Analysis Focus** | 🎯 *S. aureus*-optimized | Multi-species | Multi-species | Multi-species |
-| **Input Format** | Assembled genomes | Raw reads | Raw reads | Raw reads |
-| **Installation** | Single Conda package | Complex (Nextflow+Docker) | Conda + DB downloads | Single Conda |
-| **Execution** | Local CLI + Web GUI | Local/Cluster | Local | CLI + Web GUI |
-| **Parallelization** | Auto-resource detection | Pipeline-level | Sample-level | Single-threaded |
-| **MRSA Features** | Integrated classification + lineage DB | General typing | General typing | Resistance only |
-| **Dynamic Grouping** | ✅ By MLST/spa/SCCmec/triple | ❌ | ❌ | ❌ |
-| **Mutation Tab** | ✅ Full point mutation table | ❌ | ❌ | ❌ |
-| **Critical Gene Flagging** | ✅ *mecA*, PVL, *van* genes | ❌ | ❌ | ❌ |
-| **Resource Needs** | Low-moderate (2+ GB) | High (HPC recommended) | High (Cluster) | Low-moderate |
-| **Web Interface** | ✅ StaphScope Web | ❌ | ❌ | ✅ Mykrobe web |
-
 ---
 
 ## 🤖 **AI Integration Guide**
