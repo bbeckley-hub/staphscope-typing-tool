@@ -6,7 +6,7 @@ Author: Brown Beckley <brownbeckley94@gmail.com>
 Date: 2025
 Send a quick mail for any issues or further explanations.
 Affiliation: University of Ghana Medical School-Department of Medical Biochemistry
-version 1.2.3(2026-06-10)
+version 1.3.0(2026-07-12)
 """
 
 import random
@@ -23,7 +23,7 @@ class StaphScopeBanner:
     def __init__(self):
         self.banner_art = self._get_banner_art()
         self.quotes = self._get_scientific_quotes()
-        self.version = "v1.2.3"
+        self.version = "v1.3.0"
         self.author_info = self._get_author_info()
         self.terminal_width = self._get_terminal_width()
     
