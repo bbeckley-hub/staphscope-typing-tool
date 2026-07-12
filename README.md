@@ -74,7 +74,7 @@
 
 ## 🎉 **What’s New in v1.3.0** (July 2026)
 
-- **🧬 Agr Typing Module** – Full integration of **AgrV** (Raghuram et al., 2022) for accessory gene regulator (agr) typing. Now you can determine agr types I‑IV, with all combinations: agr‑MLST, agr‑spa, agr‑SCCmec, and **four‑way typing (ST‑spa‑SCCmec‑agr)**. The Ultimate Reporter includes a dedicated agr tab with distribution, sample lists, and all combinations.
+- **🧬 Agr Typing Module** – Full integration of **AgrVATE** (Raghuram et al., 2022) for accessory gene regulator (agr) typing. Now you can determine agr types I‑IV, with all combinations: agr‑MLST, agr‑spa, agr‑SCCmec, and **four‑way typing (ST‑spa‑SCCmec‑agr)**. The Ultimate Reporter includes a dedicated agr tab with distribution, sample lists, and all combinations.
 
 - **📊 Sample‑Centric Reporter (NEW!)** – A completely new interactive HTML report that shows **each genome** as an interactive box with all its genes. Perfect for drill‑down analysis: filter by sample name or database, view per‑sample gene lists for AMR, Virulence, BACMET, Plasmids, and Mutations. This is the **opposite** of the gene‑centric report – now you have both!
 
@@ -172,7 +172,7 @@ Curious what the output looks like? Click the badge below to view a fully intera
 ### 🚀 **v1.3.0 Exclusive Features**
 
 #### 🧬 **Agr Typing Module** (NEW)
-- **AgrV integration** – Uses [AgrV](https://github.com/VishnuRaghuram94/AgrV) (Raghuram et al., 2022) for accurate agr typing.
+- **AgrVATE integration** – Uses [AgrV](https://github.com/VishnuRaghuram94/AgrVATE) (Raghuram et al., 2022) for accurate agr typing.
 - **Dedicated agr tab** – Full agr type distribution (I‑IV), samples by agr type, and all combinations:
   - agr‑MLST
   - agr‑spa
@@ -392,7 +392,7 @@ No more `sudo chown`, no more padlock icons, no more angry HPC emails.
 | **ABRicate** | Mass screening for resistance/virulence | [tseemann/abricate](https://github.com/tseemann/abricate) | GPL v2 |
 | **AMRFinderPlus** | Antimicrobial resistance gene detection | [ncbi/amr](https://github.com/ncbi/amr) | Public Domain |
 | **SCCmecFinder** | SCCmec typing | [genomicepidemiology/Sccmecfinder](https://bitbucket.org/genomicepidemiology/Sccmecfinder) | Apache-2.0 |
-| **Agr** | Agr typing (NEW) | [VishnuRaghuram94/AgrV](https://github.com/VishnuRaghuram94/AgrVATE) | MIT |
+| **Agr** | Agr typing (NEW) | [VishnuRaghuram94/AgrVATE](https://github.com/VishnuRaghuram94/AgrVATE) | MIT |
 | **spa typing** | *spa* gene typing | [spa.ridom.de](https://spa.ridom.de/) | Free for academic use |
 | **PubMLST** | MLST allele database | [pubmlst.org](https://pubmlst.org/organisms/staphylococcus-aureus) | Open access for research |
 
