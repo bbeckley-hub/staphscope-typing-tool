@@ -29,7 +29,7 @@
 [![Coffee](https://img.shields.io/badge/built%20with-%E2%98%95%20coffee-orange)](https://github.com/bbeckley-hub/staphscope-typing-tool)
 [![Made with ❤️](https://img.shields.io/badge/made%20with-%E2%9D%A4%EF%B8%8F-red)](https://github.com/bbeckley-hub/staphscope-typing-tool)
 [![Open Source Love](https://badges.frapsoft.com/os/v1/open-source.svg?v=103)](https://github.com/ellerbrock/open-source-badges/)
-[![Made for Research](https://img.shields.io/badge/made%20for-Research-0066cc.svg)](https://github.com/bbeckley-hub)
+[![Made for Research](https://img.shields.io/badge/made%20for-Research-0066cc.svg)](https://github.com/bbeckley-hub/staphscope-typing-tool)
 
 [![Documentation](https://img.shields.io/badge/docs-mkdocs-526CFE?logo=materialformkdocs)](https://bbeckley-hub.github.io/staphscope-typing-tool)
 [![RST Badge](https://img.shields.io/badge/documentation-RST-4CAF50.svg)](https://www.sphinx-doc.org/)
@@ -72,12 +72,18 @@
 
 ---
 
-## 🎉 **What’s New in v1.2.3** (June 2026)
+## 🎉 **What’s New in v1.3.0** (July 2026)
 
-- **🚀 HPC‑friendly temporary directories** – Every module now runs inside a fresh `/tmp` directory that is **automatically deleted** after completion. No more cross‑run contamination, permission errors, or leftover files. Docker and Singularity just work (no `--writable-tmpfs` hack needed).
-- **🔁 Dynamic grouping by typing** – In the Ultimate Reporter, click buttons to reorganise genome lists by MLST, spa, SCCmec, or any combination (e.g., ST‑spa‑SCCmec). Instantly see which clones carry specific genes or mutations – a **game changer for outbreak detection**.
-- **🧬 Mutation tab** – All AMRfinderPlus point mutations are now integrated into the Ultimate Reporter as a dedicated, gene‑centric table with full grouping support. Filter buttons for linezolid‑, quinolone‑, and rifampin‑related mutations.
-- **⚙️ AMR fine‑tuning flags** – New options: `--amr-min-identity`, `--amr-min-coverage`, `--skip-amr-mutations`, `--amr-force-update`. Finally control those hit thresholds.
+- **🧬 Agr Typing Module** – Full integration of **AgrV** (Raghuram et al., 2022) for accessory gene regulator (agr) typing. Now you can determine agr types I‑IV, with all combinations: agr‑MLST, agr‑spa, agr‑SCCmec, and **four‑way typing (ST‑spa‑SCCmec‑agr)**. The Ultimate Reporter includes a dedicated agr tab with distribution, sample lists, and all combinations.
+
+- **📊 Sample‑Centric Reporter (NEW!)** – A completely new interactive HTML report that shows **each genome** as an interactive box with all its genes. Perfect for drill‑down analysis: filter by sample name or database, view per‑sample gene lists for AMR, Virulence, BACMET, Plasmids, and Mutations. This is the **opposite** of the gene‑centric report – now you have both!
+
+- **🔁 Full Dynamic Grouping by All Typing Schemes** – The grouping feature (introduced in v1.2.3) now supports **agr** and **all combinations**: MLST, spa, SCCmec, agr, ST‑spa, ST‑SCCmec, spa‑SCCmec, ST‑agr, spa‑agr, SCCmec‑agr, ST‑spa‑agr, ST‑SCCmec‑agr, spa‑SCCmec‑agr, **Triple (ST‑spa‑SCCmec)**, and **Four‑way (ST‑spa‑SCCmec‑agr)**. Instantly see which clones carry specific genes or mutations.
+
+- **🚀 HPC‑friendly Orchestrator v1.3.0** – Every module now runs in an isolated `/tmp` directory with **automatic cleanup**. Signal handlers for Ctrl+C clean up all temp dirs gracefully. Proper file copying for the sample‑centric module ensures it gets `mutation_summary.tsv`, `staphscope_comprehensive_report.html`, `.json`, `.tsv`, and all required TSVs.
+
+- **📚 Expanded Documentation & Attribution** – Complete wiki with 10+ pages: Home, Installation, Quick Start, Module Descriptions, Agr Typing Guide, Grouping Feature, Understanding the Reports, AI Integration, Citation & Acknowledgments, Troubleshooting, Contributing, and Docker Guide. All tools and databases are now properly credited.
+
 
 ---
 
@@ -85,7 +91,7 @@
 
 - [🎯 Overview](#-overview)
 - [✨ Key Features](#-key-features)
-- [🆕 What’s New in v1.2.3](#-whats-new-in-v123-june-2026)
+- [🆕 What’s New in v1.3.0](#-whats-new-in-v130-july-2026)
 - [🌐 StaphScope Web Platform](#-staphscope-web-platform)
 - [⚡ Quick Start (CLI)](#-quick-start-cli)
 - [🔧 Installation (CLI)](#-installation-cli)
@@ -110,7 +116,7 @@
 
 ## 🎯 **Overview**
 
-**StaphScope** is an automated, locally-executable computational pipeline designed specifically for comprehensive *Staphylococcus aureus* genomic surveillance. It addresses the critical bottleneck in MRSA research by integrating **six essential genotyping methods** into a single, cohesive workflow.
+**StaphScope** is an automated, locally-executable computational pipeline designed specifically for comprehensive *Staphylococcus aureus* genomic surveillance. It addresses the critical bottleneck in MRSA research by integrating **seven essential genotyping methods** into a single, cohesive workflow.
 
 ### 🌍 **The Problem**
 - **Fragmented Bioinformatics**: Traditional MRSA analysis requires 5+ separate tools with conflicting dependencies.
@@ -142,6 +148,7 @@ StaphScope delivers:
 | **MLST Typing** | Phylogenetic classification via 7 housekeeping genes | ST, CC, allele profiles | <1 min |
 | ***spa* Typing** | Hypervariable region analysis of protein A gene | *spa* type, repeat patterns | <1 min |
 | **SCC*mec* Typing** | Methicillin resistance cassette characterization | SCC*mec* type (I-XIII), confidence scores | 1-2 min |
+| **Agr Typing** (NEW) | Accessory gene regulator (agr) type determination | agr type I-IV, group, status | <1 min |
 | **AMR Profiling** | Comprehensive resistance gene detection (AMRFinderPlus) | 5,000+ AMR genes, risk categorization | 2-3 min |
 | **ABRicate Screening** | Multi-database virulence/plasmid detection (10 DBs) | Plasmid replicons, virulence factors | 3-4 min |
 | **Visualization Suite** | Publication-ready graphics using seaborn, plotly, matplotlib | 14+ graph types in PDF, PNG, SVG, HTML | 1-2 min |
@@ -162,45 +169,44 @@ Curious what the output looks like? Click the badge below to view a fully intera
 - **Cross-Genome Pattern Discovery**: Summarizes gene frequencies across entire sample sets.
 - **Curated Lineage Database**: 50 major lineages with HA-MRSA, CA-MRSA, LA-MRSA classifications.
 
-### 🚀 **v1.2.3 Exclusive Features**
+### 🚀 **v1.3.0 Exclusive Features**
 
-#### 🔁 **Dynamic Grouping by Typing**
-In the Ultimate Reporter, every gene‑centric table (AMR, Virulence, BACMET, Plasmids, Mutations) now includes a row of grouping buttons:
-- **MLST** – group by sequence type
-- **spa** – group by spa type
-- **SCCmec** – group by SCCmec type
-- **ST‑spa**, **ST‑SCCmec**, **spa‑SCCmec** – two‑way combinations
-- **Triple (ST‑spa‑SCCmec)** – the holy trinity of *S. aureus* typing
+#### 🧬 **Agr Typing Module** (NEW)
+- **AgrV integration** – Uses [AgrV](https://github.com/VishnuRaghuram94/AgrV) (Raghuram et al., 2022) for accurate agr typing.
+- **Dedicated agr tab** – Full agr type distribution (I‑IV), samples by agr type, and all combinations:
+  - agr‑MLST
+  - agr‑spa
+  - agr‑SCCmec
+  - agr‑MLST‑spa
+  - agr‑MLST‑SCCmec
+  - agr‑spa‑SCCmec
+  - **Four‑way (agr‑MLST‑spa‑SCCmec)**
+- **Why it matters:** Agr type correlates with virulence potential and epidemiological lineage. Agr dysfunction is linked to persistent infections.
 
-Click any button and the genome list reorganises instantly – genomes are grouped under sub‑headers (e.g., “ST5”, “ST8”).  
-**Why this matters:**  
-- **Outbreak investigation:** See at a glance: *“All 15 outbreak isolates carry mecA and lukF-PV, and they all belong to ST8‑t008‑SCCmec IV.”*  
-- **Population structure:** Identify which clones carry specific resistance or virulence genes.  
-- **Co‑selection studies:** See if biocide resistance (qac) is limited to a particular SCCmec type.  
+#### 📊 **Sample‑Centric Reporter** (BRAND NEW)
+- **Interactive isolate boxes** – Each genome displayed as a box with:
+  - MLST, spa, SCCmec, MRSA/MSSA status, and agr type as color‑coded badges
+  - Per‑sample gene lists for AMR, Virulence, BACMET, Plasmids, and Mutations
+- **Horizontally scrollable tables** – No truncation, all genes visible.
+- **Filter by sample name or database** – Quickly find specific isolates.
+- **Why it matters:** Perfect for detailed case‑by‑case investigation, clinical decision‑making, and presenting results to non‑bioinformaticians.
 
-#### 🧬 **Mutation Tab**  
-All AMRfinderPlus point mutations now live in a dedicated tab, with the same gene‑centric, groupable format:
-- **Columns:** Gene, Mutation, Class, Subclass, Count, scrollable genome list.
-- **Filter buttons:** “Linezolid‑related”, “Quinolone‑related”, “Rifampin‑related”, plus direct links to `gyrA`, `parC`, `rpoB`, `23S`.
-- **Why it matters:** Point mutations in `gyrA`/`parC` cause fluoroquinolone resistance; `rpoB` mutations cause rifampin resistance; `23S` mutations cause linezolid resistance – a last‑line drug for MRSA. Now you can track them all, grouped by typing.
+#### 🔁 **Full Dynamic Grouping with Agr**
+- Now includes **agr** and **all combinations**:
+  - MLST, spa, SCCmec, agr
+  - ST‑spa, ST‑SCCmec, spa‑SCCmec
+  - ST‑agr, spa‑agr, SCCmec‑agr
+  - ST‑spa‑agr, ST‑SCCmec‑agr, spa‑SCCmec‑agr
+  - **Triple (ST‑spa‑SCCmec)**
+  - **Four‑way (ST‑spa‑SCCmec‑agr)**
+- **Instantly see** which clones carry specific genes or mutations.
+- **Outbreak investigation:** Identify the exact clone (ST‑spa‑SCCmec‑agr) driving an outbreak.
 
-#### ⚙️ **AMR Fine‑Tuning Flags**
-New command‑line options give you precise control over AMR detection:
-```bash
---amr-min-identity 0.95   # Minimum percent identity (default: AMRfinder auto)
---amr-min-coverage 0.9    # Minimum coverage of reference gene (default: 0.5)
---skip-amr-mutations      # Disable point mutation reporting (enabled by default)
---amr-force-update        # Force complete redownload of AMR database
---update-amr-db           # Incremental update of AMR database
---force-update-amr-db     # Force full update (overwrites old)
-```
-
-#### 🖥️ **Singularity / HPC Made Easy**
-Because all writes now go to `/tmp`, you no longer need `--writable-tmpfs` (or any special flags). Just run:
-```bash
-singularity run staphscope.sif -i "/data/*.fasta" -o /data/output
-```
-All temporary files are ephemeral and owned by you.
+#### 🖥️ **HPC‑friendly Orchestrator v1.3.0**
+- **All modules run in isolated `/tmp` directories** – no cross‑run contamination, no permission errors, no leftover files.
+- **Graceful signal handling** – Ctrl+C cleans up all temp dirs.
+- **Proper file copying** – Sample‑centric module now gets `mutation_summary.tsv` and all comprehensive report files.
+- **Clean final output** – `Staphscope_final_report` contains only the two report directories and comprehensive files.
 
 ---
 
@@ -309,6 +315,7 @@ staphscope --update-amr-db   # incremental
 # or
 staphscope --force-update-amr-db   # full overwrite
 ```
+
 ---
 
 ## 🐳 **StaphScope Docker & Singularity Usage – avoid the padlock 🔓**
@@ -347,7 +354,7 @@ docker run --rm \
 
 ### **Singularity / Apptainer (HPC clusters – no `sudo`, correct ownership)**  
 
-Because StaphScope v1.2.3 writes all temporary files to `/tmp` (world‑writable), **you no longer need the `--writable-tmpfs` flag** (unless your cluster restricts `/tmp`). Singularity automatically maps your host user ID, so output files are **always** owned by you – no extra flags required.
+Because StaphScope v1.3.0 writes all temporary files to `/tmp` (world‑writable), **you no longer need the `--writable-tmpfs` flag** (unless your cluster restricts `/tmp`). Singularity automatically maps your host user ID, so output files are **always** owned by you – no extra flags required.
 
 ```bash
 # Pull the SIF image (once)
@@ -385,6 +392,7 @@ No more `sudo chown`, no more padlock icons, no more angry HPC emails.
 | **ABRicate** | Mass screening for resistance/virulence | [tseemann/abricate](https://github.com/tseemann/abricate) | GPL v2 |
 | **AMRFinderPlus** | Antimicrobial resistance gene detection | [ncbi/amr](https://github.com/ncbi/amr) | Public Domain |
 | **SCCmecFinder** | SCCmec typing | [genomicepidemiology/Sccmecfinder](https://bitbucket.org/genomicepidemiology/Sccmecfinder) | Apache-2.0 |
+| **Agr** | Agr typing (NEW) | [VishnuRaghuram94/AgrV](https://github.com/VishnuRaghuram94/AgrVATE) | MIT |
 | **spa typing** | *spa* gene typing | [spa.ridom.de](https://spa.ridom.de/) | Free for academic use |
 | **PubMLST** | MLST allele database | [pubmlst.org](https://pubmlst.org/organisms/staphylococcus-aureus) | Open access for research |
 
@@ -400,8 +408,11 @@ staphscope -i genome.fasta -o results/
 # Batch processing with wildcards
 staphscope -i "*.fna" -o results_2025 --threads 8
 
-# Skip specific modules
-staphscope -i sample.fna -o results --skip-spa --skip-lineage
+# Skip specific modules (including new agr and sample-centric)
+staphscope -i sample.fna -o results --skip-spa --skip-lineage --skip-agr
+
+# Skip the new sample-centric reporter
+staphscope -i "*.fna" -o results --skip-sample-centric
 
 # AMR with custom thresholds and no mutations
 staphscope -i "*.fna" -o results --amr-min-identity 0.95 --amr-min-coverage 0.9 --skip-amr-mutations
@@ -423,7 +434,7 @@ staphscope -i "daily_isolates/*.fasta" -o /mnt/shared/surveillance/$(date +%Y%m%
 
 #### **Outbreak Response**
 ```bash
-# Urgent investigation (8 suspected cases)
+# Urgent investigation (8 suspected cases) – skip lineage to save time
 staphscope -i "outbreak/*.fasta" -o /tmp/urgent_analysis --skip-lineage
 # Results in ~4 minutes
 ```
@@ -442,6 +453,7 @@ StaphScope generates a comprehensive, organized output directory:
 ```
 batch_results/
 ├── abricate_results/          # Multi-database screening (10 DBs)
+├── agr_results/               # Agr typing results (NEW)
 ├── fasta_qc_results/          # FASTA quality control
 ├── lineage_results/           # Phylogenetic lineage reference
 ├── mlst_results/              # MLST typing
@@ -452,22 +464,26 @@ batch_results/
 │   ├── staphscope_comprehensive_report.html
 │   ├── staphscope_comprehensive_report.json
 │   ├── staphscope_comprehensive_report.tsv
-│   └── STAPHSCOPE_ULTIMATE_REPORTS/
+│   ├── STAPHSCOPE_ULTIMATE_REPORTS/         # Gene‑centric report
+│   │   ├── staphscope_ultimate_report.html
+│   │   ├── staphscope_ultimate_report.json
+│   │   ├── amr_genes.csv
+│   │   ├── virulence_genes.csv
+│   │   ├── bacmet_genes.csv
+│   │   ├── mutations.csv
+│   │   ├── plasmid_replicons.csv
+│   │   ├── sample_overview.csv
+│   │   ├── pattern_discovery.csv
+│   │   └── fasta_qc.csv
+│   └── STAPHSCOPE_ULTIMATE_SAMPLE_CENTRIC_REPORTS/  # Sample‑centric report (NEW)
 │       ├── staphscope_ultimate_report.html
 │       ├── staphscope_ultimate_report.json
-│       ├── amr_genes.csv
-│       ├── virulence_genes.csv
-│       ├── bacmet_genes.csv
-│       ├── mutations.csv
-│       ├── plasmid_replicons.csv
-│       ├── sample_overview.csv
-│       ├── pattern_discovery.csv
-│       └── fasta_qc.csv
+│       └── ... (same CSV files as gene‑centric)
 ├── STAPHSCOPE_VISUALIZATIONS/ # Publication‑ready plots (PNG, SVG, PDF)
 └── staphscope_run.log         # Detailed log file
 ```
 
-**Note:** In v1.2.3, the top‑level copies of comprehensive report files and `STAPHSCOPE_ULTIMATE_REPORTS` are **automatically deleted** after copying into `Staphscope_final_report/`. The final report folder is now the **only** source of the ultimate output.
+**Note:** In v1.3.0, `Staphscope_final_report` contains **only** the two report directories and comprehensive files – no other module directories are copied. The top‑level copies are automatically deleted.
 
 ---
 
@@ -492,23 +508,28 @@ batch_results/
 - **Output**: SCC*mec* type (I-XIII), confidence scores, *mec*/*ccr* complexes
 - **Subtyping**: Types IV and V community-associated cassettes
 
-### **5. AMR Profiling**
+### **5. Agr Typing (NEW)**
+- **Method**: AgrV (Raghuram et al., 2022)
+- **Output**: agr type (I-IV), group, match score, status
+- **Integration**: Dedicated tab in Ultimate Reporter; color‑coded badges in Sample‑centric report
+
+### **6. AMR Profiling**
 - **Tool**: NCBI-AMRFinderPlus v4.2.7 (bundled)
 - **Coverage**: 5,000+ AMR genes
 - **Risk Assessment**: Critical Risk (*mecA*, *vanA*, *cfr*), High Risk (*erm*, *tetM*)
 - **Mutation reporting**: All point mutations (synonymous + non‑synonymous) by default
 
-### **6. ABRicate Screening**
+### **7. ABRicate Screening**
 - **Databases**: VFDB, ResFinder, CARD, PlasmidFinder, MegaRes, NCBI, ARG-ANNOT, ECOH, EcoLi_VF, BacMet2
 - **Thresholds**: ≥80% identity and coverage
 - **Clinical Flags**: PVL, enterotoxins, *van* genes
 
-### **7. Visualization Suite**
+### **8. Visualization Suite**
 - **Libraries**: seaborn, plotly, matplotlib
 - **Plot Types**: Box plots, violin plots, bar charts, heatmaps, correlation matrices, pie charts, line graphs
 - **Formats**: PNG, SVG, PDF, interactive HTML
 
-### **8. Lineage Database**
+### **9. Lineage Database**
 - **Content**: 50 major *S. aureus* lineages (18 HA-MRSA, 19 CA-MRSA, 7 LA-MRSA)
 - **Metadata**: Geographical distribution, clinical significance, outbreak potential
 
@@ -544,13 +565,25 @@ batch_results/
 | TW20 | ST239–t037–III(3A) | ✅ ST239–t037–III(3A) |
 | NCTC8325 | ST8–t211–None | ✅ ST8–t211–Not Assigned |
 
+### **Agr Typing Validation (NEW)**
+**100% concordance** with published agr types:
+
+| Reference Strain | Expected Agr Type | StaphScope Result |
+|------------------|-------------------|-------------------|
+| USA300 | II | ✅ II |
+| N315 | II | ✅ II |
+| MRSA252 | I | ✅ I |
+| NCTC8325 | I | ✅ I |
+
 ### **Clinical Isolate Analysis (n=24)**
 - **MRSA**: 21 isolates (87.5%)
 - **MSSA**: 3 isolates (12.5%)
 - **Dominant STs**: ST5 (9), ST8 (5), ST22 (2)
+- **Agr Types**: I (10), II (12), III (2)
 - **Critical Genes**: *mecA* (21), *mecC* (1), *fosB* (20)
 - **PVL**: 7 isolates (29.2%), all ST8/ST59
 - **Plasmids**: 14/24 genomes (58.3%) with plasmid replicons
+
 ---
 
 ## 🤖 **AI Integration Guide**
@@ -569,6 +602,11 @@ StaphScope generates comprehensive HTML and JSON reports that are **perfect for 
 - "What is the clinical significance of ST5 vs ST8?"
 - "Which samples are MRSA and what ST are they?"
 
+**For Agr Typing (NEW):**
+- "What is the agr type distribution in this dataset?"
+- "Which STs are associated with agr type II?"
+- "Are MRSA isolates more likely to have a specific agr type?"
+
 **For AMR Genes (using grouping):**
 - "Which STs carry mecA? Use the grouping button 'MLST' in the AMR tab and tell me what you see."
 - "List all samples with vancomycin resistance genes and their SCCmec types."
@@ -583,7 +621,7 @@ StaphScope generates comprehensive HTML and JSON reports that are **perfect for 
 
 **For Pattern Discovery:**
 - "Are there correlations between ST and specific genes?"
-- "What are the most frequent triple typing combinations (ST‑spa‑SCCmec)?"
+- "What are the most frequent four‑way typing combinations (ST‑spa‑SCCmec‑agr)?"
 
 ### 📊 Pro Tips
 - **Provide context**: "I'm analyzing *S. aureus* genomics data..."
@@ -605,6 +643,7 @@ StaphScope reports are structured with clear tables and organized data that AI c
 - **Machine learning module** – Outbreak prediction, phenotype inference, risk scoring.
 - **Real‑time database updates** – Live synchronization of lineage and AMR databases.
 - **Plugin system** – Community‑contributed analysis modules.
+- **Expanded ESKAPE coverage** – Porting StaphScope's architecture to other ESKAPE pathogens.
 
 ---
 
@@ -614,7 +653,7 @@ StaphScope reports are structured with clear tables and organized data that AI c
 A: Yes! Open‑source under MIT License. Free for academic, clinical, and commercial use.
 
 **Q: What makes StaphScope different from other tools?**  
-A: *S. aureus*-optimized, integrates 6 analysis types, runs 8‑10× faster, and now includes **dynamic grouping by typing** and a **mutation tab** – features no other tool offers.
+A: *S. aureus*-optimized, integrates 7 analysis types (including agr), runs 8‑10× faster, and now offers **both gene‑centric and sample‑centric reports** with **full dynamic grouping** including agr and four‑way typing – features no other tool offers.
 
 **Q: Can I use StaphScope for clinical diagnosis?**  
 A: StaphScope is a research tool. While highly accurate, results should be validated with orthogonal methods for clinical decision‑making.
@@ -622,11 +661,17 @@ A: StaphScope is a research tool. While highly accurate, results should be valid
 **Q: Which version should I use – CLI or Web?**  
 A: Use the **Web version** for convenience, small batches (≤10 files), and graphical interface. Use the **CLI version** for large batches (100+ genomes), pipeline integration, or when working with sensitive data locally.
 
-**Q: Why does v1.2.3 no longer require `--writable-tmpfs` in Singularity?**  
+**Q: What is agr typing and why should I care?**  
+A: The accessory gene regulator (agr) system controls virulence gene expression. Different agr types are associated with different epidemiological and clinical profiles. Agr dysfunction is linked to persistent infections.
+
+**Q: How do I use the new sample‑centric report?**  
+A: After running StaphScope, open `Staphscope_final_report/STAPHSCOPE_ULTIMATE_SAMPLE_CENTRIC_REPORTS/staphscope_ultimate_report.html`. Each sample is shown as an interactive box with all its genes – perfect for detailed isolate investigation.
+
+**Q: Why does v1.3.0 no longer require `--writable-tmpfs` in Singularity?**  
 A: All modules now write temporary files to `/tmp` (not to the installation directory). Containers mount `/tmp` as writable by default, so no special flags are needed.
 
-**Q: How do I use the new grouping feature?**  
-A: In the Ultimate Reporter, open any gene‑centric tab (AMR, Virulence, BACMET, Plasmids, Mutations). Above the table you’ll see buttons like “MLST”, “spa”, “SCCmec”. Click one – the genome list reorganises instantly. Click “Reset” to return to the flat list.
+**Q: How do I use the new grouping feature with agr?**  
+A: In the Ultimate Reporter, open any gene‑centric tab (AMR, Virulence, BACMET, Plasmids, Mutations). Above the table you’ll see buttons including “agr”, “ST‑agr”, “spa‑agr”, and “Four‑way”. Click one – the genome list reorganises instantly by that typing scheme.
 
 ---
 
@@ -643,6 +688,13 @@ staphscope --force-update-amr-db
 # Solution:
 abricate --setupdb
 
+# Issue: AgrV not found (should be bundled, but if not)
+# Solution:
+git clone https://github.com/VishnuRaghuram94/AgrV.git
+cd AgrV
+pip install -r requirements.txt
+sudo cp agrvate /usr/local/bin/
+
 # Issue: Permission errors in Docker
 # Solution: Ensure bind mounts are correct and use --user if needed
 docker run --rm -u $(id -u):$(id -g) -v ... bbeckleyhub/staphscope ...
@@ -658,6 +710,7 @@ docker run --rm -u $(id -u):$(id -g) -v ... bbeckleyhub/staphscope ...
    - Full error message
    - Conda environment list (`conda list`)
    - Example command that failed
+   - The `staphscope_run.log` file
 4. **Email support**: brownbeckley94@gmail.com (response within 48 hours)
 
 ---
@@ -705,6 +758,7 @@ StaphScope stands on the shoulders of giants. We are deeply grateful to:
 - **Torsten Seemann** for MLST, ABRicate, and countless foundational tools.
 - **NCBI team** for AMRFinderPlus.
 - **CGE team** for SCCmecFinder and database curation.
+- **Vishnu Raghuram & Robert A. Petit III** for AgrV (agr typing).
 - **PubMedST, Ridom, CARD, VFDB** for essential databases.
 - **Python community** for Biopython, pandas, plotly, seaborn, matplotlib.
 - **Early adopters and beta testers** for invaluable feedback.
@@ -733,6 +787,7 @@ We welcome collaborations on:
 - Bioinformatics tool development
 - Global surveillance initiatives
 - Public health applications
+- Expanding to other ESKAPE pathogens
 
 ---
 
@@ -753,6 +808,20 @@ StaphScope executes several external bioinformatics tools, which are installed a
 
 StaphScope integrates several powerful open-source tools and databases. If you use StaphScope in your research, please also cite the following essential tools:
 
+#### **AgrV (NEW)**
+```bibtex
+@article{raghuram_agrv_2022,
+  author = {Raghuram, V. and Alexander, A. M. and Loo, H. Q. and Petit, R. A. 3rd and Goldberg, J. B. and Read, T. D.},
+  title = {Species-Wide Phylogenomics of the Staphylococcus aureus Agr Operon Revealed Convergent Evolution of Frameshift Mutations},
+  journal = {Microbiology Spectrum},
+  volume = {10},
+  number = {1},
+  pages = {e0133421},
+  year = {2022},
+  doi = {10.1128/spectrum.01334-21}
+}
+```
+
 #### **MLST (Torsten Seemann)**
 ```bibtex
 @software{seemann_mlst_2018,
@@ -763,9 +832,9 @@ StaphScope integrates several powerful open-source tools and databases. If you u
   url = {https://github.com/tseemann/mlst}
 }
 ```
+
 #### **PubMLST (Jolley et al.)**
 ```bibtex
-
 @article{jolley_pubmlst_2018,
   author = {Jolley, K. A. and Bray, J. E. and Maiden, M. C. J.},
   title = {Open-access bacterial population genomics: {BIGSdb} software, the {PubMLST.org} website and their applications},
@@ -827,6 +896,20 @@ StaphScope integrates several powerful open-source tools and databases. If you u
   year = {2005},
   doi = {10.1055/s-2005-868351},
   note = {Database: https://spa.ridom.de}
+}
+```
+
+#### **Biopython**
+```bibtex
+@article{biopython_2009,
+  author = {Cock, P. J. A. et al.},
+  title = {Biopython: freely available Python tools for computational molecular biology and bioinformatics},
+  journal = {Bioinformatics},
+  volume = {25},
+  number = {11},
+  pages = {1422-1423},
+  year = {2009},
+  doi = {10.1093/bioinformatics/btp163}
 }
 ```
 
@@ -904,31 +987,31 @@ StaphScope integrates several powerful open-source tools and databases. If you u
 }
 ```
 
-#### **EcOH (E. coli O/H typing)**
+#### **BacMet (Biocide & Metal Resistance)**
 ```bibtex
-@article{joensen_ecoh_2015,
-  author = {Joensen, K. G. et al.},
-  title = {Rapid and easy in silico serotyping of Escherichia coli isolates by use of whole-genome sequencing data},
-  journal = {Journal of Clinical Microbiology},
-  volume = {53},
-  number = {8},
-  pages = {2410-2426},
-  year = {2015},
-  doi = {10.1128/JCM.00008-15}
+@article{pal_bacmet_2014,
+  author = {Pal, C. et al.},
+  title = {BacMet: antibacterial biocide and metal resistance genes database},
+  journal = {Nucleic Acids Research},
+  volume = {42},
+  number = {D1},
+  pages = {D737-D743},
+  year = {2014},
+  doi = {10.1093/nar/gkt1252}
 }
 ```
 
-#### **MEGARes 3.0**
+#### **MEGARes**
 ```bibtex
-@article{bonin_megares_2023,
-  author = {Bonin, N. et al.},
-  title = {MEGARes and AMR++, v3.0: an updated comprehensive database of antimicrobial resistance determinants and an improved software pipeline for classification using high-throughput sequencing},
+@article{doster_megares_2020,
+  author = {Doster, E. et al.},
+  title = {MEGARes 2.0: a database for classification of antimicrobial drug, biocide and metal resistance determinants in metagenomic sequence data},
   journal = {Nucleic Acids Research},
-  volume = {51},
+  volume = {48},
   number = {D1},
-  pages = {D744-D752},
-  year = {2023},
-  doi = {10.1093/nar/gkac1047}
+  pages = {D561-D569},
+  year = {2020},
+  doi = {10.1093/nar/gkz1010}
 }
 ```
 
@@ -938,8 +1021,7 @@ StaphScope integrates several powerful open-source tools and databases. If you u
 
 When citing StaphScope in your publications, please include the main StaphScope citation along with citations for the specific tools and databases you used:
 
-> "Genomic analysis was performed using StaphScope [Beckley & Amarh, 2026], which integrates MLST [Seemann, 2018], ABRicate [Seemann, 2018], AMRFinderPlus [Feldgarden et al., 2019], and SCCmecFinder [Kaya et al., 2018] for comprehensive *S. aureus* characterization. Antimicrobial resistance genes were identified using the CARD [Alcock et al., 2023] and ResFinder [Bortolaia et al., 2020] databases."
-
+> "Genomic analysis was performed using StaphScope [Beckley & Amarh, 2026], which integrates MLST [Seemann, 2018], ABRicate [Seemann, 2018], AMRFinderPlus [Feldgarden et al., 2019], SCCmecFinder [Kaya et al., 2018], and AgrV [Raghuram et al., 2022] for comprehensive *S. aureus* characterization. Antimicrobial resistance genes were identified using the CARD [Alcock et al., 2023] and ResFinder [Bortolaia et al., 2020] databases. For biocide and heavy metal resistance genes, BacMet [Pal et al., 2014] was used. Virulence and plasmid screening were performed with ABRicate using the VFDB [Chen et al., 2016] and PlasmidFinder [Carattoli et al., 2014] databases."
 
 ---
 
@@ -969,3 +1051,4 @@ Antimicrobial resistance (AMR) represents one of the most significant global hea
 **Together, we can enhance global AMR monitoring and develop more effective treatment strategies.**
 
 </div>
+
