@@ -172,7 +172,7 @@ Curious what the output looks like? Click the badge below to view a fully intera
 ### 🚀 **v1.3.0 Exclusive Features**
 
 #### 🧬 **Agr Typing Module** (NEW)
-- **AgrVATE integration** – Uses [AgrV](https://github.com/VishnuRaghuram94/AgrVATE) (Raghuram et al., 2022) for accurate agr typing.
+- **AgrVATE integration** – Uses [AgrVATE](https://github.com/VishnuRaghuram94/AgrVATE) (Raghuram et al., 2022) for accurate agr typing.
 - **Dedicated agr tab** – Full agr type distribution (I‑IV), samples by agr type, and all combinations:
   - agr‑MLST
   - agr‑spa
@@ -565,15 +565,6 @@ batch_results/
 | TW20 | ST239–t037–III(3A) | ✅ ST239–t037–III(3A) |
 | NCTC8325 | ST8–t211–None | ✅ ST8–t211–Not Assigned |
 
-### **Agr Typing Validation (NEW)**
-**100% concordance** with published agr types:
-
-| Reference Strain | Expected Agr Type | StaphScope Result |
-|------------------|-------------------|-------------------|
-| USA300 | II | ✅ II |
-| N315 | II | ✅ II |
-| MRSA252 | I | ✅ I |
-| NCTC8325 | I | ✅ I |
 
 ### **Clinical Isolate Analysis (n=24)**
 - **MRSA**: 21 isolates (87.5%)
@@ -688,13 +679,6 @@ staphscope --force-update-amr-db
 # Solution:
 abricate --setupdb
 
-# Issue: AgrV not found (should be bundled, but if not)
-# Solution:
-git clone https://github.com/VishnuRaghuram94/AgrV.git
-cd AgrV
-pip install -r requirements.txt
-sudo cp agrvate /usr/local/bin/
-
 # Issue: Permission errors in Docker
 # Solution: Ensure bind mounts are correct and use --user if needed
 docker run --rm -u $(id -u):$(id -g) -v ... bbeckleyhub/staphscope ...
@@ -808,7 +792,7 @@ StaphScope executes several external bioinformatics tools, which are installed a
 
 StaphScope integrates several powerful open-source tools and databases. If you use StaphScope in your research, please also cite the following essential tools:
 
-#### **AgrV (NEW)**
+#### **AgrVATE (NEW)**
 ```bibtex
 @article{raghuram_agrv_2022,
   author = {Raghuram, V. and Alexander, A. M. and Loo, H. Q. and Petit, R. A. 3rd and Goldberg, J. B. and Read, T. D.},
