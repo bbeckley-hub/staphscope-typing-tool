@@ -72,9 +72,19 @@
 
 ---
 
-## 🎉 **What’s New in v1.3.0** (July 2026)
+## 🎉 **What's New in v1.3.0** (July 2026)
 
 - **🧬 Agr Typing Module** – Full integration of **AgrVATE** (Raghuram et al., 2022) for accessory gene regulator (agr) typing. Now you can determine agr types I‑IV, with all combinations: agr‑MLST, agr‑spa, agr‑SCCmec, and **four‑way typing (ST‑spa‑SCCmec‑agr)**. The Ultimate Reporter includes a dedicated agr tab with distribution, sample lists, and all combinations.
+
+- **🔄 Updated spa Database (Ridom SpaServer – July 2026)** – The spa typing database has been updated to the latest version from Ridom SpaServer, now featuring:
+  - **22,727 spa types** (up from ~20,000)
+  - **864 unique repeat patterns**
+  - **471,555 total strains** in the database
+  - **196,047 strain records**
+  - **183 countries** with strain records
+  - **964 registered users** from **81 countries**
+  
+  This ensures the most accurate and up‑to‑date spa typing results for outbreak tracking and epidemiological studies.
 
 - **📊 Sample‑Centric Reporter (NEW!)** – A completely new interactive HTML report that shows **each genome** as an interactive box with all its genes. Perfect for drill‑down analysis: filter by sample name or database, view per‑sample gene lists for AMR, Virulence, BACMET, Plasmids, and Mutations. This is the **opposite** of the gene‑centric report – now you have both!
 
@@ -82,8 +92,11 @@
 
 - **🚀 HPC‑friendly Orchestrator v1.3.0** – Every module now runs in an isolated `/tmp` directory with **automatic cleanup**. Signal handlers for Ctrl+C clean up all temp dirs gracefully. Proper file copying for the sample‑centric module ensures it gets `mutation_summary.tsv`, `staphscope_comprehensive_report.html`, `.json`, `.tsv`, and all required TSVs.
 
-- **📚 Expanded Documentation & Attribution** – Complete wiki with 10+ pages: Home, Installation, Quick Start, Module Descriptions, Agr Typing Guide, Grouping Feature, Understanding the Reports, AI Integration, Citation & Acknowledgments, Troubleshooting, Contributing, and Docker Guide. All tools and databases are now properly credited.
+- **🐛 Bug Fixes & Stability** – Fixed the spa typing `ValueError` caused by malformed lines in `spatypes.txt`. The module now automatically cleans the types file before execution, making it robust against future database formatting issues.
 
+- **📚 Expanded Documentation & Attribution** – Complete wiki with 12+ pages: Home, Installation, Quick Start, Module Descriptions, Agr Typing Guide, Grouping Feature, Understanding the Reports, AI Integration, Citation & Acknowledgments, Troubleshooting, Contributing, and Docker Guide. All tools and databases are now properly credited.
+
+- **🔗 Updated spa Database Files** – The `sparepeats.fasta`, `spaTyper`, and `spatypes.txt` files have been updated to the latest Ridom SpaServer release (July 2026), ensuring accurate and comprehensive spa typing results.
 
 ---
 
@@ -464,9 +477,9 @@ batch_results/
 │   ├── staphscope_comprehensive_report.html
 │   ├── staphscope_comprehensive_report.json
 │   ├── staphscope_comprehensive_report.tsv
-│   ├── STAPHSCOPE_ULTIMATE_REPORTS/         # Gene‑centric report
-│   │   ├── staphscope_ultimate_report.html
-│   │   ├── staphscope_ultimate_report.json
+│   ├── STAPHSCOPE_ULTIMATE_GENE_CENTRIC_REPORTS/         # Gene‑centric report
+│   │   ├── staphscope_ultimate_gene_centric_report.html
+│   │   ├── staphscope_ultimate_gene_centric_report.json
 │   │   ├── amr_genes.csv
 │   │   ├── virulence_genes.csv
 │   │   ├── bacmet_genes.csv
@@ -476,8 +489,8 @@ batch_results/
 │   │   ├── pattern_discovery.csv
 │   │   └── fasta_qc.csv
 │   └── STAPHSCOPE_ULTIMATE_SAMPLE_CENTRIC_REPORTS/  # Sample‑centric report (NEW)
-│       ├── staphscope_ultimate_report.html
-│       ├── staphscope_ultimate_report.json
+│       ├── staphscope_ultimate_sample_centric_report.html
+│       ├── staphscope_ultimate_sample_centric_report.json
 │       └── ... (same CSV files as gene‑centric)
 ├── STAPHSCOPE_VISUALIZATIONS/ # Publication‑ready plots (PNG, SVG, PDF)
 └── staphscope_run.log         # Detailed log file
@@ -509,12 +522,12 @@ batch_results/
 - **Subtyping**: Types IV and V community-associated cassettes
 
 ### **5. Agr Typing (NEW)**
-- **Method**: AgrV (Raghuram et al., 2022)
+- **Method**: AgrVATE (Raghuram et al., 2022)
 - **Output**: agr type (I-IV), group, match score, status
 - **Integration**: Dedicated tab in Ultimate Reporter; color‑coded badges in Sample‑centric report
 
 ### **6. AMR Profiling**
-- **Tool**: NCBI-AMRFinderPlus v4.2.7 (bundled)
+- **Tool**: NCBI-AMRFinderPlus v4.2.7 
 - **Coverage**: 5,000+ AMR genes
 - **Risk Assessment**: Critical Risk (*mecA*, *vanA*, *cfr*), High Risk (*erm*, *tetM*)
 - **Mutation reporting**: All point mutations (synonymous + non‑synonymous) by default
@@ -583,7 +596,7 @@ StaphScope generates comprehensive HTML and JSON reports that are **perfect for 
 
 ### 🚀 Quick Start
 1. **Install any AI browser extension** (ChatGPT, Claude, Gemini)
-2. **Open your report**: `staphscope_ultimate_report.html`
+2. **Open your report**: `staphscope_ultimate_gene_centric_report.html`
 3. **Select text** in any section (AMR Genes, MLST Analysis, etc.)
 4. **Right-click → Ask AI** with your question
 
@@ -656,7 +669,7 @@ A: Use the **Web version** for convenience, small batches (≤10 files), and gra
 A: The accessory gene regulator (agr) system controls virulence gene expression. Different agr types are associated with different epidemiological and clinical profiles. Agr dysfunction is linked to persistent infections.
 
 **Q: How do I use the new sample‑centric report?**  
-A: After running StaphScope, open `Staphscope_final_report/STAPHSCOPE_ULTIMATE_SAMPLE_CENTRIC_REPORTS/staphscope_ultimate_report.html`. Each sample is shown as an interactive box with all its genes – perfect for detailed isolate investigation.
+A: After running StaphScope, open `Staphscope_final_report/STAPHSCOPE_ULTIMATE_SAMPLE_CENTRIC_REPORTS/staphscope_ultimate_sample_centric_report.html`. Each sample is shown as an interactive box with all its genes – perfect for detailed isolate investigation.
 
 **Q: Why does v1.3.0 no longer require `--writable-tmpfs` in Singularity?**  
 A: All modules now write temporary files to `/tmp` (not to the installation directory). Containers mount `/tmp` as writable by default, so no special flags are needed.
@@ -742,7 +755,7 @@ StaphScope stands on the shoulders of giants. We are deeply grateful to:
 - **Torsten Seemann** for MLST, ABRicate, and countless foundational tools.
 - **NCBI team** for AMRFinderPlus.
 - **CGE team** for SCCmecFinder and database curation.
-- **Vishnu Raghuram & Robert A. Petit III** for AgrV (agr typing).
+- **Vishnu Raghuram & Robert A. Petit III** for AgrVATE (agr typing).
 - **PubMedST, Ridom, CARD, VFDB** for essential databases.
 - **Python community** for Biopython, pandas, plotly, seaborn, matplotlib.
 - **Early adopters and beta testers** for invaluable feedback.
