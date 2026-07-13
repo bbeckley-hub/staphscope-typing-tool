@@ -718,9 +718,9 @@ class StaphScopeOrchestrator:
                 return False
             else:
                 self.banner.display_success("Ultimate reporter completed successfully!")
-                src_dir = temp_dir / "STAPHSCOPE_ULTIMATE_REPORTS"
+                src_dir = temp_dir / "STAPHSCOPE_ULTIMATE_GENE_CENTRIC_REPORTS"
                 if src_dir.exists():
-                    dst_dir = self.user_output_dir / "STAPHSCOPE_ULTIMATE_REPORTS"
+                    dst_dir = self.user_output_dir / "STAPHSCOPE_ULTIMATE_GENE_CENTRIC_REPORTS"
                     if dst_dir.exists():
                         shutil.rmtree(dst_dir)
                     shutil.copytree(src_dir, dst_dir)
@@ -758,13 +758,13 @@ class StaphScopeOrchestrator:
                     self.banner.display_info(f"  ✓ Copied: {file_name}")
 
             # Copy gene‑centric ultimate reports
-            ultimate_reports_dir = output_dir / "STAPHSCOPE_ULTIMATE_REPORTS"
+            ultimate_reports_dir = output_dir / "STAPHSCOPE_ULTIMATE_GENE_CENTRIC_REPORTS"
             if ultimate_reports_dir.exists() and ultimate_reports_dir.is_dir():
-                target_ultimate_dir = final_report_dir / "STAPHSCOPE_ULTIMATE_REPORTS"
+                target_ultimate_dir = final_report_dir / "STAPHSCOPE_ULTIMATE_GENE_CENTRIC_REPORTS"
                 if target_ultimate_dir.exists():
                     shutil.rmtree(target_ultimate_dir)
                 shutil.copytree(ultimate_reports_dir, target_ultimate_dir)
-                self.banner.display_info(f"  ✓ Copied: STAPHSCOPE_ULTIMATE_REPORTS directory")
+                self.banner.display_info(f"  ✓ Copied: STAPHSCOPE_ULTIMATE_GENE_CENTRIC_REPORTS directory")
 
             # Copy sample‑centric ultimate reports
             sample_centric_dir = output_dir / "STAPHSCOPE_ULTIMATE_SAMPLE_CENTRIC_REPORTS"
@@ -1002,7 +1002,7 @@ class StaphScopeOrchestrator:
                         "staphscope_comprehensive_report.json",
                         "staphscope_comprehensive_report.tsv"]:
                 (output_path / dup).unlink(missing_ok=True)
-            shutil.rmtree(output_path / "STAPHSCOPE_ULTIMATE_REPORTS", ignore_errors=True)
+            shutil.rmtree(output_path / "STAPHSCOPE_ULTIMATE_GENE_CENTRIC_REPORTS", ignore_errors=True)
             shutil.rmtree(output_path / "STAPHSCOPE_ULTIMATE_SAMPLE_CENTRIC_REPORTS", ignore_errors=True)
 
             # Visualization (runs after final cleanup, using files from Staphscope_final_report)

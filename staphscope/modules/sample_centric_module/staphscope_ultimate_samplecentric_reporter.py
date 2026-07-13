@@ -648,7 +648,7 @@ class StaphHTMLGenerator:
             gene_centric=gene_centric,
             integrated_data=integrated_data
         )
-        output_file = output_dir / "staphscope_ultimate_report.html"
+        output_file = output_dir / "staphscope_ultimate_sample_centric_report.html"
         with open(output_file, 'w', encoding='utf-8') as f:
             f.write(html)
         print(f"    ✅ HTML report saved: {output_file}")
@@ -2320,7 +2320,7 @@ class StaphHTMLGenerator:
                     <h4><i class="fas fa-upload"></i> How to Feed This Report to AI</h4>
                     <p>You have <strong>three powerful options</strong>:</p>
                     <ol>
-                        <li><strong>Upload the JSON file</strong> – The file <code>staphscope_ultimate_report.json</code> contains all structured data. Upload it to ChatGPT (Advanced Data Analysis), Claude, or Gemini. <em>Best for precise quantitative queries.</em></li>
+                        <li><strong>Upload the JSON file</strong> – The file <code>staphscope_ultimate_sample_centric_report.json</code> contains all structured data. Upload it to ChatGPT (Advanced Data Analysis), Claude, or Gemini. <em>Best for precise quantitative queries.</em></li>
                         <li><strong>Upload the HTML report</strong> – Modern AI tools can read HTML and extract tables. You can upload the <code>.html</code> file directly – the AI will parse the tables and text. <em>Great for visual context.</em></li>
                         <li><strong>Copy‑paste specific tables</strong> – If you only need a quick insight, copy a table (e.g., AMR gene list) and paste it into the chat. <em>Instant, no file upload needed.</em></li>
                     </ol>
@@ -2498,7 +2498,7 @@ class StaphHTMLGenerator:
             <div class="dashboard-card card-export" onclick="exportTableToCSV('plasmid-table', 'plasmid_replicons.csv')"><div style="font-size:2em;color:var(--export-color);"><i class="fas fa-plug"></i></div><div class="card-label">Plasmid Replicons CSV</div></div>
             <div class="dashboard-card card-export" onclick="exportTableToCSV('mutation-table', 'mutations.csv')"><div style="font-size:2em;color:var(--export-color);"><i class="fas fa-dna"></i></div><div class="card-label">Mutations CSV</div></div>
             <div class="dashboard-card card-export" onclick="exportTableToCSV('qc-table', 'fasta_qc.csv')"><div style="font-size:2em;color:var(--export-color);"><i class="fas fa-chart-line"></i></div><div class="card-label">FASTA QC CSV</div></div>
-            <div class="dashboard-card card-export" onclick="location.href='staphscope_ultimate_report.json'"><div style="font-size:2em;color:var(--export-color);"><i class="fas fa-file-code"></i></div><div class="card-label">Complete JSON Data</div></div>
+            <div class="dashboard-card card-export" onclick="location.href='staphscope_ultimate_sample_centric_report.json'"><div style="font-size:2em;color:var(--export-color);"><i class="fas fa-file-code"></i></div><div class="card-label">Complete JSON Data</div></div>
         </div>
         """
 
@@ -2662,7 +2662,7 @@ class StaphUltimateReporter:
 
     def generate_json_report(self, integrated_data: Dict[str, Any]) -> Path:
         print("\n📝 Generating JSON report...")
-        output_file = self.output_dir / "staphscope_ultimate_report.json"
+        output_file = self.output_dir / "staphscope_ultimate_sample_centric_report.json"
 
         def make_serializable(obj):
             if obj is None:
@@ -2815,8 +2815,8 @@ class StaphUltimateReporter:
         print("=" * 80)
         print(f"📁 Output directory: {self.output_dir}")
         print(f"📄 Files generated:")
-        print(f"   • staphscope_ultimate_report.html (Hybrid report with interactive isolate boxes and agr typing)")
-        print(f"   • staphscope_ultimate_report.json (Complete data)")
+        print(f"   • staphscope_ultimate_sample_centric_report.html (Hybrid report with interactive isolate boxes and agr typing)")
+        print(f"   • staphscope_ultimate_sample_centric_report.json (Complete data)")
         print(f"\n🔬 Interactive Isolate Boxes with Typing Badges including agr")
         print(f"   • Each isolate box shows MLST, spa, SCCmec, MRSA/MSSA, and agr type.")
         print(f"   • Horizontally scrollable tables – no truncation.")
@@ -2832,7 +2832,7 @@ class StaphUltimateReporter:
         print(f"   • {mutation_samples} samples with point mutations")
         print(f"   • {len(patterns.get('high_risk_combinations', []))} high‑risk AMR+virulence combos")
         print("\n🎯 Next steps:")
-        print("   1. Open staphscope_ultimate_report.html in your browser")
+        print("   1. Open staphscope_ultimate_sample_centric_report.html in your browser")
         print("   2. Explore the interactive isolate boxes in AMR/Virulence/BACMET/Plasmids tabs")
         print("   3. Check the agr typing tab for distribution")
         print("   4. Use the new Mutations tab to see per‑isolate mutation tables")
