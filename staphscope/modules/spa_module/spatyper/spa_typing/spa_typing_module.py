@@ -172,75 +172,76 @@ class SpaTypingAnalyzer:
         return sorted(list(set(fasta_files)))
 
     def run_spa_typing_single(self, input_file: Path, output_dir: Path) -> Dict[str, Any]:
-        """Run spa typing analysis for a single file - WITH PYTHONPATH FIX"""
+        """Run spa typing analysis for a single file - with types file cleaning."""
         print(f"🔬 Processing: {input_file.name}")
-        
-        # Create sample-specific output directory
+
         sample_output_dir = output_dir / input_file.stem
         sample_output_dir.mkdir(parents=True, exist_ok=True)
-        
+
         output_file = sample_output_dir / "spa_typing_raw.txt"
-        
-        # Find spa typing resources
+
         resources = self.find_spa_typer_resources()
-        
-        # Check if we have all required resources
         required_resources = ['spatyper', 'repeats', 'types']
         missing_resources = [res for res in required_resources if res not in resources]
-        
+
         if missing_resources:
             print(f"❌ Missing required spa typing resources: {missing_resources}")
-            print("💡 Please ensure spaTyper and its data files are installed")
             error_result = self.get_fallback_results(input_file.name)
             self.generate_output_files([], input_file.name, sample_output_dir)
             return error_result
-        
-        # Copy input file to sample directory for relative path access
+
+        # --- FIX: Clean the types file ---
+        types_path = resources['types']
+        cleaned_types_path = sample_output_dir / "spatypes_cleaned.txt"
+        with open(types_path, 'r') as infile, open(cleaned_types_path, 'w') as outfile:
+            for line in infile:
+                line = line.strip()
+                if line and ',' in line:
+                    outfile.write(line + '\n')
+                else:
+                    print(f"   ⚠️ Skipping malformed line: {line}")
+
+        # Copy input file to sample dir for relative path access
         input_file_in_sample_dir = sample_output_dir / input_file.name
         shutil.copy2(input_file, input_file_in_sample_dir)
-        
-        # Build command with RELATIVE PATHS (relative to sample_output_dir)
+
+        # Build command with relative paths and cleaned types file
         cmd = [
-            sys.executable, 
+            sys.executable,
             str(resources['spatyper']),
-            "-f", input_file.name,  # Relative path now
-            "--output", "spa_typing_raw.txt",  # Relative path
+            "-f", input_file.name,
+            "--output", "spa_typing_raw.txt",
             "-r", str(resources['repeats']),
-            "-o", str(resources['types'])
+            "-o", str(cleaned_types_path.name)  # use cleaned version, relative to sample_output_dir
         ]
-        
+
         print(f"   Running: {' '.join(cmd)}")
-        
+
         try:
-            # SET PYTHONPATH - THIS IS THE KEY FIX!
             env = os.environ.copy()
             spatyper_bin_path = Path(resources['spatyper'])
-            spatyper_package_dir = spatyper_bin_path.parent.parent  # spa_typing directory
+            spatyper_package_dir = spatyper_bin_path.parent.parent
             env["PYTHONPATH"] = str(spatyper_package_dir)
-            
-            # Run from the sample output directory
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=300, 
-                                  cwd=sample_output_dir, env=env)
-            
+
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=300,
+                                    cwd=sample_output_dir, env=env)
+
             print(f"   Return code: {result.returncode}")
             if result.stdout:
                 print(f"   stdout: {result.stdout[:500]}...")
             if result.stderr:
                 print(f"   stderr: {result.stderr[:500]}...")
-            
+
+            # Clean up temporary files
+            if input_file_in_sample_dir.exists():
+                input_file_in_sample_dir.unlink()
+            if cleaned_types_path.exists():
+                cleaned_types_path.unlink()
+
             if result.returncode == 0:
                 print(f"✅ spa typing completed for {input_file.name}")
-                
-                # Parse results
                 hits = self._parse_spa_typing_output(output_file, input_file.name)
-                
-                # Generate output files
                 self.generate_output_files(hits, input_file.name, sample_output_dir)
-                
-                # Clean up copied input file
-                if input_file_in_sample_dir.exists():
-                    input_file_in_sample_dir.unlink()
-                
                 return {
                     'sample': input_file.name,
                     'output_file': str(output_file),
@@ -251,20 +252,16 @@ class SpaTypingAnalyzer:
             else:
                 print(f"❌ spa typing failed for {input_file.name}")
                 print(f"   Error: {result.stderr}")
-                
-                # Clean up copied input file even on failure
-                if input_file_in_sample_dir.exists():
-                    input_file_in_sample_dir.unlink()
-                    
                 error_result = self.get_fallback_results(input_file.name)
                 self.generate_output_files([], input_file.name, sample_output_dir)
                 return error_result
-                
+
         except subprocess.TimeoutExpired:
             print(f"⏰ spa typing timed out for {input_file.name}")
-            # Clean up copied input file
             if input_file_in_sample_dir.exists():
                 input_file_in_sample_dir.unlink()
+            if cleaned_types_path.exists():
+                cleaned_types_path.unlink()
             error_result = self.get_fallback_results(input_file.name)
             self.generate_output_files([], input_file.name, sample_output_dir)
             return error_result
@@ -272,9 +269,10 @@ class SpaTypingAnalyzer:
             print(f"❌ Unexpected error for {input_file.name}: {e}")
             import traceback
             traceback.print_exc()
-            # Clean up copied input file
             if input_file_in_sample_dir.exists():
                 input_file_in_sample_dir.unlink()
+            if cleaned_types_path.exists():
+                cleaned_types_path.unlink()
             error_result = self.get_fallback_results(input_file.name)
             self.generate_output_files([], input_file.name, sample_output_dir)
             return error_result
