@@ -102,12 +102,37 @@ class StaphHTMLParser:
         for _, row in df.iterrows():
             sample = row['Sample']
             sample = re.sub(r'\.(fna|fasta|fa)$', '', sample)
+            # Ensure agr_Type is a string, replace NaN with 'NA'
             agr_type = row.get('agr_Type', 'NA')
+            if pd.isna(agr_type):
+                agr_type = 'NA'
+            else:
+                agr_type = str(agr_type)
             agr_group = row.get('agr_Group', 'NA')
+            if pd.isna(agr_group):
+                agr_group = 'NA'
+            else:
+                agr_group = str(agr_group)
             match_score = row.get('Match_Score', '')
+            if pd.isna(match_score):
+                match_score = ''
+            else:
+                match_score = str(match_score)
             canonical_agrD = row.get('Canonical_AgrD', '')
+            if pd.isna(canonical_agrD):
+                canonical_agrD = ''
+            else:
+                canonical_agrD = str(canonical_agrD)
             multiple_agr = row.get('Multiple_Agr', '')
+            if pd.isna(multiple_agr):
+                multiple_agr = ''
+            else:
+                multiple_agr = str(multiple_agr)
             status = row.get('Status', 'failed')
+            if pd.isna(status):
+                status = 'failed'
+            else:
+                status = str(status)
             agr_data[sample] = {
                 'agr_Type': agr_type,
                 'agr_Group': agr_group,

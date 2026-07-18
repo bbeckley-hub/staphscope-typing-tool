@@ -4,8 +4,8 @@ StaphScope Main Orchestrator - v1.3.0
 All module writes happen in /tmp, final results are copied to user output. HPC/ Docker-friendly
 Author: Brown Beckley <brownbeckley94@gmail.com>
 Affiliation: University of Ghana Medical School
-Version: 1.3.0
-Date: 2026-07-12
+Version: 1.3.1
+Date: 2026-07-18
 MIT
 """
 
@@ -803,6 +803,7 @@ class StaphScopeOrchestrator:
                 (output_dir / "abricate_results", "staph_megares_summary_report.html"),
                 (output_dir / "abricate_results", "staph_resfinder_summary_report.html"),
                 (output_dir / "abricate_results", "staph_argannot_summary_report.html"),
+                (output_dir / "agr_results", "agr_summary.tsv"),
                 (output_dir / "Staphscope_final_report", "staphscope_comprehensive_report.html"),
             ]
             copied_count = 0

@@ -95,12 +95,37 @@ class StaphHTMLParser:
         for _, row in df.iterrows():
             sample = row['Sample']
             sample = re.sub(r'\.(fna|fasta|fa)$', '', sample)
+            # Ensure agr_Type is a string, replace NaN with 'NA'
             agr_type = row.get('agr_Type', 'NA')
+            if pd.isna(agr_type):
+                agr_type = 'NA'
+            else:
+                agr_type = str(agr_type)
             agr_group = row.get('agr_Group', 'NA')
+            if pd.isna(agr_group):
+                agr_group = 'NA'
+            else:
+                agr_group = str(agr_group)
             match_score = row.get('Match_Score', '')
+            if pd.isna(match_score):
+                match_score = ''
+            else:
+                match_score = str(match_score)
             canonical_agrD = row.get('Canonical_AgrD', '')
+            if pd.isna(canonical_agrD):
+                canonical_agrD = ''
+            else:
+                canonical_agrD = str(canonical_agrD)
             multiple_agr = row.get('Multiple_Agr', '')
+            if pd.isna(multiple_agr):
+                multiple_agr = ''
+            else:
+                multiple_agr = str(multiple_agr)
             status = row.get('Status', 'failed')
+            if pd.isna(status):
+                status = 'failed'
+            else:
+                status = str(status)
             agr_data[sample] = {
                 'agr_Type': agr_type,
                 'agr_Group': agr_group,
@@ -853,7 +878,7 @@ class StaphHTMLGenerator:
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>STAPHSCOPE Ultimate S. aureus Report v2.3.0</title>
+    <title>STAPHSCOPE Ultimate S. aureus Report v2.3.1</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     {css}
     {js}
@@ -866,7 +891,7 @@ class StaphHTMLGenerator:
         <div class="metadata-bar">
             <div class="metadata-item"><i class="fas fa-calendar"></i><span>Generated: {kwargs['metadata'].get('analysis_date', 'Unknown')}</span></div>
             <div class="metadata-item"><i class="fas fa-database"></i><span>Samples: {len(kwargs['samples_data'])}</span></div>
-            <div class="metadata-item"><i class="fas fa-user-md"></i><span>Tool: STAPHSCOPE Ultimate v2.3.0</span></div>
+            <div class="metadata-item"><i class="fas fa-user-md"></i><span>Tool: STAPHSCOPE Ultimate v2.3.1</span></div>
             <div class="metadata-item"><i class="fas fa-university"></i><span>University of Ghana Medical School</span></div>
         </div>
     </div>
@@ -981,7 +1006,7 @@ class StaphHTMLGenerator:
     </div>
 
     <div class="footer">
-        <h3>STAPHSCOPE Ultimate S. aureus Reporter v2.3.0</h3>
+        <h3>STAPHSCOPE Ultimate S. aureus Reporter v2.3.1</h3>
         <p>University of Ghana Medical School | Brown Beckley &lt;brownbeckley94@gmail.com&gt;</p>
         <p>Generated on {kwargs['metadata'].get('analysis_date', 'Unknown')}</p>
         <p>⭐ Please give a big STAR on GitHub if you found this useful!</p>
@@ -1463,7 +1488,10 @@ class StaphHTMLGenerator:
                 mssa_count += 1
 
         agr_dist = patterns.get('agr_type_distribution', {})
-        agr_str = ', '.join([f"{k}: {v}" for k, v in sorted(agr_dist.items())]) if agr_dist else 'None'
+        # Filter out non-string keys and sort
+        # In _generate_summary_section:
+        string_items = [(k, v) for k, v in agr_dist.items() if isinstance(k, str)]
+        agr_str = ', '.join([f"{k}: {v}" for k, v in sorted(string_items)]) if string_items else 'None'
 
         html = f"""
         <div class="alert-box alert-info">
@@ -2093,9 +2121,14 @@ class StaphHTMLGenerator:
                             sccs.add(scc)
                         if agr and agr != 'ND':
                             agrs.add(agr)
-                st_list = ', '.join(sorted(sts)) if sts else 'None'
-                scc_list = ', '.join(sorted(sccs)) if sccs else 'None'
-                agr_list = ', '.join(sorted(agrs)) if agrs else 'None'
+                # Filter out non-string values before sorting
+                string_sts = {s for s in sts if isinstance(s, str)}
+                string_sccs = {s for s in sccs if isinstance(s, str)}
+                string_agrs = {a for a in agrs if isinstance(a, str)}
+
+                st_list = ', '.join(sorted(string_sts)) if string_sts else 'None'
+                scc_list = ', '.join(sorted(string_sccs)) if string_sccs else 'None'
+                agr_list = ', '.join(sorted(string_agrs)) if string_agrs else 'None'
                 badge = '<span class="badge badge-mrsa">MRSA</span>' if 'MRSA' in status else '<span class="badge badge-mssa">MSSA</span>'
                 html += f"<tr><td>{badge}</td><td>{count}</td><td>{pct:.1f}%</td><td>{st_list}</td><td>{scc_list}</td><td>{agr_list}</td></tr>"
         html += "</tbody></table></div>"
@@ -3863,7 +3896,7 @@ class StaphUltimateReporter:
 
     def run(self):
         print("=" * 80)
-        print("🧬 STAPHSCOPE ULTIMATE S. AUREUS REPORTER v2.3.0")
+        print("🧬 STAPHSCOPE ULTIMATE S. AUREUS REPORTER v2.3.1")
         print("   (Gene-centric with agr typing, full combinations, and co-occurrence)")
         print("=" * 80)
         print(f"📁 Input directory: {self.input_dir}")
@@ -3941,7 +3974,7 @@ class StaphUltimateReporter:
 
 def main():
     parser = argparse.ArgumentParser(
-        description='STAPHSCOPE Ultimate S. aureus Reporter v2.3.0 - Gene-centric with agr, four‑way typing, and co‑occurrence',
+        description='STAPHSCOPE Ultimate S. aureus Reporter v2.3.1 - Gene-centric with agr, four‑way typing, and co‑occurrence',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""Examples:\n  python staphscope_ultimate_reporter.py -i /path/to/staphscope/reports\n\nAuthor: Brown Beckley <brownbeckley94@gmail.com>\nAffiliation: University of Ghana Medical School"""
     )

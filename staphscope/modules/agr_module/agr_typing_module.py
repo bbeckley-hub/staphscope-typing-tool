@@ -2,7 +2,7 @@
 """
 StaphScope Agr Typing Module - Using agrVATE
 Author: Brown Beckley <brownbeckley94@gmail.com>
-Date: 2026-07-10
+Date: 2026-07-18
 Affiliation: University of Ghana Medical School - Department of Medical Biochemistry
 MIT
 """
