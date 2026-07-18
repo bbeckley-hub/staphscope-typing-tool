@@ -72,6 +72,14 @@
 
 ---
 
+## 🐛 **Bug Fixes in v1.3.1** (July 2026)
+
+- **Ultimate Reporter (gene‑centric) & Sample‑Centric Reporter** – Fixed `TypeError` when sorting agr types with `np.nan` values. Now filters non‑string keys before sorting, preventing report generation crashes.
+- **Visualization Module** – Now loads agr data directly from `agr_summary.tsv` (no longer relying solely on the comprehensive HTML). Added dynamic AMRfinder table detection to avoid `IndexError`; updated boxplot call to remove deprecated `labels` parameter (compatibility with matplotlib ≥3.9).
+- **General Stability** – Improved error handling across multiple modules to ensure robust execution even with incomplete or malformed input files.
+
+---
+
 ## 🎉 **What's New in v1.3.0** (July 2026)
 
 - **🧬 Agr Typing Module** – Full integration of **AgrVATE** (Raghuram et al., 2022) for accessory gene regulator (agr) typing. Now you can determine agr types I‑IV, with all combinations: agr‑MLST, agr‑spa, agr‑SCCmec, and **four‑way typing (ST‑spa‑SCCmec‑agr)**. The Ultimate Reporter includes a dedicated agr tab with distribution, sample lists, and all combinations.
