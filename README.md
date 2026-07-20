@@ -230,6 +230,50 @@ Curious what the output looks like? Click the badge below to view a fully intera
 - **Clean final output** – `Staphscope_final_report` contains only the two report directories and comprehensive files.
 
 ---
+## 📊 StaphScope Workflow
+
+```mermaid
+flowchart TB
+    FASTA["📥 FASTA Files<br>(.fna, .fasta)"]
+
+    QC["🔬 FASTA QC<br>Quality Control"]
+    MLST["🧬 MLST Typing<br>Multi-Locus ST"]
+    SPA["🧬 spa Typing<br>Protein A Typing"]
+    SCCMEC["🛡️ SCCmec Typing<br>MRSA Cassette"]
+
+    AGR["🧬 Agr Typing<br>Accessory Gene Regulator"]
+    AMR["💊 AMRFinderPlus<br>AMR + Mutations"]
+    ABR["📊 ABRicate<br>10+ Databases"]
+    LINEAGE["🌳 Lineage<br>Reference DB"]
+
+    COMP["📄 Comprehensive Report<br>MLST + spa + SCCmec + agr"]
+    GENE["📊 Gene-Centric Report<br>All Genes / All Genomes"]
+    SAMPLE["📋 Sample-Centric Report<br>All Genomes / All Genes"]
+    VIZ["📈 Visualization<br>Plots & Dashboards"]
+
+    FINAL["📁 Staphscope_final_report/<br>Comprehensive + Gene-Centric + Sample-Centric + Visualizations + CSV/JSON"]
+
+    FASTA --> QC & MLST & SPA & SCCMEC
+
+    QC --> AGR
+    MLST --> AMR
+    SPA --> ABR
+    SCCMEC --> LINEAGE
+
+    AGR --> COMP
+    AMR --> GENE
+    ABR --> SAMPLE
+    LINEAGE --> VIZ
+
+    COMP --> FINAL
+    GENE --> FINAL
+    SAMPLE --> FINAL
+    VIZ --> FINAL
+```
+
+---
+
+## ✨ **Key Features**
 
 ## 🌐 **StaphScope Web Platform**
 
