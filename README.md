@@ -273,8 +273,6 @@ flowchart TB
 
 ---
 
-## ✨ **Key Features**
-
 ## 🌐 **StaphScope Web Platform**
 
 For researchers and clinicians who prefer a graphical interface, **StaphScope Web** provides all the power of the command-line tool in an easy-to-use web application.
