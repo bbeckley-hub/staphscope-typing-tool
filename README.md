@@ -72,6 +72,19 @@
 
 ---
 
+## 🎉 What's New in v1.3.2 (July 2026)
+
+### 🚀 New Features
+
+- **ABRicate Threshold Flags** – Added `--abricate-minid` and `--abricate-mincov` to control identity and coverage thresholds. Users can now adjust stringency (default: 80/80) via command line for fine‑tuned resistance gene detection.
+
+### 🐛 Bug Fixes
+
+- **AMR Database Update** – Fixed `AttributeError` when running `staphscope --update-amr-db` standalone. Logger is now initialized automatically for standalone commands.
+- **General Stability** – Improved error handling in AMR database checks and standalone module execution.
+
+---
+
 ## 🐛 **Bug Fixes in v1.3.1** (July 2026)
 
 - **Ultimate Reporter (gene‑centric) & Sample‑Centric Reporter** – Fixed `TypeError` when sorting agr types with `np.nan` values. Now filters non‑string keys before sorting, preventing report generation crashes.
