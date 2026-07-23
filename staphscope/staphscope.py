@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-StaphScope Main Orchestrator - v1.3.0
+StaphScope Main Orchestrator - v1.3.2
 All module writes happen in /tmp, final results are copied to user output. HPC/ Docker-friendly
 Author: Brown Beckley <brownbeckley94@gmail.com>
 Affiliation: University of Ghana Medical School
-Version: 1.3.1
+Version: 1.3.2
 Date: 2026-07-18
 MIT
 """
@@ -345,9 +345,11 @@ class StaphScopeOrchestrator:
 
         return self.run_module_in_temp("amr_module", fasta_files, cmd, "staph_amrfinder_results")
 
-    def run_abricate_analysis(self, fasta_files: List[Path], output_dir: Path, threads: int) -> bool:
+    def run_abricate_analysis(self, fasta_files: List[Path], output_dir: Path, threads: int,
+                              min_identity: int = 80, min_coverage: int = 80) -> bool:
         pattern = self.get_file_pattern(fasta_files)
-        cmd = f"{sys.executable} abricate_module/abricate_standalone.py {pattern}"
+        cmd = (f"{sys.executable} abricate_module/abricate_standalone.py {pattern} "
+               f"--minid {min_identity} --mincov {min_coverage}")
         return self.run_module_in_temp("abricate_module", fasta_files, cmd, "abricate_results")
 
     def run_agr_analysis(self, fasta_files: List[Path], output_dir: Path, threads: int) -> bool:
@@ -592,6 +594,13 @@ class StaphScopeOrchestrator:
         if not amr_script.exists():
             self.banner.display_error(f"AMR script not found at: {amr_script}")
             return False
+
+        # Ensure logger exists
+        if self.logger is None:
+            import logging
+            logging.basicConfig(level=logging.INFO, format='%(message)s')
+            self.logger = logging.getLogger("StaphScope")
+
         self.banner.display_info("Updating AMRfinderPlus database...")
         flag = "--force-update" if force else "--update-db"
         cmd = [sys.executable, str(amr_script), flag]
@@ -619,6 +628,12 @@ class StaphScopeOrchestrator:
         if not amr_script.exists():
             self.banner.display_error("AMR script not found, cannot check database.")
             return False
+
+        if self.logger is None:
+            import logging
+            logging.basicConfig(level=logging.INFO, format='%(message)s')
+            self.logger = logging.getLogger("StaphScope")
+
         cmd = [sys.executable, str(amr_script), "--db-version"]
         result = subprocess.run(cmd, capture_output=True, text=True, cwd=amr_module_path)
         if result.stdout:
@@ -863,7 +878,8 @@ class StaphScopeOrchestrator:
     def run_sequential_analyses(self, fasta_files: List[Path], output_dir: Path, threads: int,
                                skip_modules: Dict[str, bool],
                                amr_min_identity: float, amr_min_coverage: float,
-                               amr_skip_mutations: bool, amr_force_update: bool) -> Dict[str, bool]:
+                               amr_skip_mutations: bool, amr_force_update: bool,
+                               abricate_min_identity: int = 80, abricate_min_coverage: int = 80) -> Dict[str, bool]:
         analysis_functions = [
             ("FASTA QC", self.run_fasta_qc_analysis, "FASTA QC Analysis", "Sequence Quality Control & Statistics", not skip_modules.get('fasta_qc', False)),
             ("MLST", self.run_mlst_analysis, "MLST Analysis", "Multi-Locus Sequence Typing", not skip_modules.get('mlst', False)),
@@ -872,7 +888,8 @@ class StaphScopeOrchestrator:
             ("Agr", self.run_agr_analysis, "AGR TYPING", "Agr Accessory Gene Typing", not skip_modules.get('agr', False)),
             ("AMRFinderPlus", lambda f, o, t: self.run_amrfinder_analysis(f, o, t, amr_min_identity, amr_min_coverage, amr_skip_mutations, amr_force_update),
              "AMR ANALYSIS", "Antimicrobial Resistance Gene Detection", not skip_modules.get('amr', False)),
-            ("ABRicate", self.run_abricate_analysis, "ABRICATE ANALYSIS", "Comprehensive Resistance, Plasmid & Virulence Gene Screening", not skip_modules.get('abricate', False))
+            ("ABRicate", lambda f, o, t: self.run_abricate_analysis(f, o, t, abricate_min_identity, abricate_min_coverage),
+             "ABRICATE ANALYSIS", "Comprehensive Resistance, Plasmid & Virulence Gene Screening", not skip_modules.get('abricate', False))
         ]
         active = [(name, func, header, desc) for name, func, header, desc, enabled in analysis_functions if enabled]
         if not active:
@@ -884,6 +901,8 @@ class StaphScopeOrchestrator:
             self.banner.display_module_header(header, desc)
             try:
                 if name == "AMRFinderPlus":
+                    success = func(fasta_files, output_dir, max(1, threads // len(active)))
+                elif name == "ABRicate":
                     success = func(fasta_files, output_dir, max(1, threads // len(active)))
                 else:
                     success = func(fasta_files, output_dir, max(1, threads // len(active)))
@@ -908,7 +927,9 @@ class StaphScopeOrchestrator:
                              amr_skip_mutations: bool = False,
                              amr_force_update: bool = False,
                              clean_output: bool = False,
-                             skip_sample_centric: bool = False):
+                             skip_sample_centric: bool = False,
+                             abricate_min_identity: int = 80,
+                             abricate_min_coverage: int = 80):
         if skip_modules is None:
             skip_modules = {}
         if update_amr_db_only:
@@ -965,7 +986,8 @@ class StaphScopeOrchestrator:
             # Run primary modules
             analysis_results = self.run_sequential_analyses(fasta_files, output_path, threads, skip_modules,
                                                            amr_min_identity, amr_min_coverage,
-                                                           amr_skip_mutations, amr_force_update)
+                                                           amr_skip_mutations, amr_force_update,
+                                                           abricate_min_identity, abricate_min_coverage)
 
             # Lineage
             if not skip_modules.get('lineage', False):
@@ -1087,6 +1109,9 @@ def main():
   # Skip agr typing
   staphscope -i "*.fna" -o results --skip-agr
 
+  # ABRicate custom thresholds
+  staphscope -i "*.fna" -o results --abricate-minid 85 --abricate-mincov 90
+
 {ColoredHelpFormatter.BOLD}{ColoredHelpFormatter.GREEN}Supported FASTA formats:{ColoredHelpFormatter.RESET} .fna, .fasta
 
 {ColoredHelpFormatter.BOLD}{ColoredHelpFormatter.GREEN}Analysis Modules:{ColoredHelpFormatter.RESET}
@@ -1141,6 +1166,11 @@ def main():
     parser.add_argument('--force-update-amr-db', action='store_true', help='Force complete AMR database update (overwrites old) and exit')
     parser.add_argument('--keep-temp', action='store_true', help='Do not delete temporary directories (for debugging)')
     parser.add_argument('--clean-output', action='store_true', help='Delete output directory before analysis (prevents mixing results from different runs)')
+    # New ABRicate threshold flags
+    parser.add_argument('--abricate-minid', type=int, default=80,
+                        help='Minimum identity for ABRicate hits (default: 80)')
+    parser.add_argument('--abricate-mincov', type=int, default=80,
+                        help='Minimum coverage for ABRicate hits (default: 80)')
 
     args = parser.parse_args()
 
@@ -1180,7 +1210,9 @@ def main():
         amr_skip_mutations=args.skip_amr_mutations,
         amr_force_update=args.amr_force_update,
         clean_output=args.clean_output,
-        skip_sample_centric=args.skip_sample_centric
+        skip_sample_centric=args.skip_sample_centric,
+        abricate_min_identity=args.abricate_minid,
+        abricate_min_coverage=args.abricate_mincov
     )
 
 

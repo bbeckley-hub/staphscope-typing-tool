@@ -3,7 +3,7 @@
 StaphScope AMRfinderPlus Standalone Module - BUNDLED VERSION with DYNAMIC DATABASE
 Comprehensive AMR analysis with HTML, TSV, and JSON reporting - MAXIMUM SPEED VERSION
 Author: Beckley Brown <brownbeckley94@gmail.com>
-Date: 2025 / Updated 2026-07-18
+Date: 2025 / Updated 2026-07-23
 Affiliation: University of Ghana Medical School-Department of Medical Biochemistry
 Uses AMRFinderPlus 4.2.7 with LATEST DYNAMIC DATABASE
 """
@@ -46,7 +46,7 @@ class AMRfinderPlusExecutor:
         
         self.metadata = {
             "tool_name": "StaphScope AMRfinderPlus",
-            "version": "1.3.1",
+            "version": "1.3.2",
             "authors": ["Brown Beckley"],
             "email": "brownbeckley94@gmail.com",
             "github": "https://github.com/bbeckley-hub",

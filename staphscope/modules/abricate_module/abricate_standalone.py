@@ -4,9 +4,9 @@ StaphScope ABRicate Standalone Module
 Comprehensive ABRicate analysis with HTML, TSV, and JSON reporting - MAXIMUM SPEED VERSION
 Author: Beckley Brown <brownbeckley94@gmail.com>
 Affiliation: University of Ghana Medical School-Department of Medical Biochemistry
-Date: 2026-07-18
+Date: 2026-07-23
 Send a quick mail for any issues or further explanations.
-version-1.3.1
+version-1.3.2
 """
 
 import subprocess
@@ -29,7 +29,7 @@ from collections import defaultdict, Counter
 class AbricateExecutor:
     """ABRicate executor with comprehensive HTML, TSV, and JSON reporting - MAXIMUM SPEED"""
     
-    def __init__(self, cpus: int = None):
+    def __init__(self, cpus: int = None, minid: int = 80, mincov: int = 80):
         # Setup logging FIRST
         self.logger = self._setup_logging()
         
@@ -38,6 +38,10 @@ class AbricateExecutor:
         
         # Then calculate resources - MAXIMUM SPEED MODE
         self.cpus = self._calculate_optimal_cpus(cpus)
+        
+        # Store threshold parameters
+        self.minid = minid
+        self.mincov = mincov
         
         # All databases to be used 
         self.required_databases = [
@@ -64,7 +68,7 @@ class AbricateExecutor:
         
         self.metadata = {
             "tool_name": "StaphScope ABRicate",
-            "version": "1.3.1", 
+            "version": "1.3.2", 
             "authors": ["Brown Beckley"],
             "email": "brownbeckley94@gmail.com",
             "github": "https://github.com/bbeckley-hub",
@@ -240,11 +244,11 @@ class AbricateExecutor:
             'abricate', 
             genome_file, 
             '--db', database,
-            '--minid', '80',
-            '--mincov', '80'
+            '--minid', str(self.minid),
+            '--mincov', str(self.mincov)
         ]
         
-        self.logger.info("Running ABRicate: %s --db %s", genome_name, database)
+        self.logger.info("Running ABRicate: %s --db %s (minid=%s, mincov=%s)", genome_name, database, self.minid, self.mincov)
         
         try:
             with open(output_file, 'w') as outfile:
@@ -2477,14 +2481,20 @@ Examples:
   # Run on all FASTA files (auto-detect optimal CPU cores - MAXIMUM SPEED)
   python abricate_standalone.py "*.fasta"
   
-  # Run on specific pattern with auto CPU detection
-  python abricate_standalone.py "MRSA_*.fna"
-  
+  # Run with custom thresholds
+  python abricate_standalone.py "*.fna" --minid 85 --mincov 90
+
   # Run with custom output directory and auto CPUs
   python abricate_standalone.py "*.fa" --output my_results
 
   # Force specific number of CPU cores
   python abricate_standalone.py "*.fna" --cpus 4
+
+MINIMUM IDENTITY/COVERAGE:
+  --minid and --mincov control the stringency of ABRicate hits.
+  Higher values (e.g., 90) yield fewer but more confident hits.
+  Lower values (e.g., 70) yield more hits but with lower confidence.
+  Default: 80/80 (recommended for S. aureus surveillance).
 
 MAXIMUM SPEED RESOURCE MANAGEMENT:
   • 1-4 cores: Uses ALL CPU cores (100% utilization)
@@ -2502,10 +2512,14 @@ Supported FASTA extensions: .fasta, .fa, .fna, .faa
                        help='Number of CPU cores to use (default: auto-detect optimal for MAXIMUM SPEED)')
     parser.add_argument('--output', '-o', default='abricate_results', 
                        help='Output directory (default: abricate_results)')
+    parser.add_argument('--minid', type=int, default=80,
+                       help='Minimum percent identity for ABRicate hits (default: 80)')
+    parser.add_argument('--mincov', type=int, default=80,
+                       help='Minimum percent coverage for ABRicate hits (default: 80)')
     
     args = parser.parse_args()
     
-    executor = AbricateExecutor(cpus=args.cpus)
+    executor = AbricateExecutor(cpus=args.cpus, minid=args.minid, mincov=args.mincov)
     
     try:
         results = executor.process_multiple_genomes(args.pattern, args.output)
@@ -2564,6 +2578,7 @@ Supported FASTA extensions: .fasta, .fa, .fna, .faa
         executor.logger.info("MRSA-positive genomes: %d", total_mrsa)
         executor.logger.info("PVL-positive genomes: %d", total_pvl)
         executor.logger.info("Processing mode: MAXIMUM SPEED 🚀")
+        executor.logger.info("Thresholds: minid=%d, mincov=%d", executor.minid, executor.mincov)
         
         import random
         executor.logger.info("\n💡 %s", random.choice(executor.science_quotes))
