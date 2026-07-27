@@ -12,7 +12,7 @@
 
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md)
 ![Version](https://anaconda.org/bioconda/staphscope/badges/version.svg)
-![Latest Release Date](https://anaconda.org/bioconda/staphscope/badges/latest_release_relative_date.svg)
+![Last Updated](https://anaconda.org/bioconda/staphscope/badges/latest_release_relative_date.svg)
 ![Platforms](https://anaconda.org/bbeckley-hub/staphscope/badges/platforms.svg)
 ![License](https://anaconda.org/bbeckley-hub/staphscope/badges/license.svg)
 [![DOI](https://img.shields.io/badge/DOI-10.1186%2Fs12864--026--12609--x-blue)](https://doi.org/10.1186/s12864-026-12609-x)
