@@ -1,0 +1,2396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StaphScope Comprehensive Report</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #7e22ce 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #ffffff;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .ascii-container {
+            background: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            border: 2px solid rgba(0, 255, 0, 0.3);
+        }
+        
+        .ascii-art {
+            font-family: 'Courier New', monospace;
+            font-size: 10px;
+            line-height: 1.1;
+            white-space: pre;
+            color: #00ff00;
+            text-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+            overflow-x: auto;
+        }
+        
+        .quote-container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            text-align: center;
+            min-height: 100px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: opacity 0.5s ease-in-out;
+        }
+        
+        .quote-text {
+            font-size: 18px;
+            font-style: italic;
+            margin-bottom: 10px;
+            color: #ffffff;
+        }
+        
+        .quote-author {
+            font-size: 14px;
+            color: #fbbf24;
+            font-weight: bold;
+        }
+        
+        .report-section {
+            background: rgba(255, 255, 255, 0.95);
+            color: #1f2937;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .report-section h2 {
+            color: #1e3a8a;
+            border-bottom: 3px solid #3b82f6;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 14px;
+        }
+        
+        th {
+            background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+            color: white;
+            padding: 12px;
+            text-align: left;
+            position: sticky;
+            top: 0;
+        }
+        
+        td {
+            padding: 10px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        tr:nth-child(even) {
+            background-color: #f8fafc;
+        }
+        
+        tr:hover {
+            background-color: #e0f2fe;
+        }
+        
+        .mrsa-positive {
+            color: #dc2626;
+            font-weight: bold;
+        }
+        
+        .mrsa-negative {
+            color: #10b981;
+            font-weight: bold;
+        }
+        
+        .unknown-status {
+            color: #6b7280;
+            font-weight: bold;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            font-size: 14px;
+        }
+        
+        .timestamp {
+            color: #fbbf24;
+            font-weight: bold;
+        }
+        
+        @media (max-width: 768px) {
+            .ascii-art {
+                font-size: 6px;
+            }
+            table {
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="ascii-container">
+                <div class="ascii-art">███████╗████████╗ █████╗ ██████╗ ██╗  ██╗███████╗ ██████╗ ██████╗ ██████╗ ███████╗
+██╔════╝╚══██╔══╝██╔══██╗██╔══██╗██║  ██║██╔════╝██╔════╝██╔═══██╗██╔══██╗██╔════╝
+███████╗   ██║   ███████║██████╔╝███████║███████╗██║     ██║   ██║██████╔╝█████╗  
+╚════██║   ██║   ██╔══██║██╔═══╝ ██╔══██║╚════██║██║     ██║   ██║██╔═══╝ ██╔══╝  
+███████║   ██║   ██║  ██║██║     ██║  ██║███████║╚██████╗╚██████╔╝██║     ███████╗
+╚══════╝   ╚═╝   ╚═╝  ╚═╝╚═╝     ╚═╝  ╚═╝╚══════╝ ╚═════╝ ╚═════╝ ╚═╝     ╚══════╝</div>
+            </div>
+            
+            <div class="quote-container" id="quoteContainer">
+                <div class="quote-text" id="quoteText">"The important thing is not to stop questioning. Curiosity has its own reason for existing."</div>
+                <div class="quote-author" id="quoteAuthor">— Albert Einstein</div>
+            </div>
+        </div>
+        
+        <div class="report-section">
+            <h2>📊 Comprehensive Typing Report</h2>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">300</div>
+                    <div class="stat-label">TOTAL SAMPLES</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">216</div>
+                    <div class="stat-label">MRSA</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">84</div>
+                    <div class="stat-label">MSSA</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">0</div>
+                    <div class="stat-label">UNKNOWN</div>
+                </div>
+            </div>
+            
+            <p><strong>Generated:</strong> 2026-07-27 13:22:19</p>
+            <p><strong>Report includes:</strong> Sample, MLST, spa type, SCCmec type, MRSA/MSSA classification</p>
+        </div>
+        
+        <div class="report-section">
+            <h2>🧬 Sample Typing Data (300 samples)</h2>
+            
+            <div style="overflow-x: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Sample</th>
+                            <th>MLST</th>
+                            <th>spa Type</th>
+                            <th>SCCmec Type</th>
+                            <th>MRSA/MSSA Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        
+                <tr>
+                    <td>GCA_000009665.1</td>
+                    <td>ST5</td>
+                    <td>t002</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000010445.1</td>
+                    <td>ST5</td>
+                    <td>t002</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000010465.1</td>
+                    <td>ST254</td>
+                    <td>t008</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000011265.1</td>
+                    <td>ST1</td>
+                    <td>t128</td>
+                    <td>SCCmec_type_IV(2B)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000011505.1</td>
+                    <td>ST36</td>
+                    <td>t018</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000011525.1</td>
+                    <td>ST1</td>
+                    <td>t607</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000012045.1</td>
+                    <td>ST250</td>
+                    <td>t008</td>
+                    <td>SCCmec_type_I(1B)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000146385.1</td>
+                    <td>ST239</td>
+                    <td>15-12-xx-16-02-25-17-24</td>
+                    <td>SCCmec_type_III(3A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000149015.1</td>
+                    <td>ST1</td>
+                    <td>t128</td>
+                    <td>SCCmec_type_IV(2B)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000153665.1</td>
+                    <td>ST1159</td>
+                    <td>t091</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000159535.2</td>
+                    <td>ST4618</td>
+                    <td>t019</td>
+                    <td>SCCmec_type_IV(2B)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000159555.1</td>
+                    <td>ST72</td>
+                    <td>t6509</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000160195.1</td>
+                    <td>ST30</td>
+                    <td>t012</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000160335.2</td>
+                    <td>ST30</td>
+                    <td>t021</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000160355.1</td>
+                    <td>ST30</td>
+                    <td>t021</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000160375.1</td>
+                    <td>ST30</td>
+                    <td>t137</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000160395.1</td>
+                    <td>ST30</td>
+                    <td>t021</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000160415.1</td>
+                    <td>ST30</td>
+                    <td>t021</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000162595.1</td>
+                    <td>ST30</td>
+                    <td>t021</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000162615.1</td>
+                    <td>ST42</td>
+                    <td>t166</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000162635.1</td>
+                    <td>ST145</td>
+                    <td>t5865</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000162655.1</td>
+                    <td>ST10</td>
+                    <td>t14109</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000162675.1</td>
+                    <td>ST30</td>
+                    <td>t021</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000162695.1</td>
+                    <td>ST30</td>
+                    <td>t021</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000162715.1</td>
+                    <td>ST30</td>
+                    <td>t019</td>
+                    <td>SCCmec_type_IV(2B)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000162735.1</td>
+                    <td>ST30</td>
+                    <td>t018</td>
+                    <td>SCCmec_type_IV(2B)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000162795.1</td>
+                    <td>ST431</td>
+                    <td>t021</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000162815.1</td>
+                    <td>ST30</td>
+                    <td>t021</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000162835.1</td>
+                    <td>ST30</td>
+                    <td>t012</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000162855.1</td>
+                    <td>ST34</td>
+                    <td>t166</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000163335.1</td>
+                    <td>ST30</td>
+                    <td>t021</td>
+                    <td>SCCmec_type_IV(2B)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000163575.1</td>
+                    <td>ST36</td>
+                    <td>t018</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000164715.1</td>
+                    <td>ST1</td>
+                    <td>t273</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000171435.1</td>
+                    <td>ST8</td>
+                    <td>t9877</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000171455.1</td>
+                    <td>ST8</td>
+                    <td>t008</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000172855.1</td>
+                    <td>ST239</td>
+                    <td>t037</td>
+                    <td>SCCmec_type_III(3A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000174455.1</td>
+                    <td>ST5</td>
+                    <td>t002</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000174475.1</td>
+                    <td>ST8</td>
+                    <td>t008</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000174495.1</td>
+                    <td>ST5</td>
+                    <td>t002</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000174515.1</td>
+                    <td>ST5</td>
+                    <td>t002</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000174535.1</td>
+                    <td>ST5</td>
+                    <td>t010</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000174555.1</td>
+                    <td>ST5</td>
+                    <td>t688</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000174575.1</td>
+                    <td>ST1892</td>
+                    <td>t004</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000174595.1</td>
+                    <td>ST5</td>
+                    <td>t002</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000174615.1</td>
+                    <td>ST5</td>
+                    <td>t002</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000174635.1</td>
+                    <td>ST5</td>
+                    <td>t002</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000174955.1</td>
+                    <td>ST8</td>
+                    <td>t008</td>
+                    <td>SCCmec_type_IV(2B)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000175475.1</td>
+                    <td>ST8</td>
+                    <td>t2658</td>
+                    <td>SCCmec_type_IV(2B)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000175495.1</td>
+                    <td>ST5</td>
+                    <td>t002</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000175955.1</td>
+                    <td>ST5</td>
+                    <td>t010</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000176195.1</td>
+                    <td>ST5</td>
+                    <td>No_spa_type_detected</td>
+                    <td>SCCmec_type_IV(2B)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000177995.1</td>
+                    <td>ST8</td>
+                    <td>t008</td>
+                    <td>SCCmec_type_IV(2B)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000178015.1</td>
+                    <td>ST105</td>
+                    <td>t002</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000178035.1</td>
+                    <td>ST105</td>
+                    <td>t002</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000180095.1</td>
+                    <td>ST5</td>
+                    <td>t002</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000180395.1</td>
+                    <td>ST5</td>
+                    <td>t002</td>
+                    <td>SCCmec_type_IV(2B)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000187145.1</td>
+                    <td>ST923</td>
+                    <td>t1635</td>
+                    <td>SCCmec_type_IV(2B)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000187165.1</td>
+                    <td>ST8</td>
+                    <td>t024</td>
+                    <td>SCCmec_type_IV(2B)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000189435.3</td>
+                    <td>ST700</td>
+                    <td>t524</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000189455.3</td>
+                    <td>ST2490</td>
+                    <td>t3568</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000193835.2</td>
+                    <td>ST30</td>
+                    <td>t012</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000193855.2</td>
+                    <td>ST8</td>
+                    <td>t008</td>
+                    <td>SCCmec_type_IV(2B)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000193875.2</td>
+                    <td>ST5</td>
+                    <td>t002</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000204665.1</td>
+                    <td>ST239</td>
+                    <td>t030</td>
+                    <td>SCCmec_type_III(3A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000205345.2</td>
+                    <td>ST8</td>
+                    <td>t211</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000205365.2</td>
+                    <td>ST5</td>
+                    <td>t242</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000205385.2</td>
+                    <td>ST25</td>
+                    <td>t287</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000208695.1</td>
+                    <td>ST239</td>
+                    <td>t030</td>
+                    <td>SCCmec_type_III(3A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000210315.1</td>
+                    <td>ST133</td>
+                    <td>t2678</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000212435.2</td>
+                    <td>ST8</td>
+                    <td>12-21-17-34-24-34-22-25</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000215405.2</td>
+                    <td>ST25</td>
+                    <td>t2554</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000215425.2</td>
+                    <td>ST22</td>
+                    <td>26-23-13-23-31-xx-17-25-17-25-16-28</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000215445.2</td>
+                    <td>Not typed</td>
+                    <td>t509</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000221725.2</td>
+                    <td>ST707</td>
+                    <td>t4523</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000221745.2</td>
+                    <td>Not typed</td>
+                    <td>t314</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000221765.2</td>
+                    <td>ST7893</td>
+                    <td>t160</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000221785.2</td>
+                    <td>ST72</td>
+                    <td>07-23-12-447-xx-12-17-20-17-12-12-17</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000221805.2</td>
+                    <td>ST4166</td>
+                    <td>26-23-17-34-xx-20-xx-12-17-16</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000221825.2</td>
+                    <td>ST7892</td>
+                    <td>t383</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000221845.2</td>
+                    <td>ST30</td>
+                    <td>t076</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000237125.3</td>
+                    <td>ST59</td>
+                    <td>t437</td>
+                    <td>SCCmec_type_V(5C2&5)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000237265.1</td>
+                    <td>ST425</td>
+                    <td>t6300</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000239235.1</td>
+                    <td>ST80</td>
+                    <td>t044</td>
+                    <td>SCCmec_type_IV(2B)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000239535.2</td>
+                    <td>ST8037</td>
+                    <td>t808</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000239555.2</td>
+                    <td>ST398</td>
+                    <td>t571</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000239575.2</td>
+                    <td>ST109</td>
+                    <td>t209</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000239595.2</td>
+                    <td>ST188</td>
+                    <td>t189</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000239615.2</td>
+                    <td>ST8</td>
+                    <td>t008</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000239635.2</td>
+                    <td>ST372</td>
+                    <td>t037</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000239655.2</td>
+                    <td>ST395</td>
+                    <td>t900</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000239675.2</td>
+                    <td>ST507</td>
+                    <td>t064</td>
+                    <td>SCCmec_type_IV(2B)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000242475.2</td>
+                    <td>ST45</td>
+                    <td>t1081</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000242495.2</td>
+                    <td>ST49</td>
+                    <td>No_spa_type_detected</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000242515.2</td>
+                    <td>ST30</td>
+                    <td>t018</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000242535.2</td>
+                    <td>ST1447</td>
+                    <td>t6709</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000242555.2</td>
+                    <td>ST254</td>
+                    <td>t008</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000242575.2</td>
+                    <td>ST80</td>
+                    <td>t044</td>
+                    <td>SCCmec_type_IV(2B)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000245495.1</td>
+                    <td>ST8</td>
+                    <td>t211</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000245575.2</td>
+                    <td>ST34</td>
+                    <td>12-25-22-22-34</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000245595.2</td>
+                    <td>ST88</td>
+                    <td>t786</td>
+                    <td>SCCmec_type_IV(2B)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000245615.2</td>
+                    <td>ST30</td>
+                    <td>t122</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000247255.2</td>
+                    <td>ST8</td>
+                    <td>11-19-12-xx-17-34-24-34-22-25</td>
+                    <td>SCCmec_type_IV(2B)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000247275.2</td>
+                    <td>ST5</td>
+                    <td>t2302</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000247295.2</td>
+                    <td>ST7895</td>
+                    <td>t2168</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000247315.2</td>
+                    <td>ST1356</td>
+                    <td>t2453</td>
+                    <td>SCCmec_type_IV(2B)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000247335.2</td>
+                    <td>ST8</td>
+                    <td>t008</td>
+                    <td>SCCmec_type_IV(2B)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000247355.2</td>
+                    <td>Not typed</td>
+                    <td>t121</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000247375.2</td>
+                    <td>ST22</td>
+                    <td>07-23-13-23-31-xx-17-25-16-17-25-16-28</td>
+                    <td>SCCmec_type_IV(2B)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000247395.2</td>
+                    <td>ST4803</td>
+                    <td>t008</td>
+                    <td>SCCmec_type_IV(2B)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000247415.2</td>
+                    <td>ST4166</td>
+                    <td>t045</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000248475.2</td>
+                    <td>ST5</td>
+                    <td>t002</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000248495.2</td>
+                    <td>ST8</td>
+                    <td>t064</td>
+                    <td>SCCmec_type_IV(2B)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000248515.2</td>
+                    <td>ST5</td>
+                    <td>t002</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000248535.2</td>
+                    <td>ST346</td>
+                    <td>t018</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000248555.3</td>
+                    <td>ST36</td>
+                    <td>t018</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000248575.2</td>
+                    <td>ST36</td>
+                    <td>t17416</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000248595.2</td>
+                    <td>ST36</td>
+                    <td>t018</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000248615.2</td>
+                    <td>ST5</td>
+                    <td>t002</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000248635.2</td>
+                    <td>ST5</td>
+                    <td>t002</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000248655.2</td>
+                    <td>ST1</td>
+                    <td>t128</td>
+                    <td>SCCmec_type_IV(2B)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000248675.2</td>
+                    <td>ST8</td>
+                    <td>t064</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000248695.2</td>
+                    <td>ST5</td>
+                    <td>t002</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000248715.2</td>
+                    <td>ST5</td>
+                    <td>t002</td>
+                    <td>SCCmec_type_IV(2B)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000248735.2</td>
+                    <td>ST36</td>
+                    <td>t018</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000248755.2</td>
+                    <td>ST5</td>
+                    <td>t002</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000248775.2</td>
+                    <td>ST36</td>
+                    <td>t1239</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000248795.2</td>
+                    <td>ST8</td>
+                    <td>t17383</td>
+                    <td>SCCmec_type_IV(2B)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000248815.2</td>
+                    <td>ST664</td>
+                    <td>t064</td>
+                    <td>SCCmec_type_IV(2B)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000248835.2</td>
+                    <td>ST609</td>
+                    <td>t064</td>
+                    <td>SCCmec_type_IV(2B)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000248855.2</td>
+                    <td>ST45</td>
+                    <td>t1081</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000248875.2</td>
+                    <td>ST346</td>
+                    <td>t268</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000248895.2</td>
+                    <td>ST36</td>
+                    <td>t018</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000248915.2</td>
+                    <td>ST45</td>
+                    <td>t040</td>
+                    <td>SCCmec_type_IV(2B)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000248935.2</td>
+                    <td>ST634</td>
+                    <td>t002</td>
+                    <td>SCCmec_type_IV(2B)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000248955.2</td>
+                    <td>ST36</td>
+                    <td>t018</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000248975.2</td>
+                    <td>ST8</td>
+                    <td>t334</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000248995.2</td>
+                    <td>ST105</td>
+                    <td>t002</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000249015.2</td>
+                    <td>ST1</td>
+                    <td>t175</td>
+                    <td>SCCmec_type_IV(2B)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000249035.2</td>
+                    <td>ST15</td>
+                    <td>t084</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000252405.2</td>
+                    <td>ST398</td>
+                    <td>No_spa_type_detected</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000253135.1</td>
+                    <td>ST5</td>
+                    <td>t002</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000257985.1</td>
+                    <td>ST4166</td>
+                    <td>t502</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000258475.1</td>
+                    <td>Not typed</td>
+                    <td>t008</td>
+                    <td>SCCmec_type_IV(2B)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000258685.1</td>
+                    <td>ST398</td>
+                    <td>t571</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000259715.1</td>
+                    <td>ST772</td>
+                    <td>t10629</td>
+                    <td>SCCmec_type_V(5C2)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000259995.1</td>
+                    <td>ST239</td>
+                    <td>t037</td>
+                    <td>SCCmec_type_III(3A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000260015.1</td>
+                    <td>ST239</td>
+                    <td>t037</td>
+                    <td>SCCmec_type_III(3A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000260035.1</td>
+                    <td>Not typed</td>
+                    <td>t216</td>
+                    <td>SCCmec_type_IV(2B)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000260055.1</td>
+                    <td>ST7894</td>
+                    <td>t037</td>
+                    <td>SCCmec_type_III(3A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000260315.1</td>
+                    <td>ST5510</td>
+                    <td>t393</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000261165.1</td>
+                    <td>ST243</td>
+                    <td>t021</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000262815.1</td>
+                    <td>ST371</td>
+                    <td>t062</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000262835.1</td>
+                    <td>ST5</td>
+                    <td>t2168</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000262855.1</td>
+                    <td>ST5</td>
+                    <td>t2168</td>
+                    <td>SCCmec_type_IV(2B)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000262875.1</td>
+                    <td>ST4166</td>
+                    <td>17-12-17-16</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000262895.1</td>
+                    <td>ST231</td>
+                    <td>17-20-17-12-17-16</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000262915.1</td>
+                    <td>ST85</td>
+                    <td>t062</td>
+                    <td>SCCmec_type_VIII(4A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000262935.1</td>
+                    <td>ST231</td>
+                    <td>t002</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000262955.1</td>
+                    <td>ST5</td>
+                    <td>t002</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000262975.1</td>
+                    <td>ST5</td>
+                    <td>373-17-20-17-12-17-16</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000262995.2</td>
+                    <td>ST5</td>
+                    <td>17-34-17-xx-17-12-17-16</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000263015.1</td>
+                    <td>ST5</td>
+                    <td>t509</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000263035.1</td>
+                    <td>ST5</td>
+                    <td>17-34-17-282-xx-17-12-17-16</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000276625.1</td>
+                    <td>ST115</td>
+                    <td>t267</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000280745.1</td>
+                    <td>ST1692</td>
+                    <td>t16900</td>
+                    <td>SCCmec_type_V(5C2&5)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000284535.1</td>
+                    <td>ST22</td>
+                    <td>t1041</td>
+                    <td>SCCmec_type_IV(2B)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000284895.1</td>
+                    <td>ST4803</td>
+                    <td>t1767</td>
+                    <td>SCCmec_type_IV(2B)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000294385.2</td>
+                    <td>ST5</td>
+                    <td>t5756</td>
+                    <td>SCCmec_type_I(1B)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000296595.1</td>
+                    <td>ST398</td>
+                    <td>t034</td>
+                    <td>SCCmec_type_V(5C2)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000307695.1</td>
+                    <td>Not typed</td>
+                    <td>t019</td>
+                    <td>SCCmec_type_IV(2B)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000308895.1</td>
+                    <td>ST59</td>
+                    <td>t437</td>
+                    <td>SCCmec_type_V(5C2&5)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000308915.1</td>
+                    <td>ST764</td>
+                    <td>t002</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000312965.1</td>
+                    <td>Not typed</td>
+                    <td>24</td>
+                    <td>SCCmec_type_III(3A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000312985.1</td>
+                    <td>ST239</td>
+                    <td>t421</td>
+                    <td>SCCmec_type_III(3A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000313005.1</td>
+                    <td>ST239</td>
+                    <td>t037</td>
+                    <td>SCCmec_type_III(3A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000313025.1</td>
+                    <td>ST1178</td>
+                    <td>20-17-12-16</td>
+                    <td>SCCmec_type_IV(2B)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000313595.1</td>
+                    <td>ST239</td>
+                    <td>t030</td>
+                    <td>SCCmec_type_III(3A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000330685.1</td>
+                    <td>ST254</td>
+                    <td>t024</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000330825.2</td>
+                    <td>ST8</td>
+                    <td>t1029</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000332665.1</td>
+                    <td>ST5</td>
+                    <td>t010</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000332685.1</td>
+                    <td>ST97</td>
+                    <td>t359</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000336275.1</td>
+                    <td>ST772</td>
+                    <td>07-21-17-34-33-34</td>
+                    <td>SCCmec_type_V(5C2)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000336295.1</td>
+                    <td>ST772</td>
+                    <td>t3387</td>
+                    <td>SCCmec_type_V(5C2)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000336315.1</td>
+                    <td>ST772</td>
+                    <td>t3596</td>
+                    <td>SCCmec_type_V(5C2)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000336335.1</td>
+                    <td>ST772</td>
+                    <td>t657</td>
+                    <td>SCCmec_type_V(5C2)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000336515.1</td>
+                    <td>ST1</td>
+                    <td>t127</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000336595.1</td>
+                    <td>ST772</td>
+                    <td>t657</td>
+                    <td>SCCmec_type_V(5C2)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000350425.2</td>
+                    <td>ST12</td>
+                    <td>t160</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000359665.1</td>
+                    <td>ST8</td>
+                    <td>t622</td>
+                    <td>SCCmec_type_IV(2B)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000359765.1</td>
+                    <td>ST8</td>
+                    <td>t622</td>
+                    <td>SCCmec_type_IV(2B)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000359785.1</td>
+                    <td>ST8</td>
+                    <td>t008</td>
+                    <td>SCCmec_type_IV(2B)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000359805.1</td>
+                    <td>ST8</td>
+                    <td>t008</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000359825.1</td>
+                    <td>ST8</td>
+                    <td>t622</td>
+                    <td>SCCmec_type_IV(2B)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000359845.1</td>
+                    <td>ST8</td>
+                    <td>t008</td>
+                    <td>SCCmec_type_IV(2B)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000359865.1</td>
+                    <td>ST8</td>
+                    <td>t008</td>
+                    <td>SCCmec_type_IV(2B)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000359885.1</td>
+                    <td>ST8</td>
+                    <td>11-19-12-21-17-34-xx-25</td>
+                    <td>SCCmec_type_IV(2B)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000359905.1</td>
+                    <td>ST8</td>
+                    <td>t008</td>
+                    <td>SCCmec_type_IV(2B)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000359925.1</td>
+                    <td>ST1066</td>
+                    <td>t008</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000359945.1</td>
+                    <td>ST105</td>
+                    <td>t002</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000359965.1</td>
+                    <td>ST105</td>
+                    <td>t002</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000359985.1</td>
+                    <td>ST5</td>
+                    <td>t002</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000360005.1</td>
+                    <td>ST248</td>
+                    <td>t002</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000360025.1</td>
+                    <td>ST105</td>
+                    <td>t002</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000360045.1</td>
+                    <td>ST8</td>
+                    <td>t064</td>
+                    <td>SCCmec_type_IV(2B)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000360065.1</td>
+                    <td>ST105</td>
+                    <td>t002</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000360085.1</td>
+                    <td>ST105</td>
+                    <td>26-23-17-34-17-34-17-13-17-16</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000360105.1</td>
+                    <td>ST105</td>
+                    <td>t002</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000360125.1</td>
+                    <td>ST5</td>
+                    <td>t895</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000360145.1</td>
+                    <td>ST105</td>
+                    <td>t002</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000360165.1</td>
+                    <td>ST105</td>
+                    <td>t002</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000360185.1</td>
+                    <td>ST5</td>
+                    <td>26-23-17-34-17-12-17-34-17-12-17-16</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000360205.1</td>
+                    <td>ST105</td>
+                    <td>t002</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000360225.1</td>
+                    <td>ST105</td>
+                    <td>t002</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000360245.1</td>
+                    <td>ST5</td>
+                    <td>t002</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000360265.1</td>
+                    <td>ST105</td>
+                    <td>t002</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000360285.1</td>
+                    <td>ST5</td>
+                    <td>t002</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000360305.1</td>
+                    <td>ST5</td>
+                    <td>t062</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000360325.1</td>
+                    <td>ST5</td>
+                    <td>t002</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000360345.1</td>
+                    <td>ST105</td>
+                    <td>t002</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000360365.1</td>
+                    <td>ST105</td>
+                    <td>26-23-17-12-17-20-17-12-17-xx-17-34-17-20-17-12-17-16</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000360385.1</td>
+                    <td>ST5</td>
+                    <td>t002</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000360405.1</td>
+                    <td>ST5</td>
+                    <td>t002</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000360425.1</td>
+                    <td>ST5</td>
+                    <td>26-23-17-34-xx-17-20-17-12-17-16</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000360445.1</td>
+                    <td>ST5</td>
+                    <td>t002</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000360465.1</td>
+                    <td>ST609</td>
+                    <td>t064</td>
+                    <td>SCCmec_type_IV(2B)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000360485.1</td>
+                    <td>ST5</td>
+                    <td>26-23-17-xx-23-17-34-17-20-17-12-17-16</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000360505.1</td>
+                    <td>ST5</td>
+                    <td>t895</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000360525.1</td>
+                    <td>ST188</td>
+                    <td>t189</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000360545.1</td>
+                    <td>ST180</td>
+                    <td>t3794</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000360565.1</td>
+                    <td>ST5</td>
+                    <td>t002</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000360585.1</td>
+                    <td>ST105</td>
+                    <td>t002</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000360605.1</td>
+                    <td>ST105</td>
+                    <td>t002</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000360625.1</td>
+                    <td>ST5</td>
+                    <td>26-23-17-34-17-20-17-12-17-20-17-12-17-20-17-12-17-16</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000360645.1</td>
+                    <td>ST248</td>
+                    <td>t002</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000360665.1</td>
+                    <td>ST105</td>
+                    <td>26-23-17-34-17-13-17-34-17-12-17-16</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000360685.1</td>
+                    <td>ST105</td>
+                    <td>t002</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000360705.1</td>
+                    <td>ST5</td>
+                    <td>t002</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000360725.1</td>
+                    <td>ST609</td>
+                    <td>t064</td>
+                    <td>SCCmec_type_IV(2B)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000360745.1</td>
+                    <td>ST105</td>
+                    <td>t2358</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000360765.1</td>
+                    <td>ST105</td>
+                    <td>17-16</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000360785.1</td>
+                    <td>ST5</td>
+                    <td>t895</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000360805.1</td>
+                    <td>ST5</td>
+                    <td>t002</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000360825.1</td>
+                    <td>ST105</td>
+                    <td>t002</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000360845.1</td>
+                    <td>ST609</td>
+                    <td>11-19-12-05-17-34-17-34-24-34-22-25</td>
+                    <td>SCCmec_type_IV(2B)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000360865.1</td>
+                    <td>ST5</td>
+                    <td>t002</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000360885.1</td>
+                    <td>ST105</td>
+                    <td>t5607</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000360905.1</td>
+                    <td>ST5</td>
+                    <td>t2358</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000360925.1</td>
+                    <td>ST5</td>
+                    <td>t002</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000360945.1</td>
+                    <td>ST5</td>
+                    <td>26-23-17-34-17-20-17-12-17-xx-17-20-17-12-17-16</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000360965.1</td>
+                    <td>ST5</td>
+                    <td>t5607</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000360985.1</td>
+                    <td>ST5</td>
+                    <td>t002</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000361005.1</td>
+                    <td>ST105</td>
+                    <td>t002</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000361025.1</td>
+                    <td>ST5</td>
+                    <td>t002</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000361045.1</td>
+                    <td>ST1591</td>
+                    <td>07-23-12-34-xx-12-23</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000361065.1</td>
+                    <td>ST5</td>
+                    <td>t002</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000361085.1</td>
+                    <td>ST30</td>
+                    <td>15-12-149-17-16-17-24-24-24</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000361105.1</td>
+                    <td>ST105</td>
+                    <td>t002</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000361125.1</td>
+                    <td>ST609</td>
+                    <td>11-19-12-05-17-34-24-34-17-34</td>
+                    <td>SCCmec_type_IV(2B)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000361145.1</td>
+                    <td>ST5</td>
+                    <td>t2358</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000361165.1</td>
+                    <td>ST5</td>
+                    <td>26-23-17-34-17-20-17-34-17-20-17-12-17-20-17-20-17-16</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000361185.1</td>
+                    <td>ST231</td>
+                    <td>t002</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000361205.1</td>
+                    <td>ST179</td>
+                    <td>t5607</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000361225.1</td>
+                    <td>ST5</td>
+                    <td>26-23-17-xx-17-16</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000361245.1</td>
+                    <td>ST5</td>
+                    <td>t002</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000361265.1</td>
+                    <td>ST609</td>
+                    <td>t451</td>
+                    <td>SCCmec_type_IV(2B)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000361285.1</td>
+                    <td>ST496</td>
+                    <td>t2302</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000361305.1</td>
+                    <td>ST105</td>
+                    <td>t002</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000361325.1</td>
+                    <td>ST5</td>
+                    <td>t002</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000361345.1</td>
+                    <td>ST5</td>
+                    <td>17-12-16</td>
+                    <td>Not Assigned</td>
+                    <td class="mrsa-negative">MSSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000361365.1</td>
+                    <td>ST5</td>
+                    <td>t002</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000361385.1</td>
+                    <td>ST36</td>
+                    <td>15-12-16-02-xx-24</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000361405.1</td>
+                    <td>ST5</td>
+                    <td>t002</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000361425.1</td>
+                    <td>ST105</td>
+                    <td>t002</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000361445.1</td>
+                    <td>ST8</td>
+                    <td>t008</td>
+                    <td>SCCmec_type_IV(2B)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000361465.1</td>
+                    <td>ST5</td>
+                    <td>26-23-17-34-xx-23-17-34-17-20-17-12-17-16</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000361485.1</td>
+                    <td>ST105</td>
+                    <td>26-23-17-34-17-375-17-34-17-16</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000361505.1</td>
+                    <td>ST105</td>
+                    <td>t002</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000361525.1</td>
+                    <td>ST5</td>
+                    <td>t1340</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000361545.1</td>
+                    <td>ST5</td>
+                    <td>26-23-17-34-17-20-17-12-17-20-17-12-17-20-17-12-17-16</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000361565.1</td>
+                    <td>ST105</td>
+                    <td>t002</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000361585.1</td>
+                    <td>ST5</td>
+                    <td>26-23-17-34-23-17-34-23-17-34-17-20-17-12-17-16</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000361605.1</td>
+                    <td>ST5</td>
+                    <td>t002</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000361625.1</td>
+                    <td>ST105</td>
+                    <td>26-23-17-34-17-20-17-xx-17-12-17-20-17-12-17-16</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000361645.1</td>
+                    <td>ST105</td>
+                    <td>t002</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000361665.1</td>
+                    <td>ST5</td>
+                    <td>t002</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000361685.1</td>
+                    <td>ST5</td>
+                    <td>26-23-17-xx-17-20-17-12-17-16</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000361705.1</td>
+                    <td>ST609</td>
+                    <td>t064</td>
+                    <td>SCCmec_type_IV(2B)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000361725.1</td>
+                    <td>ST105</td>
+                    <td>t002</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000361745.1</td>
+                    <td>ST105</td>
+                    <td>t688</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000361765.1</td>
+                    <td>ST105</td>
+                    <td>t10422</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000361785.1</td>
+                    <td>ST105</td>
+                    <td>t688</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000361805.1</td>
+                    <td>ST5</td>
+                    <td>t002</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000361825.1</td>
+                    <td>ST5</td>
+                    <td>t002</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000361845.1</td>
+                    <td>ST5</td>
+                    <td>t002</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000361865.1</td>
+                    <td>ST105</td>
+                    <td>26-23-17-20-17-21-17-12-17-16</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000361885.1</td>
+                    <td>ST3312</td>
+                    <td>26-23-17-xx-17-34-17-20-17-12-17-16</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000361905.1</td>
+                    <td>ST105</td>
+                    <td>t002</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000361925.1</td>
+                    <td>ST5</td>
+                    <td>t2358</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000361945.1</td>
+                    <td>ST105</td>
+                    <td>t002</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                <tr>
+                    <td>GCA_000361965.1</td>
+                    <td>ST5</td>
+                    <td>t045</td>
+                    <td>SCCmec_type_II(2A)</td>
+                    <td class="mrsa-positive">MRSA</td>
+                </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p><strong>STAPHSCOPE</strong> - Comprehensive Analysis Report</p>
+            <p class="timestamp">Generated: 2026-07-27 13:22:19</p>
+            <p><strong>Author:</strong> Brown Beckley | <strong>GitHub:</strong> bbeckley-hub</p>
+            <p><strong>Email:</strong> brownbeckley94@gmail.com</p>
+            <p><strong>Affiliation:</strong> University of Ghana Medical School - Department of Medical Biochemistry</p>
+            <p><em>Report generated from MLST, spa, and SCCmec typing results.</em></p>
+            <p><em>⭐ Star us on GitHub if you find this tool useful!</em></p>
+            <p><em>Transforming fragmented genomic data into coherent biological narratives 🧬✨</em></p>
+        </div>
+    </div>
+
+    <script>
+        // Science quotes for rotation
+        const quotes = [{"text": "The important thing is not to stop questioning. Curiosity has its own reason for existing.", "author": "Albert Einstein"}, {"text": "Science is not only a disciple of reason but also one of romance and passion.", "author": "Stephen Hawking"}, {"text": "Somewhere, something incredible is waiting to be known.", "author": "Carl Sagan"}, {"text": "The good thing about science is that it's true whether or not you believe in it.", "author": "Neil deGrasse Tyson"}, {"text": "In science, there are no shortcuts to truth.", "author": "Karl Popper"}, {"text": "Science knows no country, because knowledge belongs to humanity.", "author": "Louis Pasteur"}, {"text": "The science of today is the technology of tomorrow.", "author": "Edward Teller"}, {"text": "Nothing in life is to be feared, it is only to be understood.", "author": "Marie Curie"}, {"text": "Research is what I'm doing when I don't know what I'm doing.", "author": "Wernher von Braun"}, {"text": "The universe is not required to be in perfect harmony with human ambition.", "author": "Carl Sagan"}, {"text": "Thank you for using STAPHSCOPE and don't forget to share with us any feature suggestions in mind.", "author": "Brown Beckley"}, {"text": "Staphscope represents the convergence of genomic surveillance and clinical diagnostics, transforming raw sequences into actionable insights for infection control.", "author": "Brown Beckley"}, {"text": "In the battle against antimicrobial resistance, tools like Staphscope are our eyes and ears, revealing the genetic blueprints of resistant pathogens.", "author": "Brown Beckley"}, {"text": "Staphscope isn't just a tool; it's a comprehensive system that bridges the gap between sequencing data and public health action.", "author": "Brown Beckley"}, {"text": "Through Staphscope, we turn the complexity of bacterial genomes into clear, interpretable reports, empowering clinicians and researchers alike.", "author": "Brown Beckley"}, {"text": "Staphscope is a testament to the power of bioinformatics in the modern era, making advanced pathogen typing accessible to all.", "author": "Brown Beckley"}];
+        
+        const quoteContainer = document.getElementById('quoteContainer');
+        const quoteText = document.getElementById('quoteText');
+        const quoteAuthor = document.getElementById('quoteAuthor');
+        
+        function getRandomQuote() {
+            return quotes[Math.floor(Math.random() * quotes.length)];
+        }
+        
+        function displayQuote() {
+            quoteContainer.style.opacity = '0';
+            
+            setTimeout(() => {
+                const quote = getRandomQuote();
+                quoteText.textContent = '"' + quote.text + '"';
+                quoteAuthor.textContent = '— ' + quote.author;
+                quoteContainer.style.opacity = '1';
+            }, 500);
+        }
+        
+        // Rotate quotes every 10 seconds
+        setInterval(displayQuote, 10000);
+    </script>
+</body>
+</html>
