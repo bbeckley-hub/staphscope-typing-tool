@@ -5,107 +5,439 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>StaphScope – Sample Reports</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            max-width: 900px;
-            margin: 40px auto;
-            padding: 0 20px;
-            background: #f5f5f5;
-            color: #1e293b;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #0b3d0b, #1a6b1a, #0e4b0e);
+            background-attachment: fixed;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px 20px;
         }
-        h1 {
-            font-size: 2.5em;
-            border-bottom: 3px solid #006400;
-            padding-bottom: 10px;
-            color: #006400;
+
+        .container {
+            max-width: 1100px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.07);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 32px;
+            padding: 50px 40px;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.08);
         }
-        .subtitle {
-            color: #475569;
-            margin-top: -10px;
-            margin-bottom: 30px;
-            font-size: 1.1em;
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
         }
+
+        .header h1 {
+            font-size: 3.2em;
+            font-weight: 700;
+            background: linear-gradient(135deg, #6dd56d, #228B22);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.5px;
+        }
+
+        .header .subtitle {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 1.2em;
+            margin-top: 6px;
+            font-weight: 300;
+        }
+
+        .header .badge {
+            display: inline-block;
+            margin-top: 12px;
+            background: rgba(255, 255, 255, 0.08);
+            padding: 6px 22px;
+            border-radius: 30px;
+            font-size: 0.85em;
+            color: rgba(255, 255, 255, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(5px);
+        }
+
+        .badge i {
+            margin-right: 6px;
+        }
+
+        .badge .version {
+            color: #6dd56d;
+            font-weight: 600;
+        }
+
+        /* Quote box */
+        .quote-box {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 24px 32px;
+            margin-bottom: 40px;
+            border-left: 4px solid #6dd56d;
+            transition: opacity 0.6s ease;
+            min-height: 100px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .quote-text {
+            font-size: 1.25em;
+            color: rgba(255, 255, 255, 0.9);
+            font-style: italic;
+            line-height: 1.6;
+            transition: opacity 0.5s;
+        }
+
+        .quote-author {
+            margin-top: 12px;
+            font-size: 1em;
+            color: rgba(255, 255, 255, 0.6);
+            font-weight: 300;
+            text-align: right;
+        }
+
+        .quote-author::before {
+            content: "— ";
+        }
+
+        /* Cards */
         .card-grid {
             display: grid;
             grid-template-columns: 1fr 1fr 1fr;
-            gap: 20px;
-            margin: 30px 0;
+            gap: 30px;
+            margin-top: 10px;
         }
+
         .card {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-            padding: 24px;
-            transition: transform 0.2s, box-shadow 0.2s;
-            border-left: 5px solid #006400;
+            background: rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(10px);
+            border-radius: 24px;
+            padding: 32px 28px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: transform 0.25s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
         }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #6dd56d, #228B22);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .card:hover::before {
+            opacity: 1;
+        }
+
         .card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+            transform: translateY(-6px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+            border-color: rgba(255, 255, 255, 0.2);
         }
+
+        .card .icon {
+            font-size: 2.8em;
+            margin-bottom: 12px;
+        }
+
         .card h2 {
-            margin-top: 0;
-            font-size: 1.4em;
-            color: #0b3b2c;
+            font-size: 1.5em;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 8px;
         }
+
         .card p {
-            color: #475569;
-            line-height: 1.5;
-            margin: 12px 0;
+            color: rgba(255, 255, 255, 0.75);
+            line-height: 1.6;
+            flex: 1;
+            font-size: 0.95em;
         }
+
+        .card .feature-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin: 14px 0 8px 0;
+        }
+
+        .card .feature-tags span {
+            background: rgba(255, 255, 255, 0.08);
+            padding: 3px 12px;
+            border-radius: 20px;
+            font-size: 0.75em;
+            color: rgba(255, 255, 255, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .card .meta {
+            font-size: 0.85em;
+            color: rgba(255, 255, 255, 0.4);
+            margin-top: 6px;
+        }
+
         .card a {
             display: inline-block;
-            margin-top: 8px;
-            background: #006400;
-            color: white;
-            padding: 8px 20px;
-            border-radius: 30px;
+            margin-top: 18px;
+            padding: 10px 32px;
+            border-radius: 40px;
+            background: linear-gradient(135deg, #6dd56d, #228B22);
+            color: #fff;
             text-decoration: none;
             font-weight: 600;
-            font-size: 0.9em;
-            transition: background 0.2s;
-        }
-        .card a:hover {
-            background: #228B22;
-        }
-        .card.comprehensive { border-left-color: #FF9800; }
-        .card.gene-centric { border-left-color: #F44336; }
-        .card.sample-centric { border-left-color: #9C27B0; }
-        .footer {
-            margin-top: 40px;
+            font-size: 0.95em;
+            transition: transform 0.2s, box-shadow 0.2s;
             text-align: center;
-            font-size: 0.9em;
-            color: #94a3b8;
-            border-top: 1px solid #e2e8f0;
-            padding-top: 20px;
+            align-self: flex-start;
+            border: none;
+            cursor: pointer;
         }
+
+        .card a:hover {
+            transform: scale(1.04);
+            box-shadow: 0 8px 24px rgba(34, 139, 34, 0.4);
+        }
+
+        /* Different accent for each card */
+        .card.comprehensive::before {
+            background: linear-gradient(90deg, #f59e0b, #d97706);
+        }
+        .card.comprehensive a {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+        }
+        .card.comprehensive a:hover {
+            box-shadow: 0 8px 24px rgba(217, 119, 6, 0.4);
+        }
+
+        .card.gene::before {
+            background: linear-gradient(90deg, #6dd56d, #228B22);
+        }
+        .card.gene a {
+            background: linear-gradient(135deg, #6dd56d, #228B22);
+        }
+        .card.gene a:hover {
+            box-shadow: 0 8px 24px rgba(34, 139, 34, 0.4);
+        }
+
+        .card.sample::before {
+            background: linear-gradient(90deg, #8B5CF6, #6d28d9);
+        }
+        .card.sample a {
+            background: linear-gradient(135deg, #8B5CF6, #6d28d9);
+        }
+        .card.sample a:hover {
+            box-shadow: 0 8px 24px rgba(109, 40, 217, 0.4);
+        }
+
+        /* Footer */
+        .footer {
+            margin-top: 48px;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.35);
+            font-size: 0.9em;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            padding-top: 28px;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .footer a {
+            color: rgba(255, 255, 255, 0.6);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .footer a:hover {
+            color: #fff;
+        }
+
+        .footer .author {
+            color: rgba(255, 255, 255, 0.5);
+        }
+        .footer .author strong {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        @media (max-width: 900px) {
+            .card-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
         @media (max-width: 700px) {
-            .card-grid { grid-template-columns: 1fr; }
+            .container {
+                padding: 30px 20px;
+            }
+            .header h1 {
+                font-size: 2.2em;
+            }
+            .card-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            .quote-text {
+                font-size: 1em;
+            }
+            .footer {
+                flex-direction: column;
+                gap: 10px;
+                text-align: center;
+            }
         }
     </style>
 </head>
 <body>
-    <h1>🧬 StaphScope</h1>
-    <div class="subtitle">Interactive HTML reports – Sample datasets</div>
-    <div class="card-grid">
-        <div class="card comprehensive">
-            <h2>📄 Comprehensive Report</h2>
-            <p>MLST + spa + SCCmec typing combined in a single HTML page.</p>
-            <a href="staphscope_comprehensive_report.html">View Report →</a>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🧬 StaphScope</h1>
+            <div class="subtitle">Interactive sample reports – <em>Staphylococcus aureus</em></div>
+            <div class="badge">
+                <i class="fas fa-flask"></i> MLST &bull; spa Typing &bull; SCCmec &bull; Agr &bull; AMR &bull; Virulence &bull; BACMET &bull; Plasmids &bull; Mutations &bull; <span class="version">v1.3.2</span>
+            </div>
         </div>
-        <div class="card gene-centric">
-            <h2>📊 Gene‑Centric Report</h2>
-            <p>Each AMR/virulence gene with all genomes that carry it. Dynamic grouping included.</p>
-            <a href="staphscope_ultimate_gene_centric_report.html">View Report →</a>
+
+        <!-- Quote Box -->
+        <div class="quote-box" id="quoteBox">
+            <div class="quote-text" id="quoteText">Loading insight…</div>
+            <div class="quote-author" id="quoteAuthor"></div>
         </div>
-        <div class="card sample-centric">
-            <h2>📋 Sample‑Centric Report</h2>
-            <p>Each isolate as an interactive box with its full gene profile. Ideal for clinical review.</p>
-            <a href="staphscope_ultimate_sample_centric_report.html">View Report →</a>
+
+        <!-- Cards -->
+        <div class="card-grid">
+            <div class="card comprehensive">
+                <div class="icon">📄</div>
+                <h2>Comprehensive Report</h2>
+                <p>
+                    MLST, spa typing, SCCmec typing combined in a single HTML page. Includes typing summaries, sample overview, and lineage reference.
+                </p>
+                <div class="feature-tags">
+                    <span>MLST</span>
+                    <span>spa</span>
+                    <span>SCCmec</span>
+                    <span>Agr</span>
+                    <span>MRSA/MSSA</span>
+                </div>
+                <div class="meta">Unified typing summary • Cross‑table links</div>
+                <a href="staphscope_comprehensive_report.html">View Report →</a>
+            </div>
+
+            <div class="card gene">
+                <div class="icon">🧬</div>
+                <h2>Gene‑Centric Report</h2>
+                <p>
+                    Every AMR, virulence, BACMET, plasmid, or mutation shown with all genomes that carry it. Dynamic grouping by typing reveals clonal associations.
+                </p>
+                <div class="feature-tags">
+                    <span>Group by ST</span>
+                    <span>spa</span>
+                    <span>SCCmec</span>
+                    <span>Agr</span>
+                    <span>Combinations</span>
+                </div>
+                <div class="meta">Groupable tables • Co‑occurrence analysis • Exportable CSV</div>
+                <a href="staphscope_ultimate_gene_centric_report.html">View Report →</a>
+            </div>
+
+            <div class="card sample">
+                <div class="icon">📋</div>
+                <h2>Sample‑Centric Report</h2>
+                <p>
+                    Each isolate presented as an interactive box with typing badges, AMR, virulence, BACMET, plasmids, and mutations. Perfect for clinical review.
+                </p>
+                <div class="feature-tags">
+                    <span>MRSA/MSSA</span>
+                    <span>Agr</span>
+                    <span>AMR</span>
+                    <span>Virulence</span>
+                    <span>Mutations</span>
+                </div>
+                <div class="meta">Interactive isolate boxes • Horizontally scrollable tables • Filter by database</div>
+                <a href="staphscope_ultimate_sample_centric_report.html">View Report →</a>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <span class="author">
+                <strong>Brown Beckley</strong> &bull; University of Ghana Medical School
+            </span>
+            <span>
+                <a href="https://github.com/bbeckley-hub/staphscope-typing-tool" target="_blank">GitHub</a>
+                &nbsp;&bull;&nbsp;
+                <a href="mailto:brownbeckley94@gmail.com">Email</a>
+            </span>
+            <span style="color: rgba(255,255,255,0.25);">v1.3.2 &bull; MIT License</span>
         </div>
     </div>
-    <div class="footer">
-        StaphScope v1.3.2 &bull; University of Ghana Medical School &bull; <a href="https://github.com/bbeckley-hub/staphscope-typing-tool" target="_blank">GitHub</a>
-    </div>
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+
+    <script>
+        // Classic science quotes – no personal attribution
+        const quotes = [
+            { text: "Science is organized knowledge.", author: "Herbert Spencer" },
+            { text: "The science of today is the technology of tomorrow.", author: "Edward Teller" },
+            { text: "Nature is the source of all true knowledge.", author: "Leonardo da Vinci" },
+            { text: "Biology is the most powerful technology ever created.", author: "Freeman Dyson" },
+            { text: "Genomics is a lens on biology.", author: "Eric Lander" },
+            { text: "Every microbe has its own story.", author: "Anonymous" },
+            { text: "Data beats emotions.", author: "Sean Rad" },
+            { text: "In every walk with nature, one receives far more than one seeks.", author: "John Muir" },
+            { text: "The microbe is nothing; the terrain is everything.", author: "Louis Pasteur" },
+            { text: "What we know is a drop, what we don't know is an ocean.", author: "Isaac Newton" },
+            { text: "The important thing is not to stop questioning. Curiosity has its own reason for existing.", author: "Albert Einstein" },
+            { text: "One must learn by doing the thing; though you think you know it, you have no certainty until you try.", author: "Sophocles" },
+            { text: "Nothing in life is to be feared, it is only to be understood.", author: "Marie Curie" },
+            { text: "The greatest enemy of knowledge is not ignorance, it is the illusion of knowledge.", author: "Stephen Hawking" },
+            { text: "We are just an advanced breed of monkeys on a minor planet of a very average star. But we can understand the Universe.", author: "Stephen Hawking" },
+            { text: "The most exciting phrase to hear in science, the one that heralds new discoveries, is not 'Eureka!' but 'That's funny…'", author: "Isaac Asimov" },
+            { text: "DNA is like a computer program but far, far more advanced than any software ever created.", author: "Bill Gates" },
+            { text: "The beauty of a living thing is not the atoms that go into it, but the way those atoms are put together.", author: "Carl Sagan" },
+            { text: "If I have seen further it is by standing on the shoulders of Giants.", author: "Isaac Newton" },
+            { text: "Science knows no country, because knowledge belongs to humanity, and is the torch which illuminates the world.", author: "Louis Pasteur" },
+            { text: "The first rule of intelligent tinkering is to save all the parts.", author: "Paul Ehrlich" }
+        ];
+
+        let currentIndex = 0;
+        const quoteText = document.getElementById('quoteText');
+        const quoteAuthor = document.getElementById('quoteAuthor');
+
+        function displayQuote() {
+            const q = quotes[currentIndex];
+            quoteText.style.opacity = 0;
+            setTimeout(() => {
+                quoteText.textContent = `“${q.text}”`;
+                quoteAuthor.textContent = q.author;
+                quoteText.style.opacity = 1;
+            }, 300);
+            currentIndex = (currentIndex + 1) % quotes.length;
+        }
+
+        displayQuote();
+        setInterval(displayQuote, 12000);
+    </script>
 </body>
 </html>
