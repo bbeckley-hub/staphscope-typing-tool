@@ -72,6 +72,34 @@
 
 ---
 
+## 🎉 **NEW in August: StaphScope Toolkit – iTOL Metadata Made Easy!**
+
+> **Data wrangling got you down?** We've created a companion toolkit that automatically generates **iTOL-ready annotation files** from your StaphScope outputs — no Excel gymnastics required! 🚀
+
+### What it does:
+- ✅ Converts your StaphScope CSVs into **colour strips** & **binary matrices**
+- ✅ Handles **MLST, spa, SCCmec, agr, MRSA status, AMR genes, virulence, mutations, bacmet, and plasmid replicons**
+- ✅ Auto-selects top genes/mutations so you **never get empty files**
+- ✅ Customise with `--top_st`, `--custom_amr`, or a **YAML config file**
+
+### Quick start:
+```bash
+git clone git@github.com:bbeckley-hub/staphscope-toolkit.git
+cd staphscope-toolkit
+pip install -r requirements.txt
+python staphscope_itol.py --input_dir /path/to/Staphscope_final_report
+```
+
+**Drag and drop the generated files into iTOL – that's it!**
+
+📖 **[Full documentation & examples →](https://github.com/bbeckley-hub/staphscope-toolkit)**
+
+---
+
+> *"From 3 hours of Excel gymnastics to 30 seconds of drag-and-drop. You're welcome."* 😉
+
+---
+
 ## 🎉 What's New in v1.3.2 (July 2026)
 
 ### 🚀 New Features
