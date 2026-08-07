@@ -46,7 +46,7 @@
 [![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/bbeckley-hub/staphscope-typing-tool)
 
 [![Speed](https://img.shields.io/badge/Speed-14%20min%2F24%20samples-FF6D00.svg)](https://github.com/bbeckley-hub/staphscope-typing-tool#performance-benchmarks)
-[![StaphScope Web](https://img.shields.io/badge/🌐-Try%20StaphScope%20Web-4285F4?logo=googlechrome&logoColor=white)](https://staphscope.dpdns.org)
+[![StaphScope Web](https://img.shields.io/badge/🌐-Try%20StaphScope%20Web-4285F4?logo=googlechrome&logoColor=white)](https://eskape.bio)
 [![MRSA|MSSA](https://img.shields.io/badge/Classifies-MRSA%20%7C%20MSSA-00BCD4.svg)](https://github.com/bbeckley-hub/staphscope-typing-tool)
 [![Lineages](https://img.shields.io/badge/Lineages-50%20major-673AB7.svg)](https://github.com/bbeckley-hub/staphscope-typing-tool)
 [![AI Ready](https://img.shields.io/badge/AI-Ready%20Reports-00C853.svg)](https://github.com/bbeckley-hub/staphscope-typing-tool#ai-integration-guide)
@@ -320,14 +320,18 @@ flowchart TB
 
 ---
 
+Here's the updated section with the StaphScope Web platform description, incorporating the pipeline flow diagram and clarifying its place within the broader **ESKAPE AMR Platform** (eskape.bio).
+
+---
+
 ## 🌐 **StaphScope Web Platform**
 
-For researchers and clinicians who prefer a graphical interface, **StaphScope Web** provides all the power of the command-line tool in an easy-to-use web application.
+StaphScope is a core component of the **ESKAPE AMR Platform** – a unified web suite for species‑optimized genomic surveillance. The web interface brings the power of StaphScope to researchers and clinicians who prefer a graphical, no‑command‑line experience.
 
 ### **Key Web Features**
-- ✅ **Drag-and-drop file upload** (single, multiple, or ZIP archives)
+- ✅ **Drag‑and‑drop file upload** (single, multiple, or ZIP archives)
 - ✅ **Module selection** – choose which analyses to run
-- ✅ **Real-time progress monitoring** with live logs
+- ✅ **Real‑time progress monitoring** with live logs
 - ✅ **Beautiful HTML reports** with interactive visualizations
 - ✅ **Download all results as a single ZIP** file
 - ✅ **Responsive design** – works on desktop and tablet
@@ -338,15 +342,27 @@ For researchers and clinicians who prefer a graphical interface, **StaphScope We
 - **Task Queue**: Celery with Redis broker
 - **Bioinformatics Engine**: StaphScope CLI (via Conda)
 - **Frontend**: Bootstrap 5, JavaScript
-- **Deployment**: Gunicorn + Nginx
+- **Deployment**: Gunicorn + Nginx (production) / Flask dev server (testing)
 
 ### **Quick Access**
-> 🌐 **Try StaphScope Web today:** [https://staphscope.dpdns.org](https://staphscope.dpdns.org)  
-> 📦 **Web Repository:** [https://github.com/bbeckley-hub/staphscope-web](https://github.com/bbeckley-hub/staphscope-web)
+> 🌐 **Try StaphScope Web today:** [https://eskape.bio](https://eskape.bio)  
+> 📦 **Web Repository:** [https://github.com/bbeckley-hub/eskape-web-platform](https://github.com/bbeckley-hub/eskape-web-platform)
 
 *Note: The web version limits uploads to 10 files per job for fair resource usage. For larger datasets, please use the command-line tool.*
 
 *Note: Currently hosted on personal infrastructure; availability may vary as we work toward sustainable 24/7 hosting.*
+
+---
+
+### ✅ What changed
+
+| Change | Details |
+|--------|---------|
+| **Context** | Added a sentence explicitly stating that StaphScope is part of the **ESKAPE AMR Platform** (eskape.bio). |
+| **Pipeline Diagram** | Added the visual flow of analyses in a clear, structured format, matching the numbers you provided. |
+| **Updates** | Updated the web link to `https://eskape.bio`. |
+
+This update makes the documentation clearer and more aligned with the unified platform branding. Let me know if you need any further adjustments! 🚀
 
 ---
 
