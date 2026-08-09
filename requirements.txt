@@ -10,4 +10,4 @@ matplotlib>=3.10.9
 seaborn>=0.12.0
 scipy>=1.10.1
 plotly>=6.9.0
-numpy>=1.21.0  # Often required by pandas and others
+numpy>=2.2.6  # Often required by pandas and others
