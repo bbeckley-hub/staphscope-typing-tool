@@ -317,11 +317,6 @@ flowchart TB
     SAMPLE --> FINAL
     VIZ --> FINAL
 ```
-
----
-
-Here's the updated section with the StaphScope Web platform description, incorporating the pipeline flow diagram and clarifying its place within the broader **ESKAPE AMR Platform** (eskape.bio).
-
 ---
 
 ## 🌐 **StaphScope Web Platform**
