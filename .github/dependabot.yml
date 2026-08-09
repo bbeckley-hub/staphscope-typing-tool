@@ -1,0 +1,17 @@
+version: 2
+updates:
+  # Python pip dependencies 
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "python"
+
+  # keep GitHub Actions workflows up to date 
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
