@@ -90,6 +90,10 @@ pip install -r requirements.txt
 python staphscope_itol.py --input_dir /path/to/Staphscope_final_report
 ```
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/bbeckley-hub/staphscope-typing-tool/main/staphscope_itol.png" alt="StaphScope iTOL Toolkit example output" width="80%">
+</p>
+
 **Drag and drop the generated files into iTOL – that's it!**
 
 📖 **[Full documentation & examples →](https://github.com/bbeckley-hub/staphscope-toolkit)**
