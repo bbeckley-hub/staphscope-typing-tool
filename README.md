@@ -66,7 +66,7 @@
 
 **Two ways to use StaphScope:**  
 🖥️ **Command-line tool** for high-throughput, local analysis  
-🌐 **StaphScope Web** for non-bioinformaticians – [https://staphscope.dpdns.org](https://staphscope.dpdns.org)
+🌐 **StaphScope Web** for non-bioinformaticians – [https://eskape.bio](https://eskape.bio)
 
 </div>
 
@@ -1141,10 +1141,10 @@ When citing StaphScope in your publications, please include the main StaphScope 
 | **Choose Your Platform** | |
 |--------------------------|-|
 | 🖥️ **Command Line** | For high-throughput, local analysis |
-| 🌐 **StaphScope Web** | For non-bioinformaticians – [https://staphscope.dpdns.org](https://staphscope.dpdns.org) |
+| 🌐 **StaphScope Web** | For non-bioinformaticians – [https://eskape.bio](https://eskape.bio) |
 
 [![Get Started CLI](https://img.shields.io/badge/GET_STARTED_CLI-Now-green?style=for-the-badge&logo=github)](https://github.com/bbeckley-hub/staphscope-typing-tool#-quick-start-cli)
-[![Try Web Version](https://img.shields.io/badge/TRY_WEB_VERSION-Here-blue?style=for-the-badge&logo=html5)](https://staphscope.dpdns.org)
+[![Try Web Version](https://img.shields.io/badge/TRY_WEB_VERSION-Here-blue?style=for-the-badge&logo=html5)](https://eskape.bio)
 [![Report Issue](https://img.shields.io/badge/REPORT_ISSUE-Here-red?style=for-the-badge&logo=github)](https://github.com/bbeckley-hub/staphscope-typing-tool/issues)
 
 **From days to minutes. From fragmented to integrated. From data to insights.**
