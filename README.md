@@ -350,19 +350,6 @@ StaphScope is a core component of the **ESKAPE AMR Platform** – a unified web 
 *Note: The web version limits uploads to 10 files per job for fair resource usage. For larger datasets, please use the command-line tool.*
 
 *Note: Currently hosted on personal infrastructure; availability may vary as we work toward sustainable 24/7 hosting.*
-
----
-
-### ✅ What changed
-
-| Change | Details |
-|--------|---------|
-| **Context** | Added a sentence explicitly stating that StaphScope is part of the **ESKAPE AMR Platform** (eskape.bio). |
-| **Pipeline Diagram** | Added the visual flow of analyses in a clear, structured format, matching the numbers you provided. |
-| **Updates** | Updated the web link to `https://eskape.bio`. |
-
-This update makes the documentation clearer and more aligned with the unified platform branding. Let me know if you need any further adjustments! 🚀
-
 ---
 
 ## ⚡ **Quick Start (CLI)**
