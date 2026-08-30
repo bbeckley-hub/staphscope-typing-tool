@@ -9,5 +9,5 @@ lxml>=6.1.2
 matplotlib>=3.10.9
 seaborn>=0.13.2
 scipy>=1.15.3
-plotly>=6.9.0
+plotly>=7.0.0
 numpy>=2.2.6  # Often required by pandas and others
