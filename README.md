@@ -742,7 +742,7 @@ StaphScope reports are structured with clear tables and organized data that AI c
 ## 🔮 **Future Development**
 
 ### **🚀 Upcoming Features (2026-2027)**
-- **Raw read support** – Direct FASTQ analysis with integrated assembly (Snippy).
+- **Raw read support** – Direct FASTQ analysis with integrated assembly (Shovill).
 - **Machine learning module** – Outbreak prediction, phenotype inference, risk scoring.
 - **Real‑time database updates** – Live synchronization of lineage and AMR databases.
 - **Plugin system** – Community‑contributed analysis modules.
