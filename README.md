@@ -72,6 +72,34 @@
 
 ---
 
+## 🧬 **Fixed in v1.4.0: SCCmec Typing Now Handles `mecC` Properly**
+
+> **Caught by [@Alyssa-Kent](https://github.com/Alyssa-Kent)** — `mecC`-positive isolates were getting called MSSA, and the k-mer evidence was thrown away. Oops. Fixed now. 🎯
+
+### What was broken:
+- ❌ `mecC` (and the legacy `mecALGA251`) were never treated as MRSA markers
+- ❌ The first row of `results_tab_MyDbFinder.txt` was being skipped, silently dropping `ccrB3`
+- ❌ The k-mer fallback only fired on `mecA`, so LGA251's 100% SCCmec XI hit never showed up
+
+### Proof it works (LGA251 / GCF_000237265.1):
+
+<p align="center">
+  <img src="staphscope_comprehensive_report.html.png" alt="StaphScope SCCmec report for LGA251 showing SCCmec XI (8E)" width="85%">
+</p>
+
+**LGA251 now reports:**
+- 🟢 MRSA: `CONFIRMED_MRSA` — `mecC` detected
+- 🟢 SCCmec: `SCCmec_type_XI(8E)` — gene-based and k-mer agree at 100% coverage
+- 🟢 CCR class 8 + mec class E correctly resolved
+
+Full HTML report: [`staphscope_comprehensive_report.html`](staphscope_comprehensive_report.html)
+
+> **Thanks!!! [@Alyssa-Kent](https://github.com/Alyssa-Kent)** v1.4.0 under way.....
+
+---
+
+---
+
 ## 🎉 **NEW in August: StaphScope Toolkit – iTOL Metadata Made Easy!**
 
 > **Data wrangling got you down?** We've created a companion toolkit that automatically generates **iTOL-ready annotation files** from your StaphScope outputs — no Excel gymnastics required! 🚀
