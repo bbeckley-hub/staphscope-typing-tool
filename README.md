@@ -85,13 +85,13 @@ Nine months, three new modules, one completely rewritten orchestrator, an intera
 ### 🆕 **Three Brand-New Analysis Modules**
 
 - **🧬 `mge_module` — Mobile Genetic Element Profiling**  
-  Uses **mobileOG-db** (Beatrix-1.6) with **Prodigal** and **DIAMOND** to count protein families across ten functional categories: Integrase, Transfer, Stability, Phage, Replication, IS-associated, ICE-associated, Plasmid-associated, Phage-associated, and Key MGE-signatures. Because you can't understand how resistance *spreads* until you know what's *carrying* it. [Jump to feature deep-dive ↓](#-the-mge-tab-where-resistance-gets-a-postal-address)
+  Uses **mobileOG-db** (Beatrix-1.6) with **Prodigal** and **DIAMOND** to count protein families across ten functional categories: Integrase, Transfer, Stability, Phage, Replication, IS-associated, ICE-associated, Plasmid-associated, Phage-associated, and Key MGE-signatures. Because you can't understand how resistance *spreads* until you know what's *carrying* it. [Jump to feature deep-dive ↓](#-feature-deep-dives)
 
 - **💊 `capsule_module` — Capsular Polysaccharide Typing**  
-  Serotype determination (Type 5 / Type 8) with completeness scoring and per-gene detection. The capsule is what *S. aureus* uses to evade your immune system, and it's a major vaccine target. So yes, it matters — more than people give it credit for. [Jump to feature deep-dive ↓](#-the-capsule-tab-because-phagocytes-have-feelings-too)
+  Serotype determination (Type 5 / Type 8) with completeness scoring and per-gene detection. The capsule is what *S. aureus* uses to evade your immune system, and it's a major vaccine target. So yes, it matters — more than people give it credit for. [Jump to feature deep-dive ↓](#-feature-deep-dives)
 
 - **🔬 `sccmec_module_rpet` — A Second SCCmec Opinion**  
-  A completely independent SCCmec caller from **Robert A. Petit III** (the original `sccmec` tool, successor to the Staphopia-SCCmec module). Now you get **two callers**: the classic CGE SCCmecFinder and RPet's implementation. When they agree, you can breathe. When they disagree, you have a research project. [Jump to feature deep-dive ↓](#-the-sccmec-tab-because-one-opinion-is-never-enough)
+  A completely independent SCCmec caller from **Robert A. Petit III** (the original `sccmec` tool, successor to the Staphopia-SCCmec module). Now you get **two callers**: the classic CGE SCCmecFinder and RPet's implementation. When they agree, you can breathe. When they disagree, you have a research project. [Jump to feature deep-dive ↓](#-feature-deep-dives)
 
 ---
 
@@ -530,7 +530,7 @@ Singularity always maps your host UID automatically — no padlock, no extra fla
 | **AMRFinderPlus** | Antimicrobial resistance gene detection | [ncbi/amr](https://github.com/ncbi/amr) | Public Domain |
 | **SCCmecFinder** | SCCmec typing (CGE caller) | [genomicepidemiology/Sccmecfinder](https://bitbucket.org/genomicepidemiology/Sccmecfinder) | Apache-2.0 |
 | **sccmec (RPet)** | SCCmec typing (RPet caller) | [rpetit3/sccmec](https://github.com/rpetit3/sccmec) | MIT |
-| **AgrVATE** | Agr typing | [VishnuRaghuram94/AgrV](https://github.com/VishnuRaghuram94/AgrVATE) | MIT |
+| **AgrVATE** | Agr typing | [VishnuRaghuram94/AgrVATE](https://github.com/VishnuRaghuram94/AgrVATE) | MIT |
 | **spa typing** | *spa* gene typing | [spa.ridom.de](https://spa.ridom.de/) | Free for academic use |
 | **PubMLST** | MLST allele database | [pubmlst.org](https://pubmlst.org/organisms/staphylococcus-aureus) | Open access for research |
 | **fastANI** | Species-level ANI confirmation | [ParBLiSS/FastANI](https://github.com/ParBLiSS/FastANI) | Apache-2.0 |
@@ -884,7 +884,7 @@ StaphScope stands on the shoulders of giants. We are deeply grateful to:
 - **ParBLiSS** team for fastANI.
 - **Python community** for Biopython, pandas, plotly, seaborn, matplotlib.
 - **Early adopters and beta testers** for invaluable feedback.
-- **[Alyssa-Kent](https://github.com/Alyssa-Kent)** for catching the *mecC* misclassification in v1.4.0 — a bug whose fix is still load-bearing in v2.0.0.
+- **[Alyssa-Kent](https://github.com/Alyssa-Kent)** for catching the *mecC* misclassification in v1.3.2 — a bug whose fix is still load-bearing in v2.0.0.
 - **Peer reviewers & Editorial Team @ BMC Genomics** for their constructive feedback.
 
 > *"If we ever meet in person, the drinks are on me!" – Brown Beckley*
