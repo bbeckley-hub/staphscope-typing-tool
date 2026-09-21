@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """
 StaphScope FASTA QC - Comprehensive Quality Control with Beautiful HTML Reports
+Includes species confirmation using fastANI for Staphylococcus aureus
 Author: Brown Beckley <brownbeckley94@gmail.com>
 Affiliation: University of Ghana Medical School - Department of Medical Biochemistry
-Date: 2026-07-23
+Date: 2026-09-02 (Enhanced with fastANI species confirmation)
 Send a quick mail for any issues or further explanations.
 """
 
@@ -13,12 +14,13 @@ import glob
 import json
 import math
 import statistics
+import tempfile
+import subprocess
 from pathlib import Path
 from datetime import datetime
 from collections import Counter, defaultdict
 import argparse
 import logging
-import subprocess
 from typing import List, Dict, Any, Optional
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
@@ -26,13 +28,14 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from Bio import SeqIO
 from Bio.SeqUtils import gc_fraction
 
+
 class StaphFASTAQC:
-    """Comprehensive FASTA QC for Staphylococcus aureus with beautiful HTML"""
-    
-    def __init__(self, cpus: int = None):
+    """Comprehensive FASTA QC for Staphylococcus aureus with beautiful HTML and species confirmation"""
+
+    def __init__(self, cpus: int = None, ref_dir: str = None):
         # Setup logging
         self.logger = self._setup_logging()
-        
+
         # Science quotes for rotation
         self.science_quotes = [
             {"text": "The important thing is not to stop questioning. Curiosity has its own reason for existing.", "author": "Albert Einstein"},
@@ -51,11 +54,11 @@ class StaphFASTAQC:
             {"text": "Through Staphscope, we turn the complexity of bacterial genomes into clear, interpretable reports, empowering clinicians and researchers alike.", "author": "Brown Beckley"},
             {"text": "Staphscope is a testament to the power of bioinformatics in the modern era, making advanced pathogen typing accessible to all.", "author": "Brown Beckley"}
         ]
-        
+
         # Metadata
         self.metadata = {
             "tool_name": "StaphScope FASTA QC Analysis",
-            "version": "1.3.2", 
+            "version": "2.0.0",
             "authors": ["Brown Beckley"],
             "email": "brownbeckley94@gmail.com",
             "github": "https://github.com/bbeckley-hub",
@@ -63,7 +66,7 @@ class StaphFASTAQC:
             "analysis_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "biopython_version": self._get_biopython_version()
         }
-        
+
         # S. aureus specific thresholds
         self.thresholds = {
             'gc_normal': (32, 38),  # S. aureus specific GC range
@@ -74,9 +77,15 @@ class StaphFASTAQC:
             'ambiguous_critical': 5.0,
             'ambiguous_warning': 1.0,
         }
-        
+
         self.cpus = cpus or os.cpu_count() or 1
-    
+
+        # Species confirmation setup
+        if ref_dir is None:
+            ref_dir = Path(__file__).resolve().parent / "ref_db"
+        self.ref_dir = Path(ref_dir)
+        self.species_refs = self._load_references()
+
     def _setup_logging(self):
         """Setup logging"""
         logging.basicConfig(
@@ -84,26 +93,117 @@ class StaphFASTAQC:
             format='%(asctime)s - %(levelname)s - %(message)s'
         )
         return logging.getLogger(__name__)
-    
+
     def _get_biopython_version(self) -> str:
         """Get BioPython version"""
         try:
             import Bio
             return Bio.__version__
-        except:
+        except Exception:
             return "Unknown"
-    
+
     def get_random_quote(self):
         """Get a random science quote"""
         import random
         return random.choice(self.science_quotes)
-    
+
+    # ------------------------------------------------------------------
+    # Species confirmation helpers
+    # ------------------------------------------------------------------
+    def _load_references(self) -> Dict[str, Path]:
+        """Load reference genomes from ref_dir (expected: staphylococcus_aureus_*.fna, etc.)."""
+        refs: Dict[str, Path] = {}
+        if not self.ref_dir.exists():
+            self.logger.warning(f"Reference directory {self.ref_dir} not found. Species check disabled.")
+            return refs
+        for f in sorted(self.ref_dir.glob("*.fna")):
+            # Normalise the stem: replace underscores, collapse whitespace, title-case
+            stem = f.stem.replace('_', ' ')
+            stem = ' '.join(stem.split())
+            species = stem.title()
+            refs[species] = f
+        if refs:
+            self.logger.info(
+                f"Loaded {len(refs)} reference genomes for species check: {', '.join(refs.keys())}"
+            )
+        return refs
+
+    def _is_s_aureus(self, species_name: str) -> bool:
+        """Return True if the species name indicates S. aureus."""
+        s = species_name.lower()
+        return ('staphylococcus' in s and 'aureus' in s) or 'staph' in s or 'aureus' in s
+
+    def _run_species_ani(self, query_fasta: str, threads: int = 4) -> Optional[Dict]:
+        """Run fastANI against all references; return best match, ANI, and contamination flag.
+        Only S. aureus with ANI >= 95% passes. Contamination flagged only when the second best
+        is (a) not S. aureus, (b) > 90% ANI, and (c) within 5% of the best hit."""
+        if not self.species_refs:
+            return None
+
+        results = []
+        for species, ref_path in self.species_refs.items():
+            tmp_fd, tmp_path = tempfile.mkstemp(suffix='.txt')
+            os.close(tmp_fd)
+            try:
+                cmd = ['fastANI', '-q', query_fasta, '-r', str(ref_path),
+                       '-o', tmp_path, '-t', str(threads)]
+                subprocess.run(cmd, capture_output=True, text=True, check=True)
+                with open(tmp_path, 'r') as fh:
+                    line = fh.readline().strip()
+                    if line:
+                        parts = line.split('\t')
+                        if len(parts) >= 3:
+                            try:
+                                ani = float(parts[2])
+                                results.append((species, ani))
+                            except ValueError:
+                                self.logger.warning(f"Could not parse ANI from line: {line}")
+            except subprocess.CalledProcessError:
+                self.logger.warning(f"fastANI failed for {Path(query_fasta).name} vs {species}")
+            except FileNotFoundError:
+                self.logger.error("fastANI executable not found on PATH. Species check disabled.")
+                return None
+            finally:
+                try:
+                    os.remove(tmp_path)
+                except OSError:
+                    pass
+
+        if not results:
+            return None
+
+        results.sort(key=lambda x: x[1], reverse=True)
+        best_species, best_ani = results[0]
+        second_species = results[1][0] if len(results) > 1 else None
+        second_ani = results[1][1] if len(results) > 1 else None
+
+        # Pass: best match is S. aureus AND ANI >= 95%
+        passed = (best_ani >= 95.0 and self._is_s_aureus(best_species))
+
+        # Contamination: second best > 90%, gap < 5%, and second best not S. aureus
+        contamination = False
+        if second_ani and second_ani > 90.0 and (best_ani - second_ani) < 5.0:
+            if not self._is_s_aureus(second_species):
+                contamination = True
+
+        return {
+            'best_match': best_species,
+            'ani_percent': round(best_ani, 2),
+            'passed': passed,
+            'contamination_suspected': contamination,
+            'second_best_match': second_species,
+            'second_best_ani': round(second_ani, 2) if second_ani is not None else None,
+            'all_matches': {sp: round(ani, 2) for sp, ani in results}
+        }
+
+    # ------------------------------------------------------------------
+    # Core analysis
+    # ------------------------------------------------------------------
     def analyze_file(self, fasta_file: str) -> Dict[str, Any]:
         """Comprehensive analysis of a FASTA file for S. aureus"""
         try:
             self.logger.info(f"🔬 Analyzing {os.path.basename(fasta_file)}...")
-            
-            # Read sequences
+
             sequences = list(SeqIO.parse(fasta_file, "fasta"))
             if not sequences:
                 return {
@@ -112,69 +212,57 @@ class StaphFASTAQC:
                     'status': 'error',
                     'error': 'No sequences found'
                 }
-            
-            # Basic stats
+
             seq_lengths = [len(seq) for seq in sequences]
             total_length = sum(seq_lengths)
-            
-            # Sort for N statistics
             sorted_lengths = sorted(seq_lengths, reverse=True)
-            
-            # N statistics
+
             n50 = self._calculate_nx(sorted_lengths, total_length, 50)
             n75 = self._calculate_nx(sorted_lengths, total_length, 75)
             n90 = self._calculate_nx(sorted_lengths, total_length, 90)
-            
-            # L statistics
+
             l50 = self._calculate_lx(sorted_lengths, total_length, 50)
             l75 = self._calculate_lx(sorted_lengths, total_length, 75)
             l90 = self._calculate_lx(sorted_lengths, total_length, 90)
-            
-            # Nucleotide composition
+
             base_counts = Counter()
             gc_contents = []
-            
             for seq in sequences:
                 seq_str = str(seq.seq).upper()
                 base_counts.update(seq_str)
                 gc_contents.append(gc_fraction(seq_str) * 100)
-            
+
             total_bases = sum(base_counts.values())
-            
-            # Calculate percentages
+
             a_count = base_counts.get('A', 0)
             t_count = base_counts.get('T', 0)
             g_count = base_counts.get('G', 0)
             c_count = base_counts.get('C', 0)
-            
+
             a_percent = (a_count / total_bases) * 100 if total_bases > 0 else 0
             t_percent = (t_count / total_bases) * 100 if total_bases > 0 else 0
             g_percent = (g_count / total_bases) * 100 if total_bases > 0 else 0
             c_percent = (c_count / total_bases) * 100 if total_bases > 0 else 0
             gc_percent = g_percent + c_percent
             at_percent = a_percent + t_percent
-            
-            # Ambiguous bases
+
             ambiguous_bases = sum(base_counts.get(b, 0) for b in ['N', 'Y', 'R', 'W', 'S', 'K', 'M', 'B', 'D', 'H', 'V'])
             ambiguous_percent = (ambiguous_bases / total_bases) * 100 if total_bases > 0 else 0
-            
-            # N statistics
+
             sequences_with_n = sum(1 for seq in sequences if 'N' in str(seq.seq).upper())
             total_n_bases = base_counts.get('N', 0)
-            
-            # Find longest N-run
+
+            import re
             max_n_run = 0
             n_runs = []
             for seq in sequences:
                 seq_str = str(seq.seq).upper()
-                import re
                 for match in re.finditer(r'N+', seq_str):
                     run_len = len(match.group())
                     n_runs.append(run_len)
                     if run_len > max_n_run:
                         max_n_run = run_len
-            
-            # Homopolymers
+
             homopolymers = []
             for seq in sequences:
                 seq_str = str(seq.seq).upper()
@@ -186,10 +274,9 @@ class StaphFASTAQC:
                                 'length': len(match.group()),
                                 'position': match.start()
                             })
-            
+
             max_homopolymer = max([h['length'] for h in homopolymers]) if homopolymers else 0
-            
-            # Duplicate sequences
+
             seq_hashes = set()
             duplicate_sequences = 0
             for seq in sequences:
@@ -198,18 +285,16 @@ class StaphFASTAQC:
                     duplicate_sequences += 1
                 else:
                     seq_hashes.add(seq_hash)
-            
-            # Short and long sequences
+
             short_sequences = sum(1 for length in seq_lengths if length < self.thresholds['short_seq'])
             long_sequences = sum(1 for length in seq_lengths if length > self.thresholds['long_seq'])
-            
-            # Length distribution
+
             length_distribution = self._create_length_bins(seq_lengths)
-            
-            # S. aureus specific checks
             s_aureus_status = self._check_s_aureus_specific(gc_percent, gc_contents, total_length, seq_lengths)
-            
-            # Compile results
+
+            # ----- Species confirmation using fastANI -----
+            species_result = self._run_species_ani(fasta_file, self.cpus)
+
             results = {
                 'filename': os.path.basename(fasta_file),
                 'filepath': fasta_file,
@@ -254,16 +339,20 @@ class StaphFASTAQC:
                 'base_counts': dict(base_counts),
                 'n_runs': n_runs,
                 's_aureus_status': s_aureus_status,
+                'species_check': species_result if species_result else {'error': 'Species check not available'},
                 'warnings': self._generate_warnings(
                     gc_percent, ambiguous_percent, max_n_run, max_homopolymer,
                     short_sequences, long_sequences, duplicate_sequences, len(sequences),
-                    s_aureus_status
+                    s_aureus_status, species_result
                 )
             }
-            
-            self.logger.info(f"✅ {os.path.basename(fasta_file)}: {len(sequences)} sequences, {total_length:,} bp, N50: {n50:,}, GC: {gc_percent:.1f}%")
+
+            self.logger.info(
+                f"✅ {os.path.basename(fasta_file)}: {len(sequences)} sequences, "
+                f"{total_length:,} bp, N50: {n50:,}, GC: {gc_percent:.1f}%"
+            )
             return results
-            
+
         except Exception as e:
             self.logger.error(f"❌ Error analyzing {fasta_file}: {e}")
             return {
@@ -271,22 +360,18 @@ class StaphFASTAQC:
                 'status': 'error',
                 'error': str(e)
             }
-    
-    def _check_s_aureus_specific(self, gc_percent: float, gc_contents: List[float], 
-                                total_length: int, seq_lengths: List[int]) -> Dict:
+
+    def _check_s_aureus_specific(self, gc_percent: float, gc_contents: List[float],
+                                 total_length: int, seq_lengths: List[int]) -> Dict:
         """Check S. aureus specific characteristics"""
-        # S. aureus genome typically 2.7-3.0 Mbp
-        genome_size_ok = total_length >= 2500000 and total_length <= 3200000
-        
-        # GC content should be 32-38%
+        genome_size_ok = 2500000 <= total_length <= 3200000
         gc_ok = self.thresholds['gc_normal'][0] <= gc_percent <= self.thresholds['gc_normal'][1]
-        
-        # Check for typical contig count (assembly quality)
+
         if len(seq_lengths) <= 100:
             assembly_quality = "Good" if len(seq_lengths) <= 50 else "Moderate"
         else:
             assembly_quality = "Fragmented"
-        
+
         return {
             'genome_size_mbp': total_length / 1000000,
             'genome_size_status': 'Normal' if genome_size_ok else 'Atypical',
@@ -296,52 +381,35 @@ class StaphFASTAQC:
             'expected_gc_range': f"{self.thresholds['gc_normal'][0]}-{self.thresholds['gc_normal'][1]}%",
             'expected_genome_size': "2.7-3.2 Mbp"
         }
-    
+
     def _calculate_nx(self, sorted_lengths: List[int], total_length: int, x: int) -> int:
-        """Calculate Nx (N50, N75, N90)"""
         if not sorted_lengths:
             return 0
-        
         target = total_length * (x / 100)
         cumulative = 0
-        
         for length in sorted_lengths:
             cumulative += length
             if cumulative >= target:
                 return length
-        
         return sorted_lengths[-1]
-    
+
     def _calculate_lx(self, sorted_lengths: List[int], total_length: int, x: int) -> int:
-        """Calculate Lx (L50, L75, L90)"""
         if not sorted_lengths:
             return 0
-        
         target = total_length * (x / 100)
         cumulative = 0
-        
         for i, length in enumerate(sorted_lengths, 1):
             cumulative += length
             if cumulative >= target:
                 return i
-        
         return len(sorted_lengths)
-    
+
     def _create_length_bins(self, lengths: List[int]) -> Dict[str, int]:
-        """Create length distribution bins"""
         bins = {
-            '< 100 bp': 0,
-            '100-500 bp': 0,
-            '500-1k bp': 0,
-            '1k-5k bp': 0,
-            '5k-10k bp': 0,
-            '10k-50k bp': 0,
-            '50k-100k bp': 0,
-            '100k-500k bp': 0,
-            '500k-1M bp': 0,
-            '> 1M bp': 0
+            '< 100 bp': 0, '100-500 bp': 0, '500-1k bp': 0, '1k-5k bp': 0,
+            '5k-10k bp': 0, '10k-50k bp': 0, '50k-100k bp': 0, '100k-500k bp': 0,
+            '500k-1M bp': 0, '> 1M bp': 0
         }
-        
         for length in lengths:
             if length < 100:
                 bins['< 100 bp'] += 1
@@ -363,121 +431,85 @@ class StaphFASTAQC:
                 bins['500k-1M bp'] += 1
             else:
                 bins['> 1M bp'] += 1
-        
         return bins
-    
-    def _generate_warnings(self, gc_percent: float, ambiguous_percent: float, 
-                          max_n_run: int, max_homopolymer: int,
-                          short_sequences: int, long_sequences: int, 
-                          duplicate_sequences: int, total_sequences: int,
-                          s_aureus_status: Dict) -> List[Dict]:
-        """Generate warning messages for S. aureus"""
+
+    def _generate_warnings(self, gc_percent: float, ambiguous_percent: float,
+                           max_n_run: int, max_homopolymer: int,
+                           short_sequences: int, long_sequences: int,
+                           duplicate_sequences: int, total_sequences: int,
+                           s_aureus_status: Dict,
+                           species_result: Optional[Dict] = None) -> List[Dict]:
         warnings = []
-        
-        # GC content for S. aureus
+
         low, high = self.thresholds['gc_normal']
         if gc_percent < low:
-            warnings.append({
-                'level': 'warning',
-                'message': f'Low GC content ({gc_percent:.1f}%) - below S. aureus range ({low}-{high}%)'
-            })
+            warnings.append({'level': 'warning', 'message': f'Low GC content ({gc_percent:.1f}%) - below S. aureus range ({low}-{high}%)'})
         elif gc_percent > high:
-            warnings.append({
-                'level': 'warning',
-                'message': f'High GC content ({gc_percent:.1f}%) - above S. aureus range ({low}-{high}%)'
-            })
-        
-        # Ambiguous bases
+            warnings.append({'level': 'warning', 'message': f'High GC content ({gc_percent:.1f}%) - above S. aureus range ({low}-{high}%)'})
+
         if ambiguous_percent > self.thresholds['ambiguous_critical']:
-            warnings.append({
-                'level': 'danger',
-                'message': f'High ambiguous bases ({ambiguous_percent:.2f}%) - may indicate poor quality'
-            })
+            warnings.append({'level': 'danger', 'message': f'High ambiguous bases ({ambiguous_percent:.2f}%) - may indicate poor quality'})
         elif ambiguous_percent > self.thresholds['ambiguous_warning']:
-            warnings.append({
-                'level': 'warning',
-                'message': f'Elevated ambiguous bases ({ambiguous_percent:.2f}%)'
-            })
-        
-        # N-runs
+            warnings.append({'level': 'warning', 'message': f'Elevated ambiguous bases ({ambiguous_percent:.2f}%)'})
+
         if max_n_run > 100:
-            warnings.append({
-                'level': 'danger',
-                'message': f'Very long N-run detected ({max_n_run} bases) - may indicate assembly gaps'
-            })
+            warnings.append({'level': 'danger', 'message': f'Very long N-run detected ({max_n_run} bases) - may indicate assembly gaps'})
         elif max_n_run > 10:
-            warnings.append({
-                'level': 'warning',
-                'message': f'Long N-run detected ({max_n_run} bases)'
-            })
-        
-        # Homopolymers
+            warnings.append({'level': 'warning', 'message': f'Long N-run detected ({max_n_run} bases)'})
+
         if max_homopolymer > 20:
-            warnings.append({
-                'level': 'danger',
-                'message': f'Very long homopolymer ({max_homopolymer} bases) - may cause sequencing errors'
-            })
+            warnings.append({'level': 'danger', 'message': f'Very long homopolymer ({max_homopolymer} bases) - may cause sequencing errors'})
         elif max_homopolymer > 10:
-            warnings.append({
-                'level': 'warning',
-                'message': f'Long homopolymer ({max_homopolymer} bases)'
-            })
-        
-        # Short sequences
+            warnings.append({'level': 'warning', 'message': f'Long homopolymer ({max_homopolymer} bases)'})
+
         if short_sequences > total_sequences * 0.5:
-            warnings.append({
-                'level': 'danger',
-                'message': f'Many short sequences ({short_sequences}) - may indicate poor assembly'
-            })
+            warnings.append({'level': 'danger', 'message': f'Many short sequences ({short_sequences}) - may indicate poor assembly'})
         elif short_sequences > total_sequences * 0.1:
-            warnings.append({
-                'level': 'warning',
-                'message': f'Some short sequences ({short_sequences})'
-            })
-        
-        # Long sequences
+            warnings.append({'level': 'warning', 'message': f'Some short sequences ({short_sequences})'})
+
         if long_sequences > 0:
-            warnings.append({
-                'level': 'warning',
-                'message': f'Very long sequences detected ({long_sequences}) - may indicate contamination'
-            })
-        
-        # Duplicate sequences
+            warnings.append({'level': 'warning', 'message': f'Very long sequences detected ({long_sequences}) - may indicate contamination'})
+
         duplicate_percent = (duplicate_sequences / total_sequences) * 100 if total_sequences > 0 else 0
         if duplicate_percent > 10:
-            warnings.append({
-                'level': 'warning',
-                'message': f'Duplicate sequences detected ({duplicate_sequences}, {duplicate_percent:.1f}%)'
-            })
-        
-        # S. aureus specific warnings
+            warnings.append({'level': 'warning', 'message': f'Duplicate sequences detected ({duplicate_sequences}, {duplicate_percent:.1f}%)'})
+
         if s_aureus_status.get('genome_size_status') == 'Atypical':
-            warnings.append({
-                'level': 'warning',
-                'message': f'Atypical genome size ({s_aureus_status["genome_size_mbp"]:.2f} Mbp) for S. aureus (expected: {s_aureus_status["expected_genome_size"]})'
-            })
-        
+            warnings.append({'level': 'warning', 'message': f'Atypical genome size ({s_aureus_status["genome_size_mbp"]:.2f} Mbp) for S. aureus (expected: {s_aureus_status["expected_genome_size"]})'})
+
         if s_aureus_status.get('assembly_quality') == 'Fragmented':
-            warnings.append({
-                'level': 'warning',
-                'message': f'High contig count ({s_aureus_status["contig_count"]}) - consider additional assembly polishing'
-            })
-        
+            warnings.append({'level': 'warning', 'message': f'High contig count ({s_aureus_status["contig_count"]}) - consider additional assembly polishing'})
+
+        # Species confirmation warnings
+        if species_result and 'error' not in species_result:
+            if not species_result.get('passed', False):
+                warnings.append({
+                    'level': 'danger',
+                    'message': (f"Species mismatch: best match is {species_result.get('best_match', 'ND')} "
+                                f"(ANI {species_result.get('ani_percent', 'ND')}%). Expected S. aureus (ANI ≥ 95%).")
+                })
+            if species_result.get('contamination_suspected', False):
+                warnings.append({
+                    'level': 'danger',
+                    'message': (f"Contamination suspected: second best match is "
+                                f"{species_result.get('second_best_match', 'unknown')} "
+                                f"(ANI {species_result.get('second_best_ani', 'ND')}%), "
+                                f"which is not S. aureus.")
+                })
+
         return warnings
-    
+
+    # ------------------------------------------------------------------
+    # Individual HTML report
+    # ------------------------------------------------------------------
     def create_individual_html_report(self, results: Dict[str, Any], output_dir: str) -> str:
-        """Create comprehensive HTML report for a single FASTA file in StaphScope style"""
-        # Create individual folder for this FASTA file
         filename_no_ext = Path(results['filename']).stem
         sample_dir = os.path.join(output_dir, filename_no_ext)
         os.makedirs(sample_dir, exist_ok=True)
-        
+
         html_file = os.path.join(sample_dir, f"{filename_no_ext}_fasta_qc_report.html")
-        
-        # Get a random quote
         random_quote = self.get_random_quote()
-        
-        # Extract variables for template
+
         sample = results['filename']
         total_sequences = results['total_sequences']
         total_length = results['total_length']
@@ -486,8 +518,8 @@ class StaphFASTAQC:
         at_percent = results['at_percent']
         ambiguous_percent = results['ambiguous_percent']
         s_aureus_status = results.get('s_aureus_status', {})
-        
-        # Build warnings HTML
+        species_check = results.get('species_check', {})
+
         warnings_html = ''
         if results.get('warnings'):
             for warning in results['warnings']:
@@ -497,8 +529,7 @@ class StaphFASTAQC:
                     <div>{warning['message']}</div>
                 </div>
 '''
-        
-        # Build nucleotide composition HTML
+
         composition_html = f'''
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-top: 15px;">
                     <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 15px; border-radius: 8px; text-align: center; color: white;">
@@ -527,8 +558,7 @@ class StaphFASTAQC:
                     </div>
                 </div>
 '''
-        
-        # Build length distribution HTML
+
         length_dist_html = ''
         for length_range, count in results['length_distribution'].items():
             percentage = (count / total_sequences * 100) if total_sequences > 0 else 0
@@ -539,14 +569,13 @@ class StaphFASTAQC:
                             <td>{percentage:.1f}%</td>
                         </tr>
 '''
-        
-        # Build S. aureus status HTML
+
         s_aureus_html = ''
         if s_aureus_status:
             genome_color = '#10b981' if s_aureus_status['genome_size_status'] == 'Normal' else '#f59e0b'
             gc_color = '#10b981' if s_aureus_status['gc_status'] == 'Normal' else '#f59e0b'
             assembly_color = '#10b981' if s_aureus_status['assembly_quality'] == 'Good' else '#f59e0b' if s_aureus_status['assembly_quality'] == 'Moderate' else '#dc2626'
-            
+
             s_aureus_html = f'''
             <div style="margin-top: 20px; padding: 20px; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border-radius: 10px; color: white;">
                 <h3 style="color: white; margin-bottom: 15px;">🦠 Staphylococcus aureus Specific Analysis</h3>
@@ -574,7 +603,45 @@ class StaphFASTAQC:
                 </div>
             </div>
 '''
-        
+
+        # Species confirmation block
+        species_html = ''
+        if species_check and 'error' not in species_check:
+            pass_color = '#10b981' if species_check.get('passed') else '#dc2626'
+            contam_color = '#f59e0b' if species_check.get('contamination_suspected') else '#10b981'
+            species_html = f'''
+            <div style="margin-top: 20px; padding: 20px; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border-radius: 10px; color: white;">
+                <h3 style="color: white; margin-bottom: 15px;">🧬 Species Confirmation (fastANI)</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                    <div>
+                        <div style="font-size: 12px; opacity: 0.8;">Best Match</div>
+                        <div style="font-size: 18px; font-weight: bold;">{species_check.get('best_match', 'ND')}</div>
+                        <div style="font-size: 11px;">ANI: {species_check.get('ani_percent', 'ND')}%</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 12px; opacity: 0.8;">S. aureus Confirmed</div>
+                        <div style="font-size: 18px; font-weight: bold; color: {pass_color};">{'✓ Yes' if species_check.get('passed') else '✗ No'}</div>
+                        <div style="font-size: 11px;">Threshold ≥95%</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 12px; opacity: 0.8;">Contamination Suspected</div>
+                        <div style="font-size: 18px; font-weight: bold; color: {contam_color};">{'⚠️ Yes' if species_check.get('contamination_suspected') else '✓ No'}</div>
+                        <div style="font-size: 11px;">Second best &gt;90% and not S. aureus</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 12px; opacity: 0.8;">Second Best</div>
+                        <div style="font-size: 18px; font-weight: bold;">{species_check.get('second_best_match', 'ND') or 'ND'}</div>
+                        <div style="font-size: 11px;">ANI: {species_check.get('second_best_ani', 'ND') if species_check.get('second_best_ani') is not None else 'ND'}%</div>
+                    </div>
+                </div>
+                <details style="margin-top: 15px;">
+                    <summary style="cursor: pointer; color: #3b82f6;">All ANI values</summary>
+                    <ul>
+'''
+            for sp, ani in species_check.get('all_matches', {}).items():
+                species_html += f'<li>{sp}: {ani}%</li>'
+            species_html += '</ul></details></div>'
+
         html_content = f'''<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -582,230 +649,30 @@ class StaphFASTAQC:
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>STAPHSCOPE - FASTA QC Report</title>
     <style>
-        * {{
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }}
-        
-        body {{
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #7e22ce 100%);
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            color: #ffffff;
-            padding: 20px;
-            min-height: 100vh;
-        }}
-        
-        .container {{
-            max-width: 1600px;
-            margin: 0 auto;
-        }}
-        
-        .header {{
-            text-align: center;
-            margin-bottom: 30px;
-        }}
-        
-        .ascii-container {{
-            background: rgba(0, 0, 0, 0.7);
-            padding: 20px;
-            border-radius: 15px;
-            margin-bottom: 20px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-            border: 2px solid rgba(0, 255, 0, 0.3);
-        }}
-        
-        .ascii-art {{
-            font-family: 'Courier New', monospace;
-            font-size: 10px;
-            line-height: 1.1;
-            white-space: pre;
-            color: #00ff00;
-            text-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
-            overflow-x: auto;
-        }}
-        
-        .quote-container {{
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 30px;
-            text-align: center;
-            min-height: 100px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            transition: opacity 0.5s ease-in-out;
-        }}
-        
-        .quote-text {{
-            font-size: 18px;
-            font-style: italic;
-            margin-bottom: 10px;
-            color: #ffffff;
-        }}
-        
-        .quote-author {{
-            font-size: 14px;
-            color: #fbbf24;
-            font-weight: bold;
-        }}
-        
-        .report-section {{
-            background: rgba(255, 255, 255, 0.95);
-            color: #1f2937;
-            padding: 25px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-        }}
-        
-        .report-section h2 {{
-            color: #1e3a8a;
-            border-bottom: 3px solid #3b82f6;
-            padding-bottom: 10px;
-            margin-bottom: 20px;
-            font-size: 24px;
-        }}
-        
-        .metrics-grid {{
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            margin-top: 15px;
-        }}
-        
-        .metric-card {{
-            background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
-            color: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        }}
-        
-        .metric-label {{
-            font-size: 14px;
-            opacity: 0.9;
-            margin-bottom: 5px;
-        }}
-        
-        .metric-value {{
-            font-size: 24px;
-            font-weight: bold;
-        }}
-        
-        .stat-table {{
-            width: 100%;
-            border-collapse: collapse;
-            margin: 20px 0;
-            background: white;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }}
-        
-        .stat-table th {{
-            background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
-            color: white;
-            padding: 12px;
-            text-align: left;
-            font-weight: bold;
-        }}
-        
-        .stat-table td {{
-            padding: 10px;
-            border-bottom: 1px solid #e5e7eb;
-        }}
-        
-        .stat-table tr:nth-child(even) {{
-            background-color: #f8fafc;
-        }}
-        
-        .stat-table tr:hover {{
-            background-color: #e0f2fe;
-        }}
-        
-        .footer {{
-            text-align: center;
-            margin-top: 30px;
-            padding: 20px;
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 10px;
-            font-size: 14px;
-        }}
-        
-        .timestamp {{
-            color: #fbbf24;
-            font-weight: bold;
-        }}
-        
-        .authorship {{
-            margin-top: 15px;
-            padding: 15px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 8px;
-            font-size: 12px;
-        }}
-        
-        .controls {{
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 8px;
-            margin: 15px 0;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            align-items: center;
-        }}
-        
-        .export-buttons {{
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-        }}
-        
-        .export-buttons button {{
-            padding: 8px 16px;
-            background: #3b82f6;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: background 0.3s;
-        }}
-        
-        .export-buttons button:hover {{
-            background: #2563eb;
-        }}
-        
-        .export-buttons button.print {{
-            background: #10b981;
-        }}
-        
-        .export-buttons button.print:hover {{
-            background: #059669;
-        }}
-        
-        .export-buttons button.json {{
-            background: #8b5cf6;
-        }}
-        
-        .export-buttons button.json:hover {{
-            background: #7c3aed;
-        }}
-        
-        @media (max-width: 768px) {{
-            .ascii-art {{
-                font-size: 6px;
-            }}
-            .metrics-grid {{
-                grid-template-columns: 1fr;
-            }}
-        }}
+        * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+        body {{ background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #7e22ce 100%); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #ffffff; padding: 20px; min-height: 100vh; }}
+        .container {{ max-width: 1600px; margin: 0 auto; }}
+        .header {{ text-align: center; margin-bottom: 30px; }}
+        .ascii-container {{ background: rgba(0, 0, 0, 0.7); padding: 20px; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4); border: 2px solid rgba(0, 255, 0, 0.3); }}
+        .ascii-art {{ font-family: 'Courier New', monospace; font-size: 10px; line-height: 1.1; white-space: pre; color: #00ff00; text-shadow: 0 0 10px rgba(0, 255, 0, 0.5); overflow-x: auto; }}
+        .quote-container {{ background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); padding: 20px; border-radius: 10px; margin-bottom: 30px; text-align: center; min-height: 100px; display: flex; flex-direction: column; justify-content: center; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.2); transition: opacity 0.5s ease-in-out; }}
+        .quote-text {{ font-size: 18px; font-style: italic; margin-bottom: 10px; color: #ffffff; }}
+        .quote-author {{ font-size: 14px; color: #fbbf24; font-weight: bold; }}
+        .report-section {{ background: rgba(255, 255, 255, 0.95); color: #1f2937; padding: 25px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); }}
+        .report-section h2 {{ color: #1e3a8a; border-bottom: 3px solid #3b82f6; padding-bottom: 10px; margin-bottom: 20px; font-size: 24px; }}
+        .metrics-grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-top: 15px; }}
+        .metric-card {{ background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%); color: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); }}
+        .metric-label {{ font-size: 14px; opacity: 0.9; margin-bottom: 5px; }}
+        .metric-value {{ font-size: 24px; font-weight: bold; }}
+        .stat-table {{ width: 100%; border-collapse: collapse; margin: 20px 0; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }}
+        .stat-table th {{ background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%); color: white; padding: 12px; text-align: left; font-weight: bold; }}
+        .stat-table td {{ padding: 10px; border-bottom: 1px solid #e5e7eb; }}
+        .stat-table tr:nth-child(even) {{ background-color: #f8fafc; }}
+        .stat-table tr:hover {{ background-color: #e0f2fe; }}
+        .footer {{ text-align: center; margin-top: 30px; padding: 20px; background: rgba(0, 0, 0, 0.3); border-radius: 10px; font-size: 14px; }}
+        .timestamp {{ color: #fbbf24; font-weight: bold; }}
+        .authorship {{ margin-top: 15px; padding: 15px; background: rgba(255, 255, 255, 0.1); border-radius: 8px; font-size: 12px; }}
+        @media (max-width: 768px) {{ .ascii-art {{ font-size: 6px; }} .metrics-grid {{ grid-template-columns: 1fr; }} }}
     </style>
 </head>
 <body>
@@ -819,207 +686,94 @@ class StaphFASTAQC:
 ███████║   ██║   ██║  ██║██║     ██║  ██║███████║╚██████╗╚██████╔╝██║     ███████╗
 ╚══════╝   ╚═╝   ╚═╝  ╚═╝╚═╝     ╚═╝  ╚═╝╚══════╝ ╚═════╝ ╚═════╝ ╚═╝     ╚══════╝</div>
             </div>
-            
+
             <div class="quote-container" id="quoteContainer">
                 <div class="quote-text" id="quoteText">"{random_quote['text']}"</div>
                 <div class="quote-author" id="quoteAuthor">— {random_quote['author']}</div>
             </div>
         </div>
-        
+
         <div class="report-section">
             <h2>📊 Sample Information</h2>
             <div class="metrics-grid">
-                <div class="metric-card">
-                    <div class="metric-label">Sample Name</div>
-                    <div class="metric-value">{sample}</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-label">Analysis Date</div>
-                    <div class="metric-value">{results['analysis_date']}</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-label">File Size</div>
-                    <div class="metric-value">{results['file_size_mb']:.2f} MB</div>
-                </div>
+                <div class="metric-card"><div class="metric-label">Sample Name</div><div class="metric-value">{sample}</div></div>
+                <div class="metric-card"><div class="metric-label">Analysis Date</div><div class="metric-value">{results['analysis_date']}</div></div>
+                <div class="metric-card"><div class="metric-label">File Size</div><div class="metric-value">{results['file_size_mb']:.2f} MB</div></div>
             </div>
         </div>
-        
+
         <div class="report-section">
             <h2>🎯 FASTA QC Summary</h2>
             <div class="metrics-grid">
-                <div class="metric-card">
-                    <div class="metric-label">Total Sequences</div>
-                    <div class="metric-value">{total_sequences:,}</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-label">Total Length</div>
-                    <div class="metric-value">{total_length:,}</div>
-                    <div class="metric-label">base pairs</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-label">N50</div>
-                    <div class="metric-value">{n50:,}</div>
-                    <div class="metric-label">base pairs</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-label">GC Content</div>
-                    <div class="metric-value">{gc_percent:.1f}%</div>
-                    <div class="metric-label">S. aureus: 32-38%</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-label">AT Content</div>
-                    <div class="metric-value">{at_percent:.1f}%</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-label">Ambiguous Bases</div>
-                    <div class="metric-value">{ambiguous_percent:.2f}%</div>
-                </div>
+                <div class="metric-card"><div class="metric-label">Total Sequences</div><div class="metric-value">{total_sequences:,}</div></div>
+                <div class="metric-card"><div class="metric-label">Total Length</div><div class="metric-value">{total_length:,}</div><div class="metric-label">base pairs</div></div>
+                <div class="metric-card"><div class="metric-label">N50</div><div class="metric-value">{n50:,}</div><div class="metric-label">base pairs</div></div>
+                <div class="metric-card"><div class="metric-label">GC Content</div><div class="metric-value">{gc_percent:.1f}%</div><div class="metric-label">S. aureus: 32-38%</div></div>
+                <div class="metric-card"><div class="metric-label">AT Content</div><div class="metric-value">{at_percent:.1f}%</div></div>
+                <div class="metric-card"><div class="metric-label">Ambiguous Bases</div><div class="metric-value">{ambiguous_percent:.2f}%</div></div>
             </div>
         </div>
-        
+
         <div class="report-section">
             <h2>📈 Basic Statistics</h2>
             <table class="stat-table">
-                <thead>
-                    <tr>
-                        <th>Metric</th>
-                        <th>Value</th>
-                        <th>Description</th>
-                    </tr>
-                </thead>
+                <thead><tr><th>Metric</th><th>Value</th><th>Description</th></tr></thead>
                 <tbody>
-                    <tr>
-                        <td><strong>Total Sequences</strong></td>
-                        <td>{results['total_sequences']:,}</td>
-                        <td>Number of sequences in the file</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Total Length</strong></td>
-                        <td>{results['total_length']:,} bp</td>
-                        <td>Total number of bases</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Total Bases</strong></td>
-                        <td>{results['total_bases']:,} bp</td>
-                        <td>Total bases excluding ambiguous characters</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Longest Sequence</strong></td>
-                        <td>{results['longest_sequence']:,} bp</td>
-                        <td>Length of the longest sequence</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Shortest Sequence</strong></td>
-                        <td>{results['shortest_sequence']:,} bp</td>
-                        <td>Length of the shortest sequence</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Mean Length</strong></td>
-                        <td>{results['mean_length']:,.0f} bp</td>
-                        <td>Average sequence length</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Median Length</strong></td>
-                        <td>{results['median_length']:,} bp</td>
-                        <td>Median sequence length</td>
-                    </tr>
-                    <tr>
-                        <td><strong>N50</strong></td>
-                        <td>{results['n50']:,} bp</td>
-                        <td>Length for which 50% of total bases are in longer sequences</td>
-                    </tr>
-                    <tr>
-                        <td><strong>N75</strong></td>
-                        <td>{results['n75']:,} bp</td>
-                        <td>Length for which 75% of total bases are in longer sequences</td>
-                    </tr>
-                    <tr>
-                        <td><strong>N90</strong></td>
-                        <td>{results['n90']:,} bp</td>
-                        <td>Length for which 90% of total bases are in longer sequences</td>
-                    </tr>
-                    <tr>
-                        <td><strong>L50</strong></td>
-                        <td>{results['l50']:,}</td>
-                        <td>Number of sequences that make up 50% of total length</td>
-                    </tr>
-                    <tr>
-                        <td><strong>L75</strong></td>
-                        <td>{results['l75']:,}</td>
-                        <td>Number of sequences that make up 75% of total length</td>
-                    </tr>
-                    <tr>
-                        <td><strong>L90</strong></td>
-                        <td>{results['l90']:,}</td>
-                        <td>Number of sequences that make up 90% of total length</td>
-                    </tr>
+                    <tr><td><strong>Total Sequences</strong></td><td>{results['total_sequences']:,}</td><td>Number of sequences in the file</td></tr>
+                    <tr><td><strong>Total Length</strong></td><td>{results['total_length']:,} bp</td><td>Total number of bases</td></tr>
+                    <tr><td><strong>Total Bases</strong></td><td>{results['total_bases']:,} bp</td><td>Total bases excluding ambiguous characters</td></tr>
+                    <tr><td><strong>Longest Sequence</strong></td><td>{results['longest_sequence']:,} bp</td><td>Length of the longest sequence</td></tr>
+                    <tr><td><strong>Shortest Sequence</strong></td><td>{results['shortest_sequence']:,} bp</td><td>Length of the shortest sequence</td></tr>
+                    <tr><td><strong>Mean Length</strong></td><td>{results['mean_length']:,.0f} bp</td><td>Average sequence length</td></tr>
+                    <tr><td><strong>Median Length</strong></td><td>{results['median_length']:,} bp</td><td>Median sequence length</td></tr>
+                    <tr><td><strong>N50</strong></td><td>{results['n50']:,} bp</td><td>Length for which 50% of total bases are in longer sequences</td></tr>
+                    <tr><td><strong>N75</strong></td><td>{results['n75']:,} bp</td><td>Length for which 75% of total bases are in longer sequences</td></tr>
+                    <tr><td><strong>N90</strong></td><td>{results['n90']:,} bp</td><td>Length for which 90% of total bases are in longer sequences</td></tr>
+                    <tr><td><strong>L50</strong></td><td>{results['l50']:,}</td><td>Number of sequences that make up 50% of total length</td></tr>
+                    <tr><td><strong>L75</strong></td><td>{results['l75']:,}</td><td>Number of sequences that make up 75% of total length</td></tr>
+                    <tr><td><strong>L90</strong></td><td>{results['l90']:,}</td><td>Number of sequences that make up 90% of total length</td></tr>
                 </tbody>
             </table>
         </div>
-        
+
         <div class="report-section">
             <h2>🧬 Nucleotide Composition</h2>
             {composition_html}
         </div>
-        
+
         <div class="report-section">
             <h2>📊 Length Distribution</h2>
             <table class="stat-table">
-                <thead>
-                    <tr>
-                        <th>Length Range</th>
-                        <th>Count</th>
-                        <th>Percentage</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {length_dist_html}
-                </tbody>
+                <thead><tr><th>Length Range</th><th>Count</th><th>Percentage</th></tr></thead>
+                <tbody>{length_dist_html}</tbody>
             </table>
         </div>
-        
+
         {s_aureus_html}
-        
+        {species_html}
+
         <div class="report-section">
             <h2>⚠️ Quality Warnings</h2>
             {warnings_html if warnings_html else '<p style="color: #10b981; font-weight: bold;">✅ No quality warnings detected</p>'}
         </div>
-        
+
         <div class="report-section">
             <h2>📋 Additional Statistics</h2>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 15px;">
-                <div style="background: #f0f9ff; padding: 15px; border-radius: 8px; color: #0369a1; border: 1px solid #bae6fd;">
-                    <div style="font-size: 16px; font-weight: bold;">{results['sequences_with_n']:,}</div>
-                    <div style="font-size: 12px;">Sequences with Ns</div>
-                </div>
-                <div style="background: #f0f9ff; padding: 15px; border-radius: 8px; color: #0369a1; border: 1px solid #bae6fd;">
-                    <div style="font-size: 16px; font-weight: bold;">{results['total_n_bases']:,}</div>
-                    <div style="font-size: 12px;">Total N Bases</div>
-                </div>
-                <div style="background: #f0f9ff; padding: 15px; border-radius: 8px; color: #0369a1; border: 1px solid #bae6fd;">
-                    <div style="font-size: 16px; font-weight: bold;">{results['max_n_run']:,}</div>
-                    <div style="font-size: 12px;">Max N-run</div>
-                </div>
-                <div style="background: #f0f9ff; padding: 15px; border-radius: 8px; color: #0369a1; border: 1px solid #bae6fd;">
-                    <div style="font-size: 16px; font-weight: bold;">{results['homopolymers_count']:,}</div>
-                    <div style="font-size: 12px;">Homopolymers</div>
-                </div>
-                <div style="background: #f0f9ff; padding: 15px; border-radius: 8px; color: #0369a1; border: 1px solid #bae6fd;">
-                    <div style="font-size: 16px; font-weight: bold;">{results['max_homopolymer']:,}</div>
-                    <div style="font-size: 12px;">Max Homopolymer</div>
-                </div>
-                <div style="background: #f0f9ff; padding: 15px; border-radius: 8px; color: #0369a1; border: 1px solid #bae6fd;">
-                    <div style="font-size: 16px; font-weight: bold;">{results['duplicate_sequences']:,}</div>
-                    <div style="font-size: 12px;">Duplicate Sequences</div>
-                </div>
+                <div style="background: #f0f9ff; padding: 15px; border-radius: 8px; color: #0369a1; border: 1px solid #bae6fd;"><div style="font-size: 16px; font-weight: bold;">{results['sequences_with_n']:,}</div><div style="font-size: 12px;">Sequences with Ns</div></div>
+                <div style="background: #f0f9ff; padding: 15px; border-radius: 8px; color: #0369a1; border: 1px solid #bae6fd;"><div style="font-size: 16px; font-weight: bold;">{results['total_n_bases']:,}</div><div style="font-size: 12px;">Total N Bases</div></div>
+                <div style="background: #f0f9ff; padding: 15px; border-radius: 8px; color: #0369a1; border: 1px solid #bae6fd;"><div style="font-size: 16px; font-weight: bold;">{results['max_n_run']:,}</div><div style="font-size: 12px;">Max N-run</div></div>
+                <div style="background: #f0f9ff; padding: 15px; border-radius: 8px; color: #0369a1; border: 1px solid #bae6fd;"><div style="font-size: 16px; font-weight: bold;">{results['homopolymers_count']:,}</div><div style="font-size: 12px;">Homopolymers</div></div>
+                <div style="background: #f0f9ff; padding: 15px; border-radius: 8px; color: #0369a1; border: 1px solid #bae6fd;"><div style="font-size: 16px; font-weight: bold;">{results['max_homopolymer']:,}</div><div style="font-size: 12px;">Max Homopolymer</div></div>
+                <div style="background: #f0f9ff; padding: 15px; border-radius: 8px; color: #0369a1; border: 1px solid #bae6fd;"><div style="font-size: 16px; font-weight: bold;">{results['duplicate_sequences']:,}</div><div style="font-size: 12px;">Duplicate Sequences</div></div>
             </div>
         </div>
-        
+
         <div class="footer">
             <p><strong>STAPHSCOPE</strong> - FASTA QC Analysis Module</p>
             <p class="timestamp">Generated: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}</p>
             <div class="authorship">
-                <p><strong>Technical Support & Inquiries:</strong></p>
+                <p><strong>Technical Support &amp; Inquiries:</strong></p>
                 <p>Author: Brown Beckley | GitHub: bbeckley-hub</p>
                 <p>Email: brownbeckley94@gmail.com</p>
                 <p>Affiliation: University of Ghana Medical School - Department of Medical Biochemistry</p>
@@ -1029,19 +783,12 @@ class StaphFASTAQC:
 
     <script>
         const quotes = {json.dumps(self.science_quotes)};
-        let currentQuote = 0;
-
-        function getRandomQuote() {{
-            return quotes[Math.floor(Math.random() * quotes.length)];
-        }}
-
+        function getRandomQuote() {{ return quotes[Math.floor(Math.random() * quotes.length)]; }}
         function displayQuote() {{
             const quoteContainer = document.getElementById('quoteContainer');
             const quoteText = document.getElementById('quoteText');
             const quoteAuthor = document.getElementById('quoteAuthor');
-            
             quoteContainer.style.opacity = '0';
-            
             setTimeout(() => {{
                 const quote = getRandomQuote();
                 quoteText.textContent = '"' + quote.text + '"';
@@ -1049,59 +796,34 @@ class StaphFASTAQC:
                 quoteContainer.style.opacity = '1';
             }}, 500);
         }}
-
-        // Rotate quotes every 10 seconds
         setInterval(displayQuote, 10000);
-        
-        // Print report
-        function printReport() {{
-            window.print();
-        }}
-        
-        // Export to JSON
-        function exportToJSON() {{
-            const reportData = {json.dumps(results, indent=2)};
-            const dataStr = JSON.stringify(reportData, null, 2);
-            const dataBlob = new Blob([dataStr], {{ type: 'application/json' }});
-            const url = URL.createObjectURL(dataBlob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = '{filename_no_ext}_fasta_qc_report.json';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        }}
     </script>
 </body>
 </html>'''
-        
-        # Write HTML file
+
         with open(html_file, 'w', encoding='utf-8') as f:
             f.write(html_content)
-        
-        # Create JSON report
+
         json_file = os.path.join(sample_dir, f"{filename_no_ext}_fasta_qc_report.json")
         with open(json_file, 'w', encoding='utf-8') as f:
             json.dump(results, f, indent=2, default=str)
-        
+
         self.logger.info(f"✅ HTML report generated: {html_file}")
         self.logger.info(f"✅ JSON report generated: {json_file}")
-        
         return html_file
-    
+
+    # ------------------------------------------------------------------
+    # Summary report
+    # ------------------------------------------------------------------
     def create_summary_report(self, all_results: List[Dict[str, Any]], output_dir: str):
-        """Create summary report for multiple FASTA files in StaphScope style"""
         successful_results = [r for r in all_results if r.get('status') == 'success']
-        
         if not successful_results:
             self.logger.warning("No successful analyses to create summary report")
             return
-        
-        # Create TSV summary
+
+        # TSV with species columns
         tsv_file = os.path.join(output_dir, "FASTA_QC_summary.tsv")
         with open(tsv_file, 'w', encoding='utf-8') as f:
-            # Header
             headers = [
                 'Filename', 'Total Sequences', 'Total Length', 'Total Bases',
                 'GC Content (%)', 'AT Content (%)', 'N50', 'N75', 'N90',
@@ -1109,14 +831,20 @@ class StaphFASTAQC:
                 'Ambiguous Bases (%)', 'Sequences with Ns', 'Max N-run',
                 'Homopolymers', 'Max Homopolymer', 'Duplicate Sequences',
                 'Short Sequences (<100 bp)', 'Long Sequences (>1M bp)',
-                'File Size (MB)', 'Warnings', 'S. aureus Status'
+                'File Size (MB)', 'Warnings', 'S. aureus Status',
+                'Best Species', 'ANI (%)', 'S. aureus Confirmed', 'Contamination Suspected'
             ]
             f.write('\t'.join(headers) + '\n')
-            
+
             for result in successful_results:
                 s_aureus_status = result.get('s_aureus_status', {})
                 status_str = f"GC:{s_aureus_status.get('gc_status', 'Unknown')},Size:{s_aureus_status.get('genome_size_status', 'Unknown')}"
-                
+                sc = result.get('species_check', {}) or {}
+                best_species = sc.get('best_match', 'ND')
+                ani = sc.get('ani_percent', 'ND')
+                ec_confirmed = 'Yes' if sc.get('passed') else 'No'
+                contam = 'Yes' if sc.get('contamination_suspected') else 'No'
+
                 row = [
                     result['filename'],
                     str(result['total_sequences']),
@@ -1141,26 +869,29 @@ class StaphFASTAQC:
                     str(result['long_sequences']),
                     f"{result['file_size_mb']:.2f}",
                     str(len(result.get('warnings', []))),
-                    status_str
+                    status_str,
+                    best_species,
+                    str(ani),
+                    ec_confirmed,
+                    contam
                 ]
                 f.write('\t'.join(row) + '\n')
-        
-        # Create JSON summary
+
+        # JSON summary
         json_summary = self._create_json_summary(successful_results)
         json_file = os.path.join(output_dir, "FASTA_QC_summary.json")
         with open(json_file, 'w', encoding='utf-8') as f:
             json.dump(json_summary, f, indent=2, default=str)
-        
-        # Create HTML summary report
+
+        # HTML summary
         html_file = os.path.join(output_dir, "FASTA_QC_summary.html")
         self._create_summary_html_report(successful_results, html_file, json_summary)
-        
+
         self.logger.info(f"✅ TSV summary created: {tsv_file}")
         self.logger.info(f"✅ JSON summary created: {json_file}")
         self.logger.info(f"✅ HTML summary created: {html_file}")
-    
+
     def _create_json_summary(self, successful_results: List[Dict[str, Any]]) -> Dict[str, Any]:
-        """Create JSON summary structure"""
         summary_data = {
             'metadata': {
                 'tool': self.metadata['tool_name'],
@@ -1188,25 +919,35 @@ class StaphFASTAQC:
                 'total_warnings': sum(len(r.get('warnings', [])) for r in successful_results),
                 'files_with_high_gc': sum(1 for r in successful_results if r['gc_percent'] > self.thresholds['gc_normal'][1]),
                 'files_with_low_gc': sum(1 for r in successful_results if r['gc_percent'] < self.thresholds['gc_normal'][0]),
+                'files_confirmed_s_aureus': sum(
+                    1 for r in successful_results
+                    if (r.get('species_check') or {}).get('passed', False)
+                ),
+                'files_with_contamination_suspected': sum(
+                    1 for r in successful_results
+                    if (r.get('species_check') or {}).get('contamination_suspected', False)
+                ),
             },
             'files': successful_results
         }
-        
         return summary_data
-    
-    def _create_summary_html_report(self, successful_results: List[Dict[str, Any]], 
-                                  html_file: str, json_summary: Dict[str, Any]):
-        """Create HTML summary report with StaphScope styling"""
-        
-        # Get a random quote
+
+    def _create_summary_html_report(self, successful_results: List[Dict[str, Any]],
+                                    html_file: str, json_summary: Dict[str, Any]):
         random_quote = self.get_random_quote()
-        
-        # Build table rows
+
         table_rows = ''
         for result in successful_results:
             warning_count = len(result.get('warnings', []))
             warning_class = 'none' if warning_count == 0 else 'low' if warning_count < 3 else 'high'
-            
+            sc = result.get('species_check', {}) or {}
+            best_species = sc.get('best_match', 'ND')
+            ani = sc.get('ani_percent', 'ND')
+            confirmed = '✓' if sc.get('passed') else '✗'
+            contam_flag = '⚠️' if sc.get('contamination_suspected') else ''
+            species_display = f"{best_species} {confirmed} {contam_flag}"
+            ani_display = f"{ani}%" if ani != 'ND' else 'ND'
+
             table_rows += f'''
                         <tr>
                             <td><strong>{result['filename']}</strong></td>
@@ -1232,15 +973,15 @@ class StaphFASTAQC:
                             <td>{result['long_sequences']:,}</td>
                             <td>{result['file_size_mb']:.2f}</td>
                             <td><span style="display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; background: {'#d4edda' if warning_class == 'none' else '#fff3cd' if warning_class == 'low' else '#f8d7da'}; color: {'#155724' if warning_class == 'none' else '#856404' if warning_class == 'low' else '#721c24'};">{warning_count}</span></td>
+                            <td>{ani_display}</td>
+                            <td>{species_display}</td>
                         </tr>
 '''
-        
-        # Overall statistics
+
         total_sequences = sum(r['total_sequences'] for r in successful_results)
         total_length = sum(r['total_length'] for r in successful_results)
         total_warnings = sum(len(r.get('warnings', [])) for r in successful_results)
-        files_with_warnings = sum(1 for r in successful_results if r.get('warnings'))
-        
+
         html_content = f'''<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1248,181 +989,30 @@ class StaphFASTAQC:
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>STAPHSCOPE - FASTA QC Summary Report</title>
     <style>
-        * {{
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }}
-        
-        body {{
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #7e22ce 100%);
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            color: #ffffff;
-            padding: 20px;
-            min-height: 100vh;
-        }}
-        
-        .container {{
-            max-width: 1800px;
-            margin: 0 auto;
-        }}
-        
-        .header {{
-            text-align: center;
-            margin-bottom: 30px;
-        }}
-        
-        .ascii-container {{
-            background: rgba(0, 0, 0, 0.7);
-            padding: 20px;
-            border-radius: 15px;
-            margin-bottom: 20px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-            border: 2px solid rgba(0, 255, 0, 0.3);
-        }}
-        
-        .ascii-art {{
-            font-family: 'Courier New', monospace;
-            font-size: 10px;
-            line-height: 1.1;
-            white-space: pre;
-            color: #00ff00;
-            text-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
-            overflow-x: auto;
-        }}
-        
-        .quote-container {{
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 30px;
-            text-align: center;
-            min-height: 100px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            transition: opacity 0.5s ease-in-out;
-        }}
-        
-        .quote-text {{
-            font-size: 18px;
-            font-style: italic;
-            margin-bottom: 10px;
-            color: #ffffff;
-        }}
-        
-        .quote-author {{
-            font-size: 14px;
-            color: #fbbf24;
-            font-weight: bold;
-        }}
-        
-        .report-section {{
-            background: rgba(255, 255, 255, 0.95);
-            color: #1f2937;
-            padding: 25px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-        }}
-        
-        .report-section h2 {{
-            color: #1e3a8a;
-            border-bottom: 3px solid #3b82f6;
-            padding-bottom: 10px;
-            margin-bottom: 20px;
-            font-size: 24px;
-        }}
-        
-        .summary-table {{
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-            font-size: 12px;
-        }}
-        
-        .summary-table th {{
-            background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
-            color: white;
-            padding: 12px;
-            text-align: left;
-            font-weight: bold;
-            position: sticky;
-            top: 0;
-        }}
-        
-        .summary-table td {{
-            padding: 10px;
-            border-bottom: 1px solid #e5e7eb;
-        }}
-        
-        .summary-table tr:nth-child(even) {{
-            background-color: #f8fafc;
-        }}
-        
-        .summary-table tr:hover {{
-            background-color: #e0f2fe;
-        }}
-        
-        .stats-grid {{
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-bottom: 20px;
-        }}
-        
-        .stat-card {{
-            background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
-            color: white;
-            padding: 15px;
-            border-radius: 8px;
-            text-align: center;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        }}
-        
-        .stat-value {{
-            font-size: 24px;
-            font-weight: bold;
-            margin-bottom: 5px;
-        }}
-        
-        .stat-label {{
-            font-size: 12px;
-            opacity: 0.9;
-        }}
-        
-        .footer {{
-            text-align: center;
-            margin-top: 30px;
-            padding: 20px;
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 10px;
-            font-size: 14px;
-        }}
-        
-        .timestamp {{
-            color: #fbbf24;
-            font-weight: bold;
-        }}
-        
-        .table-container {{
-            overflow-x: auto;
-            margin: 20px 0;
-            max-height: 600px;
-            overflow-y: auto;
-        }}
-        
-        @media (max-width: 768px) {{
-            .ascii-art {{
-                font-size: 6px;
-            }}
-            .summary-table {{
-                font-size: 11px;
-            }}
-        }}
+        * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+        body {{ background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #7e22ce 100%); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #ffffff; padding: 20px; min-height: 100vh; }}
+        .container {{ max-width: 1800px; margin: 0 auto; }}
+        .header {{ text-align: center; margin-bottom: 30px; }}
+        .ascii-container {{ background: rgba(0, 0, 0, 0.7); padding: 20px; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4); border: 2px solid rgba(0, 255, 0, 0.3); }}
+        .ascii-art {{ font-family: 'Courier New', monospace; font-size: 10px; line-height: 1.1; white-space: pre; color: #00ff00; text-shadow: 0 0 10px rgba(0, 255, 0, 0.5); overflow-x: auto; }}
+        .quote-container {{ background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); padding: 20px; border-radius: 10px; margin-bottom: 30px; text-align: center; min-height: 100px; display: flex; flex-direction: column; justify-content: center; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.2); transition: opacity 0.5s ease-in-out; }}
+        .quote-text {{ font-size: 18px; font-style: italic; margin-bottom: 10px; color: #ffffff; }}
+        .quote-author {{ font-size: 14px; color: #fbbf24; font-weight: bold; }}
+        .report-section {{ background: rgba(255, 255, 255, 0.95); color: #1f2937; padding: 25px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); }}
+        .report-section h2 {{ color: #1e3a8a; border-bottom: 3px solid #3b82f6; padding-bottom: 10px; margin-bottom: 20px; font-size: 24px; }}
+        .summary-table {{ width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; }}
+        .summary-table th {{ background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%); color: white; padding: 12px; text-align: left; font-weight: bold; position: sticky; top: 0; }}
+        .summary-table td {{ padding: 10px; border-bottom: 1px solid #e5e7eb; }}
+        .summary-table tr:nth-child(even) {{ background-color: #f8fafc; }}
+        .summary-table tr:hover {{ background-color: #e0f2fe; }}
+        .stats-grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }}
+        .stat-card {{ background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%); color: white; padding: 15px; border-radius: 8px; text-align: center; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); }}
+        .stat-value {{ font-size: 24px; font-weight: bold; margin-bottom: 5px; }}
+        .stat-label {{ font-size: 12px; opacity: 0.9; }}
+        .footer {{ text-align: center; margin-top: 30px; padding: 20px; background: rgba(0, 0, 0, 0.3); border-radius: 10px; font-size: 14px; }}
+        .timestamp {{ color: #fbbf24; font-weight: bold; }}
+        .table-container {{ overflow-x: auto; margin: 20px 0; max-height: 600px; overflow-y: auto; }}
+        @media (max-width: 768px) {{ .ascii-art {{ font-size: 6px; }} .summary-table {{ font-size: 11px; }} }}
     </style>
 </head>
 <body>
@@ -1436,72 +1026,45 @@ class StaphFASTAQC:
 ███████║   ██║   ██║  ██║██║     ██║  ██║███████║╚██████╗╚██████╔╝██║     ███████╗
 ╚══════╝   ╚═╝   ╚═╝  ╚═╝╚═╝     ╚═╝  ╚═╝╚══════╝ ╚═════╝ ╚═════╝ ╚═╝     ╚══════╝</div>
             </div>
-            
+
             <div class="quote-container" id="quoteContainer">
                 <div class="quote-text" id="quoteText">"{random_quote['text']}"</div>
                 <div class="quote-author" id="quoteAuthor">— {random_quote['author']}</div>
             </div>
         </div>
-        
+
         <div class="report-section">
             <h2>📊 FASTA QC Summary - All Samples</h2>
-            
+
             <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-value">{len(successful_results)}</div>
-                    <div class="stat-label">SAMPLES PROCESSED</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value">{total_sequences:,}</div>
-                    <div class="stat-label">TOTAL SEQUENCES</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value">{total_length:,}</div>
-                    <div class="stat-label">TOTAL BASES</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value">{total_warnings}</div>
-                    <div class="stat-label">TOTAL WARNINGS</div>
-                </div>
+                <div class="stat-card"><div class="stat-value">{len(successful_results)}</div><div class="stat-label">SAMPLES PROCESSED</div></div>
+                <div class="stat-card"><div class="stat-value">{total_sequences:,}</div><div class="stat-label">TOTAL SEQUENCES</div></div>
+                <div class="stat-card"><div class="stat-value">{total_length:,}</div><div class="stat-label">TOTAL BASES</div></div>
+                <div class="stat-card"><div class="stat-value">{total_warnings}</div><div class="stat-label">TOTAL WARNINGS</div></div>
             </div>
-            
+
             <h3>Staphylococcus aureus Analysis Statistics</h3>
             <p><strong>Analysis Date:</strong> {self.metadata['analysis_date']}</p>
             <p><strong>Tool Version:</strong> {self.metadata['version']}</p>
             <p><strong>BioPython Version:</strong> {self.metadata['biopython_version']}</p>
         </div>
-        
+
         <div class="report-section">
-            <h2>📈 Detailed FASTA QC Results</h2>
-            <p style="color: #666; margin-bottom: 15px;">Scroll horizontally to view all columns.</p>
-            
+            <h2>📈 Detailed FASTA QC Results + Species Check</h2>
+            <p style="color: #666; margin-bottom: 15px;">Scroll horizontally to view all columns. Species column shows best match, S. aureus confirmation (✓/✗), and contamination warning (⚠️). ANI (%) column displays the identity to the best match.</p>
+
             <div class="table-container">
                 <table class="summary-table" id="qc-summary-table">
                     <thead>
                         <tr>
-                            <th>Filename</th>
-                            <th>Total Sequences</th>
-                            <th>Total Length</th>
-                            <th>Total Bases</th>
-                            <th>GC Content (%)</th>
-                            <th>AT Content (%)</th>
-                            <th>N50</th>
-                            <th>N75</th>
-                            <th>N90</th>
-                            <th>Median Length</th>
-                            <th>Mean Length</th>
-                            <th>Longest Sequence</th>
-                            <th>Shortest Sequence</th>
-                            <th>Ambiguous Bases (%)</th>
-                            <th>Sequences with Ns</th>
-                            <th>Max N-run</th>
-                            <th>Homopolymers</th>
-                            <th>Max Homopolymer</th>
-                            <th>Duplicate Sequences</th>
-                            <th>Short Sequences (&lt;100 bp)</th>
-                            <th>Long Sequences (&gt;1M bp)</th>
-                            <th>File Size (MB)</th>
-                            <th>Warnings</th>
+                            <th>Filename</th><th>Total Sequences</th><th>Total Length</th><th>Total Bases</th>
+                            <th>GC Content (%)</th><th>AT Content (%)</th><th>N50</th><th>N75</th><th>N90</th>
+                            <th>Median Length</th><th>Mean Length</th><th>Longest Sequence</th><th>Shortest Sequence</th>
+                            <th>Ambiguous Bases (%)</th><th>Sequences with Ns</th><th>Max N-run</th>
+                            <th>Homopolymers</th><th>Max Homopolymer</th><th>Duplicate Sequences</th>
+                            <th>Short Sequences (&lt;100 bp)</th><th>Long Sequences (&gt;1M bp)</th>
+                            <th>File Size (MB)</th><th>Warnings</th>
+                            <th>ANI (%)</th><th>Species</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -1510,9 +1073,9 @@ class StaphFASTAQC:
                 </table>
             </div>
         </div>
-        
+
         <div class="footer">
-            <p><strong>STAPHSCOPE</strong> - FASTA QC Summary Report</p>
+            <p><strong>STAPHSCOPE</strong> - FASTA QC Summary Report (with fastANI species confirmation)</p>
             <p class="timestamp">Generated: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}</p>
             <p>Github: bbeckley-hub | Email: brownbeckley94@gmail.com</p>
         </div>
@@ -1520,19 +1083,12 @@ class StaphFASTAQC:
 
     <script>
         const quotes = {json.dumps(self.science_quotes)};
-        let currentQuote = 0;
-
-        function getRandomQuote() {{
-            return quotes[Math.floor(Math.random() * quotes.length)];
-        }}
-
+        function getRandomQuote() {{ return quotes[Math.floor(Math.random() * quotes.length)]; }}
         function displayQuote() {{
             const quoteContainer = document.getElementById('quoteContainer');
             const quoteText = document.getElementById('quoteText');
             const quoteAuthor = document.getElementById('quoteAuthor');
-            
             quoteContainer.style.opacity = '0';
-            
             setTimeout(() => {{
                 const quote = getRandomQuote();
                 quoteText.textContent = '"' + quote.text + '"';
@@ -1540,19 +1096,18 @@ class StaphFASTAQC:
                 quoteContainer.style.opacity = '1';
             }}, 500);
         }}
-
-        // Rotate quotes every 10 seconds
         setInterval(displayQuote, 10000);
     </script>
 </body>
 </html>'''
-        
-        # Write HTML file
+
         with open(html_file, 'w', encoding='utf-8') as f:
             f.write(html_content)
-    
+
+    # ------------------------------------------------------------------
+    # Driver
+    # ------------------------------------------------------------------
     def process_files(self, pattern: str, output_dir: str = "fasta_qc_results") -> List[Dict[str, Any]]:
-        """Process multiple FASTA files with parallel execution and comprehensive reporting"""
         print("\n" + "="*80)
         print("🔬 STAPHSCOPE FASTA QC - Staphylococcus aureus Quality Control")
         print("="*80)
@@ -1561,66 +1116,50 @@ class StaphFASTAQC:
         print("="*80)
         print(f"Output directory: {output_dir}")
         print(f"Using {self.cpus} CPU cores")
+        if self.species_refs:
+            print(f"Species references: {', '.join(self.species_refs.keys())}")
+        else:
+            print("⚠️  Species check disabled (no references found in ref_db/)")
         print("="*80)
-        
-        # Find FASTA files
+
         fasta_extensions = ['.fna', '.fasta', '.fa', '.faa', '.fn', '.fna.gz', '.fasta.gz', '.fa.gz']
         files = []
-        
-        # Try the pattern as-is first
         files.extend(glob.glob(pattern))
-        
-        # If no files found, try with extensions
         if not files:
             for ext in fasta_extensions:
                 files.extend(glob.glob(f"{pattern}{ext}"))
-        
-        # Remove duplicates and non-existent files
         files = list(set([f for f in files if os.path.exists(f)]))
-        
+
         if not files:
             self.logger.error(f"❌ No FASTA files found matching pattern: {pattern}")
             self.logger.info(f"🔍 Supported extensions: {', '.join(fasta_extensions)}")
             return []
-        
+
         self.logger.info(f"📁 Found {len(files)} FASTA files: {[Path(f).name for f in files]}")
-        
-        # Create output directory
         os.makedirs(output_dir, exist_ok=True)
-        
-        # Process files in parallel
+
         all_results = []
         successful_files = 0
-        
+
         with ThreadPoolExecutor(max_workers=self.cpus) as executor:
             future_to_file = {executor.submit(self.analyze_file, f): f for f in files}
-            
             for future in as_completed(future_to_file):
                 file = future_to_file[future]
                 try:
                     result = future.result()
                     all_results.append(result)
-                    
                     if result.get('status') == 'success':
                         successful_files += 1
-                        # Create individual HTML report
                         self.create_individual_html_report(result, output_dir)
                     else:
                         self.logger.error(f"❌ {result['filename']}: {result.get('error', 'Unknown error')}")
-                        
                 except Exception as e:
                     self.logger.error(f"❌ {os.path.basename(file)}: ERROR - {str(e)}")
-                    all_results.append({
-                        'filename': os.path.basename(file),
-                        'status': 'error',
-                        'error': str(e)
-                    })
-        
-        # Create summary reports if we have successful analyses
+                    all_results.append({'filename': os.path.basename(file), 'status': 'error', 'error': str(e)})
+
         if successful_files > 0:
             self.create_summary_report(all_results, output_dir)
-        
-        # Print final summary
+
         print("\n" + "="*80)
         print("🎉 ANALYSIS COMPLETE")
         print("="*80)
@@ -1634,46 +1173,47 @@ class StaphFASTAQC:
             print(f"   Summary TSV: {output_dir}/FASTA_QC_summary.tsv")
             print(f"   Summary JSON: {output_dir}/FASTA_QC_summary.json")
             print(f"   Summary HTML: {output_dir}/FASTA_QC_summary.html")
-        
         print("\n" + "="*80)
-        
         return all_results
 
+
 def main():
-    """Command line interface for FASTA QC analysis"""
     parser = argparse.ArgumentParser(
-        description='StaphScope FASTA QC - Staphylococcus aureus Quality Control with HTML Reports',
+        description='StaphScope FASTA QC - Staphylococcus aureus Quality Control with HTML Reports and fastANI species confirmation',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  # Run on all FASTA files
+  # Run on all FASTA files (uses ./ref_db next to this script by default)
   python staph_fasta_qc.py "*.fna"
-  
+
   # Run on specific pattern
   python staph_fasta_qc.py "genomes/*.fasta"
-  
+
   # Run with custom output directory
   python staph_fasta_qc.py "*.fa" --output my_qc_results
 
-Supported FASTA extensions: .fasta, .fa, .fna, .faa, .fn, .gb, .gbk, .gbff
+  # Run with a custom reference directory
+  python staph_fasta_qc.py "*.fna" --ref_dir /path/to/ref_db
+
+Supported FASTA extensions: .fasta, .fa, .fna, .faa, .fn
+Species check uses fastANI against all *.fna files in ref_db/.
+For S. aureus confirmation, ensure staphylococcus_aureus_*.fna is present.
         """
     )
-    
     parser.add_argument('pattern', help='File pattern for FASTA files (e.g., "*.fasta", "genomes/*.fna")')
-    parser.add_argument('--output', '-o', default='fasta_qc_results', 
-                       help='Output directory (default: fasta_qc_results)')
-    parser.add_argument('--cpus', '-c', type=int, default=None,
-                       help='Number of CPU cores to use (default: all available)')
-    
+    parser.add_argument('--output', '-o', default='fasta_qc_results', help='Output directory (default: fasta_qc_results)')
+    parser.add_argument('--cpus', '-c', type=int, default=None, help='Number of CPU cores to use (default: all available)')
+    parser.add_argument('--ref_dir', default=None, help='Directory containing reference genomes (default: ./ref_db next to this script)')
+
     args = parser.parse_args()
-    
+
     try:
-        qc = StaphFASTAQC(cpus=args.cpus)
+        qc = StaphFASTAQC(cpus=args.cpus, ref_dir=args.ref_dir)
         results = qc.process_files(args.pattern, args.output)
-        
     except Exception as e:
         print(f"❌ FASTA QC analysis failed: {e}")
         sys.exit(1)
+
 
 if __name__ == "__main__":
     main()

@@ -1,12 +1,20 @@
 #!/usr/bin/env python3
 """
-StaphScope Main Orchestrator - v1.3.2
-All module writes happen in /tmp, final results are copied to user output. HPC/ Docker-friendly
+StaphScope Main Orchestrator - v2.0.0
+All module writes happen in /tmp, final results are copied to user output.
+HPC / Docker-friendly.
+
+Modules:
+  analysis      : fasta_qc, mlst, spa, sccmec_cge, sccmec_rpet, capsule, agr, amr, abricate, mge
+  reporting     : gene_centric_module (comprehensive_report.py + ultimate gene-centric reporter)
+                  sample_centric_module (interactive isolate-centric reporter)
+  support       : lineage_module, visualization_module
+Find a bug? Please reach out!!!
 Author: Brown Beckley <brownbeckley94@gmail.com>
 Affiliation: University of Ghana Medical School
-Version: 1.3.2
-Date: 2026-07-18
-MIT
+Version: 2.0.0
+Date: 2026-09-19
+MIT License
 """
 
 import os
@@ -19,6 +27,8 @@ import tempfile
 import logging
 import traceback
 import signal
+import urllib.request
+import zipfile
 from pathlib import Path
 from datetime import datetime
 from typing import Dict, List
@@ -29,9 +39,12 @@ except (ImportError, SystemError):
     sys.path.insert(0, str(Path(__file__).parent))
     from core.banner import StaphScopeBanner
 
+__version__ = "2.0.0"
+
 
 class ColoredHelpFormatter(argparse.HelpFormatter):
-    """Custom help formatter with colored output for terminal readability."""
+    """Custom help formatter with ANSI color codes for better readability."""
+
     HEADER = '\033[95m'
     BLUE = '\033[94m'
     GREEN = '\033[92m'
@@ -82,7 +95,7 @@ class ColoredHelpFormatter(argparse.HelpFormatter):
 
 class StaphScopeOrchestrator:
     """
-    Main orchestrator for StaphScope pipeline.
+    Main orchestrator for the StaphScope pipeline.
     Manages temporary directories, runs modules in isolation, and collects results.
     """
 
@@ -120,11 +133,25 @@ class StaphScopeOrchestrator:
         self.user_output_dir = output_dir
 
     def get_module_path(self, module_name: str) -> Path:
+        env_override = os.environ.get(f'STAPHSCOPE_{module_name.upper()}_MODULE_PATH')
+        if env_override:
+            return Path(env_override)
+
         if hasattr(sys, 'prefix'):
             share_path = Path(sys.prefix) / "share" / "staphscope" / "modules" / module_name
             if share_path.exists():
                 return share_path
         return self.base_dir / "modules" / module_name
+
+    def get_mlst_db_dir(self) -> Path:
+        """Return a writable directory for the MLST database."""
+        module_db = self.get_module_path("mlst_module") / "db"
+        if module_db.exists() and os.access(module_db, os.W_OK):
+            return module_db
+        user_db = Path.home() / ".local" / "share" / "staphscope" / "mlst_db"
+        user_db.mkdir(parents=True, exist_ok=True)
+        self.banner.display_info(f"Using user-local MLST database: {user_db}")
+        return user_db
 
     def run_module_in_temp(self, module_name: str, fasta_files: List[Path],
                            cmd_str: str, result_subdir: str = None) -> bool:
@@ -180,7 +207,9 @@ class StaphScopeOrchestrator:
                 shutil.rmtree(temp_dir, ignore_errors=True)
                 self.logger.info(f"Removed temporary directory: {temp_dir}")
 
-    # --- Module-specific run methods ---
+    # ------------------------------------------------------------------
+    # Analysis modules
+    # ------------------------------------------------------------------
 
     def run_fasta_qc_analysis(self, fasta_files: List[Path], output_dir: Path, threads: int) -> bool:
         pattern = self.get_file_pattern(fasta_files)
@@ -198,12 +227,18 @@ class StaphScopeOrchestrator:
             for f in fasta_files:
                 shutil.copy2(f, temp_dir / f.name)
 
+            db_dir = self.get_mlst_db_dir()
+            env = os.environ.copy()
+            env['STAPHSCOPE_MLST_DB'] = str(db_dir)
+
             self.banner.display_info(f"Copied {len(fasta_files)} files to MLST module")
             self.banner.display_info(f"Running MLST analysis with pattern: {pattern_with_quotes}")
+            self.banner.display_info(f"Using MLST database: {db_dir}")
 
             script = temp_dir / "mlst_module.py"
-            cmd = [sys.executable, str(script), "-i", pattern_unquoted, "-o", "mlst_results", "-db", "db", "-sc", "bin", "--batch"]
-            result = subprocess.run(cmd, cwd=temp_dir, capture_output=True, text=True)
+            cmd = [sys.executable, str(script), "-i", pattern_unquoted,
+                   "-o", "mlst_results", "-db", "db", "-sc", "bin", "--batch"]
+            result = subprocess.run(cmd, cwd=temp_dir, env=env, capture_output=True, text=True)
 
             if result.stdout:
                 self.logger.info(result.stdout)
@@ -273,18 +308,22 @@ class StaphScopeOrchestrator:
                 shutil.rmtree(temp_dir, ignore_errors=True)
 
     def run_sccmec_analysis(self, fasta_files: List[Path], output_dir: Path, threads: int) -> bool:
+        """Run the CGE SCCmec caller in an isolated temp directory."""
         pattern_with_quotes = self.get_file_pattern(fasta_files)
         pattern_unquoted = pattern_with_quotes.strip('"')
         temp_dir = Path(tempfile.mkdtemp(prefix="staphscope_sccmec_"))
         self._register_temp_dir(temp_dir)
         try:
-            module_orig = self.get_module_path("sccmec_module")
+            module_orig = self.get_module_path("sccmec_module_cge")
+            if not module_orig.exists():
+                self.banner.display_error(f"sccmec_module_cge not found: {module_orig}")
+                return False
             shutil.copytree(module_orig, temp_dir, dirs_exist_ok=True)
             for f in fasta_files:
                 shutil.copy2(f, temp_dir / f.name)
 
-            self.banner.display_info(f"Copied {len(fasta_files)} files to SCCmec module")
-            self.banner.display_info(f"Running SCCmec analysis with pattern: {pattern_with_quotes}")
+            self.banner.display_info(f"Copied {len(fasta_files)} files to SCCmec (CGE) module")
+            self.banner.display_info(f"Running SCCmec (CGE) analysis with pattern: {pattern_with_quotes}")
 
             batch_script = temp_dir / "run_sccmec_batch.sh"
             summary_script = temp_dir / "generate_staphscope_summary.sh"
@@ -297,60 +336,158 @@ class StaphScopeOrchestrator:
                 self.logger.warning(result_batch.stderr)
 
             if result_batch.returncode != 0:
-                self.logger.error(f"SCCmec batch failed: {result_batch.stderr}")
+                self.logger.error(f"SCCmec (CGE) batch failed: {result_batch.stderr}")
                 return False
 
             if summary_script.exists():
-                subprocess.run(f"bash {summary_script}", shell=True, cwd=temp_dir, capture_output=True, text=True)
+                subprocess.run(f"bash {summary_script}", shell=True, cwd=temp_dir,
+                               capture_output=True, text=True)
 
-            target_dir = self.user_output_dir / "sccmec_results"
+            target_dir = self.user_output_dir / "sccmec_cge_results"
             target_dir.mkdir(parents=True, exist_ok=True)
 
             for s_dir in temp_dir.glob("s_*"):
                 if s_dir.is_dir():
                     shutil.copytree(s_dir, target_dir / s_dir.name, dirs_exist_ok=True)
 
-            for fname in ["staphscope_summary.html", "staphscope_summary.tsv", "staphscope_detailed_results.csv"]:
+            for fname in ["staphscope_sccmec_cge_summary.html",
+                          "staphscope_sccmec_cge_summary.tsv",
+                          "staphscope_sccmec_cge_detailed_results.csv"]:
                 src = temp_dir / fname
                 if src.exists():
                     shutil.copy2(src, target_dir / fname)
 
-            self.logger.info(f"SCCmec results copied to {target_dir}")
+            self.logger.info(f"SCCmec (CGE) results copied to {target_dir}")
             return True
         except Exception as e:
-            self.logger.error(f"SCCmec exception: {e}")
+            self.logger.error(f"SCCmec (CGE) exception: {e}")
             return False
         finally:
             if not self.keep_temp:
                 shutil.rmtree(temp_dir, ignore_errors=True)
 
-    def run_amrfinder_analysis(self, fasta_files: List[Path], output_dir: Path, threads: int,
-                               min_identity: float = None, min_coverage: float = None,
-                               skip_mutations: bool = False, force_update: bool = False) -> bool:
-        if not self.ensure_amr_database():
-            self.banner.display_error("AMR database is missing and could not be updated automatically.")
+    def run_sccmec_rpet_analysis(self, fasta_files: List[Path], output_dir: Path, threads: int) -> bool:
+        """Run the RPet SCCmec caller (Robert Petit III) in an isolated temp directory."""
+        pattern_with_quotes = self.get_file_pattern(fasta_files)
+        pattern_unquoted = pattern_with_quotes.strip('"')
+        temp_dir = Path(tempfile.mkdtemp(prefix="staphscope_sccmec_rpet_"))
+        self._register_temp_dir(temp_dir)
+        self.logger.info(f"Temporary directory for sccmec_rpet: {temp_dir}")
+
+        try:
+            module_orig = self.get_module_path("sccmec_module_rpet")
+            if not module_orig.exists():
+                self.banner.display_error(f"sccmec_module_rpet not found: {module_orig}")
+                return False
+
+            shutil.copytree(module_orig, temp_dir, dirs_exist_ok=True,
+                            ignore=shutil.ignore_patterns('results',
+                                                          'sccmec_rpet_results',
+                                                          '*.fna',
+                                                          '__pycache__'))
+            for f in fasta_files:
+                shutil.copy2(f, temp_dir / f.name)
+
+            self.banner.display_info(f"Copied {len(fasta_files)} files to SCCmec RPet module")
+            self.banner.display_info(f"Running SCCmec RPet analysis with pattern: {pattern_with_quotes}")
+
+            script = temp_dir / "SCCmecFinder_RPet.py"
+            if not script.exists():
+                self.logger.error("SCCmecFinder_RPet.py not found in sccmec_module_rpet")
+                return False
+
+            cmd = f"{sys.executable} {script} -i {pattern_unquoted} -d sccmec_rpet_results -db_dir database"
+            result = subprocess.run(cmd, shell=True, cwd=temp_dir, capture_output=True, text=True)
+
+            if result.stdout:
+                self.logger.info(result.stdout)
+            if result.stderr:
+                self.logger.warning(result.stderr)
+
+            if result.returncode != 0:
+                self.logger.error(f"SCCmec RPet failed with return code {result.returncode}")
+                return False
+
+            src = temp_dir / "sccmec_rpet_results"
+            if src.exists():
+                dst = self.user_output_dir / "sccmec_rpet_results"
+                if dst.exists():
+                    shutil.rmtree(dst)
+                shutil.copytree(src, dst)
+                self.logger.info(f"SCCmec RPet results copied to {dst}")
+                self.banner.display_success("✅ SCCmec RPet analysis completed successfully.")
+                return True
+            else:
+                self.logger.error("sccmec_rpet_results directory not found after running the module")
+                return False
+
+        except Exception as e:
+            self.logger.error(f"SCCmec RPet exception: {e}\n{traceback.format_exc()}")
             return False
+        finally:
+            if not self.keep_temp:
+                shutil.rmtree(temp_dir, ignore_errors=True)
 
-        pattern = self.get_file_pattern(fasta_files)
-        cmd = f"{sys.executable} amr_module/amrfinder_standalone.py {pattern}"
-        if min_identity is not None:
-            cmd += f" --min-identity {min_identity}"
-        if min_coverage is not None:
-            cmd += f" --min-coverage {min_coverage}"
-        if skip_mutations:
-            cmd += " --skip-mutations"
-        if force_update:
-            self.banner.display_info("Forcing AMR database update before analysis...")
-            self.update_amr_database(force=True)
+    def run_capsule_analysis(self, fasta_files: List[Path], output_dir: Path, threads: int) -> bool:
+        """Run the capsule typing module in an isolated temp directory."""
+        pattern_with_quotes = self.get_file_pattern(fasta_files)
+        pattern_unquoted = pattern_with_quotes.strip('"')
+        temp_dir = Path(tempfile.mkdtemp(prefix="staphscope_capsule_"))
+        self._register_temp_dir(temp_dir)
+        self.logger.info(f"Temporary directory for capsule: {temp_dir}")
 
-        return self.run_module_in_temp("amr_module", fasta_files, cmd, "staph_amrfinder_results")
+        try:
+            module_orig = self.get_module_path("capsule_module")
+            if not module_orig.exists():
+                self.banner.display_error(f"capsule_module not found: {module_orig}")
+                return False
 
-    def run_abricate_analysis(self, fasta_files: List[Path], output_dir: Path, threads: int,
-                              min_identity: int = 80, min_coverage: int = 80) -> bool:
-        pattern = self.get_file_pattern(fasta_files)
-        cmd = (f"{sys.executable} abricate_module/abricate_standalone.py {pattern} "
-               f"--minid {min_identity} --mincov {min_coverage}")
-        return self.run_module_in_temp("abricate_module", fasta_files, cmd, "abricate_results")
+            shutil.copytree(module_orig, temp_dir, dirs_exist_ok=True,
+                            ignore=shutil.ignore_patterns('capsule_results',
+                                                          '*.fna',
+                                                          '__pycache__'))
+            for f in fasta_files:
+                shutil.copy2(f, temp_dir / f.name)
+
+            self.banner.display_info(f"Copied {len(fasta_files)} files to capsule module")
+            self.banner.display_info(f"Running capsule typing analysis with pattern: {pattern_with_quotes}")
+
+            script = temp_dir / "CapsuleFinder.py"
+            if not script.exists():
+                self.logger.error("CapsuleFinder.py not found in capsule_module")
+                return False
+
+            cmd = f"{sys.executable} {script} -i {pattern_unquoted} -d capsule_results -db_dir database"
+            result = subprocess.run(cmd, shell=True, cwd=temp_dir, capture_output=True, text=True)
+
+            if result.stdout:
+                self.logger.info(result.stdout)
+            if result.stderr:
+                self.logger.warning(result.stderr)
+
+            if result.returncode != 0:
+                self.logger.error(f"Capsule typing failed with return code {result.returncode}")
+                return False
+
+            src = temp_dir / "capsule_results"
+            if src.exists():
+                dst = self.user_output_dir / "capsule_results"
+                if dst.exists():
+                    shutil.rmtree(dst)
+                shutil.copytree(src, dst)
+                self.logger.info(f"Capsule results copied to {dst}")
+                self.banner.display_success("✅ Capsule typing completed successfully.")
+                return True
+            else:
+                self.logger.error("capsule_results directory not found after running the module")
+                return False
+
+        except Exception as e:
+            self.logger.error(f"Capsule exception: {e}\n{traceback.format_exc()}")
+            return False
+        finally:
+            if not self.keep_temp:
+                shutil.rmtree(temp_dir, ignore_errors=True)
 
     def run_agr_analysis(self, fasta_files: List[Path], output_dir: Path, threads: int) -> bool:
         module_name = "agr_module"
@@ -410,39 +547,232 @@ class StaphScopeOrchestrator:
             if not self.keep_temp:
                 shutil.rmtree(temp_dir, ignore_errors=True)
 
+    def run_amrfinder_analysis(self, fasta_files: List[Path], output_dir: Path, threads: int,
+                               min_identity: float = None, min_coverage: float = None,
+                               skip_mutations: bool = False, force_update: bool = False) -> bool:
+        if not self.ensure_amr_database():
+            self.banner.display_error("AMR database is missing and could not be updated automatically.")
+            return False
+
+        pattern = self.get_file_pattern(fasta_files)
+        cmd = f"{sys.executable} amr_module/amrfinder_standalone.py {pattern}"
+        if min_identity is not None:
+            cmd += f" --min-identity {min_identity}"
+        if min_coverage is not None:
+            cmd += f" --min-coverage {min_coverage}"
+        if skip_mutations:
+            cmd += " --skip-mutations"
+        if force_update:
+            self.banner.display_info("Forcing AMR database update before analysis...")
+            self.update_amr_database(force=True)
+
+        return self.run_module_in_temp("amr_module", fasta_files, cmd, "staph_amrfinder_results")
+
+    def run_abricate_analysis(self, fasta_files: List[Path], output_dir: Path, threads: int,
+                              min_identity: int = 80, min_coverage: int = 80) -> bool:
+        pattern = self.get_file_pattern(fasta_files)
+        cmd = (f"{sys.executable} abricate_module/abricate_standalone.py {pattern} "
+               f"--minid {min_identity} --mincov {min_coverage}")
+        return self.run_module_in_temp("abricate_module", fasta_files, cmd, "abricate_results")
+
+    def run_mge_analysis(self, fasta_files: List[Path], output_dir: Path, threads: int) -> bool:
+        """Run the mobileOG-based MGE profiler in an isolated temp directory."""
+        pattern_with_quotes = self.get_file_pattern(fasta_files)
+        pattern_unquoted = pattern_with_quotes.strip('"')
+        temp_dir = Path(tempfile.mkdtemp(prefix="staphscope_mge_"))
+        self._register_temp_dir(temp_dir)
+        self.logger.info(f"Temporary directory for mge: {temp_dir}")
+
+        try:
+            module_orig = self.get_module_path("mge_module")
+            if not module_orig.exists():
+                self.banner.display_error(f"mge_module not found: {module_orig}")
+                return False
+
+            shutil.copytree(module_orig, temp_dir, dirs_exist_ok=True,
+                            ignore=shutil.ignore_patterns('mge_results',
+                                                          'test_hits.tsv',
+                                                          '*.fna',
+                                                          '__pycache__'))
+            for f in fasta_files:
+                shutil.copy2(f, temp_dir / f.name)
+
+            self.banner.display_info(f"Copied {len(fasta_files)} files to MGE module")
+            self.banner.display_info(f"Running MGE analysis with pattern: {pattern_with_quotes}")
+
+            script = temp_dir / "MGEFinder.py"
+            if not script.exists():
+                self.logger.error("MGEFinder.py not found in mge_module")
+                return False
+
+            cmd = f"{sys.executable} {script} -i {pattern_unquoted} -d mge_results -db_dir mobileOG-db/beatrix-1-6_v1_all"
+            result = subprocess.run(cmd, shell=True, cwd=temp_dir, capture_output=True, text=True)
+
+            if result.stdout:
+                self.logger.info(result.stdout)
+            if result.stderr:
+                self.logger.warning(result.stderr)
+
+            if result.returncode != 0:
+                self.logger.error(f"MGE analysis failed with return code {result.returncode}")
+                return False
+
+            src = temp_dir / "mge_results"
+            if src.exists():
+                dst = self.user_output_dir / "mge_results"
+                if dst.exists():
+                    shutil.rmtree(dst)
+                shutil.copytree(
+                    src, dst,
+                    ignore=shutil.ignore_patterns('annotations'),
+                )
+                self.logger.info(f"MGE results copied to {dst} (annotations cache skipped)")
+                self.banner.display_success("✅ MGE analysis completed successfully.")
+                return True
+            else:
+                self.logger.error("mge_results directory not found after running the module")
+                return False
+
+        except Exception as e:
+            self.logger.error(f"MGE exception: {e}\n{traceback.format_exc()}")
+            return False
+        finally:
+            if not self.keep_temp:
+                shutil.rmtree(temp_dir, ignore_errors=True)
+
+    # ------------------------------------------------------------------
+    # Reporting modules
+    # ------------------------------------------------------------------
+
+    def run_comprehensive_and_ultimate_reports(self, output_dir: Path) -> bool:
+        """Run comprehensive_report.py and the gene-centric ultimate reporter from gene_centric_module."""
+        temp_dir = Path(tempfile.mkdtemp(prefix="staphscope_gene_centric_"))
+        self._register_temp_dir(temp_dir)
+        self.logger.info(f"Temporary directory for gene-centric reports: {temp_dir}")
+
+        try:
+            gene_centric_path = self.get_module_path("gene_centric_module")
+            if not gene_centric_path.exists():
+                self.banner.display_error(f"gene_centric_module not found: {gene_centric_path}")
+                return False
+
+            shutil.copytree(
+                gene_centric_path, temp_dir, dirs_exist_ok=True,
+                ignore=shutil.ignore_patterns(
+                    'STAPHSCOPE_ULTIMATE_GENE_CENTRIC_REPORTS',
+                    '*.fna', '__pycache__', '*.pyc',
+                ),
+            )
+
+            required_tsvs = [
+                ("mlst_results", "mlst_summary.tsv"),
+                ("spa_results", "spa_summary.tsv"),
+                ("sccmec_cge_results", "staphscope_sccmec_cge_summary.tsv"),
+                ("sccmec_rpet_results", "staphscope_sccmec_rpet_summary.tsv"),
+                ("capsule_results", "staphscope_capsule_summary.tsv"),
+                ("agr_results", "agr_summary.tsv"),
+            ]
+            for subdir, filename in required_tsvs:
+                src = output_dir / subdir / filename
+                if src.exists():
+                    shutil.copy2(src, temp_dir / filename)
+                    self.logger.info(f"Copied {filename} to gene-centric temp dir")
+                else:
+                    self.logger.warning(f"Required TSV not found: {src}")
+
+            required_htmls = [
+                ("staph_amrfinder_results", "staph_amrfinder_summary_report.html"),
+                ("staph_amrfinder_results", "mutation_summary.html"),
+                ("abricate_results", "staph_card_summary_report.html"),
+                ("abricate_results", "staph_plasmidfinder_summary_report.html"),
+                ("abricate_results", "staph_ncbi_summary_report.html"),
+                ("abricate_results", "staph_vfdb_summary_report.html"),
+                ("abricate_results", "staph_megares_summary_report.html"),
+                ("abricate_results", "staph_resfinder_summary_report.html"),
+                ("abricate_results", "staph_argannot_summary_report.html"),
+                ("abricate_results", "staph_bacmet2_summary_report.html"),
+                ("fasta_qc_results", "FASTA_QC_summary.html"),
+                ("mge_results", "staphscope_mge_summary.html"),
+            ]
+            for subdir, filename in required_htmls:
+                src = output_dir / subdir / filename
+                if src.exists():
+                    shutil.copy2(src, temp_dir / filename)
+                    self.logger.info(f"Copied {filename} to gene-centric temp dir")
+                else:
+                    self.logger.warning(f"Required HTML not found: {src}")
+
+            self.banner.display_info("Running comprehensive report...")
+            cmd_comp = [sys.executable, "comprehensive_report.py"]
+            result_comp = subprocess.run(cmd_comp, cwd=temp_dir, capture_output=True, text=True)
+            if result_comp.stdout:
+                self.logger.info(result_comp.stdout)
+            if result_comp.stderr:
+                self.logger.warning(result_comp.stderr)
+
+            if result_comp.returncode != 0:
+                self.logger.error(f"Comprehensive report failed:\n{result_comp.stderr}")
+                self.banner.display_warning("Comprehensive report failed – continuing with ultimate reporter")
+            else:
+                self.banner.display_success("Comprehensive report generated successfully!")
+                for ext in [".html", ".json", ".tsv"]:
+                    src = temp_dir / f"staphscope_comprehensive_report{ext}"
+                    if src.exists():
+                        dst = self.user_output_dir / src.name
+                        shutil.copy2(src, dst)
+                        self.logger.info(f"Copied {src.name} to output directory")
+
+            self.banner.display_info("Running ultimate reporter (gene-centric)...")
+            cmd_ultimate = [sys.executable, "staphscope_ultimate_gene_centric_reporter.py", "-i", "."]
+            result_ultimate = subprocess.run(cmd_ultimate, cwd=temp_dir, capture_output=True, text=True)
+            if result_ultimate.stdout:
+                self.logger.info(result_ultimate.stdout)
+            if result_ultimate.stderr:
+                self.logger.warning(result_ultimate.stderr)
+
+            if result_ultimate.returncode != 0:
+                self.logger.error(f"Ultimate reporter failed:\n{result_ultimate.stderr}")
+                self.banner.display_error(f"Ultimate reporter failed with exit code {result_ultimate.returncode}")
+                return False
+            else:
+                self.banner.display_success("Ultimate reporter completed successfully!")
+                src_dir = temp_dir / "STAPHSCOPE_ULTIMATE_GENE_CENTRIC_REPORTS"
+                if src_dir.exists():
+                    dst_dir = self.user_output_dir / "STAPHSCOPE_ULTIMATE_GENE_CENTRIC_REPORTS"
+                    if dst_dir.exists():
+                        shutil.rmtree(dst_dir)
+                    shutil.copytree(src_dir, dst_dir)
+                    self.logger.info(f"Ultimate reports copied to {dst_dir}")
+                return True
+
+        except Exception as e:
+            self.logger.error(f"Gene-centric reports exception: {e}\n{traceback.format_exc()}")
+            return False
+        finally:
+            if not self.keep_temp:
+                shutil.rmtree(temp_dir, ignore_errors=True)
+                self.logger.info(f"Removed temporary directory: {temp_dir}")
+
     def run_sample_centric_analysis(self, output_dir: Path) -> bool:
-        """
-        Run the sample‑centric reporter (staphscope_ultimate_samplecentric_reporter.py).
-        This module depends on all TSV summary files, mutation_summary.tsv, and comprehensive report files.
-        It runs in a temporary directory where all required files are copied.
-        """
         module_name = "sample_centric_module"
         module_orig = self.get_module_path(module_name)
         if not module_orig.exists():
-            self.banner.display_error(f"Sample‑centric module not found: {module_orig}")
+            self.banner.display_error(f"Sample-centric module not found: {module_orig}")
             return False
 
         temp_dir = Path(tempfile.mkdtemp(prefix="staphscope_sample_centric_"))
         self._register_temp_dir(temp_dir)
-        self.logger.info(f"Temporary directory for sample‑centric: {temp_dir}")
+        self.logger.info(f"Temporary directory for sample-centric: {temp_dir}")
 
         try:
-            # Copy the entire module directory
             shutil.copytree(module_orig, temp_dir, dirs_exist_ok=True)
 
-            # Define required files with source paths (relative to output_dir)
             required_files = [
-                ("mlst_results", "mlst_summary.tsv"),
-                ("spa_results", "spa_summary.tsv"),
-                ("sccmec_results", "staphscope_summary.tsv"),
-                ("agr_results", "agr_summary.tsv"),
                 ("staph_amrfinder_results", "staph_amrfinder_summary.tsv"),
-                ("fasta_qc_results", "FASTA_QC_summary.html"),
-                # mutation_summary.tsv is inside staph_amrfinder_results
                 ("staph_amrfinder_results", "mutation_summary.tsv"),
+                ("fasta_qc_results", "FASTA_QC_summary.html"),
+                ("mge_results", "staphscope_mge_summary.html"),
             ]
-
-            # All ABRicate summary TSVs
             abricate_sources = [
                 ("abricate_results", "staph_argannot_abricate_summary.tsv"),
                 ("abricate_results", "staph_bacmet2_abricate_summary.tsv"),
@@ -455,7 +785,6 @@ class StaphScopeOrchestrator:
             ]
             required_files.extend(abricate_sources)
 
-            # Copy all required files from their subdirectories
             for subdir, filename in required_files:
                 if subdir:
                     src = output_dir / subdir / filename
@@ -463,21 +792,20 @@ class StaphScopeOrchestrator:
                     src = output_dir / filename
                 if src.exists():
                     shutil.copy2(src, temp_dir / filename)
-                    self.logger.info(f"Copied {filename} to sample‑centric temp dir")
+                    self.logger.info(f"Copied {filename} to sample-centric temp dir")
                 else:
                     self.logger.warning(f"Required file not found: {src} (skipping)")
 
-            # Copy comprehensive report files (HTML, JSON, TSV) from top-level output
             comprehensive_extensions = [".html", ".json", ".tsv"]
             for ext in comprehensive_extensions:
                 src = output_dir / f"staphscope_comprehensive_report{ext}"
                 if src.exists():
                     shutil.copy2(src, temp_dir / f"staphscope_comprehensive_report{ext}")
-                    self.logger.info(f"Copied staphscope_comprehensive_report{ext} to sample‑centric temp dir")
+                    self.logger.info(f"Copied staphscope_comprehensive_report{ext} to sample-centric temp dir")
                 else:
-                    self.logger.warning(f"staphscope_comprehensive_report{ext} not found; sample‑centric reporter may fail")
+                    self.logger.warning(f"staphscope_comprehensive_report{ext} not found; sample-centric reporter may fail")
 
-            self.banner.display_info("Running sample‑centric reporter...")
+            self.banner.display_info("Running sample-centric reporter...")
             script = temp_dir / "staphscope_ultimate_samplecentric_reporter.py"
             if not script.exists():
                 self.logger.error("staphscope_ultimate_samplecentric_reporter.py not found in sample_centric_module")
@@ -492,29 +820,32 @@ class StaphScopeOrchestrator:
                 self.logger.warning(result.stderr)
 
             if result.returncode != 0:
-                self.logger.error(f"sample‑centric reporter failed with return code {result.returncode}")
+                self.logger.error(f"Sample-centric reporter failed with return code {result.returncode}")
                 return False
 
-            # Copy output directory back
             src_dir = temp_dir / "STAPHSCOPE_ULTIMATE_SAMPLE_CENTRIC_REPORTS"
             if src_dir.exists():
                 dst_dir = self.user_output_dir / "STAPHSCOPE_ULTIMATE_SAMPLE_CENTRIC_REPORTS"
                 if dst_dir.exists():
                     shutil.rmtree(dst_dir)
                 shutil.copytree(src_dir, dst_dir)
-                self.logger.info(f"Sample‑centric reports copied to {dst_dir}")
-                self.banner.display_success("✅ Sample‑centric reporter completed successfully.")
+                self.logger.info(f"Sample-centric reports copied to {dst_dir}")
+                self.banner.display_success("✅ Sample-centric reporter completed successfully.")
                 return True
             else:
-                self.logger.error("STAPHSCOPE_ULTIMATE_SAMPLE_CENTRIC_REPORTS not found after running sample‑centric reporter")
+                self.logger.error("STAPHSCOPE_ULTIMATE_SAMPLE_CENTRIC_REPORTS not found after running sample-centric reporter")
                 return False
 
         except Exception as e:
-            self.logger.error(f"Sample‑centric exception: {e}\n{traceback.format_exc()}")
+            self.logger.error(f"Sample-centric exception: {e}\n{traceback.format_exc()}")
             return False
         finally:
             if not self.keep_temp:
                 shutil.rmtree(temp_dir, ignore_errors=True)
+
+    # ------------------------------------------------------------------
+    # Support modules
+    # ------------------------------------------------------------------
 
     def run_lineage_analysis(self, output_dir: Path) -> bool:
         temp_dir = Path(tempfile.mkdtemp(prefix="staphscope_lineage_"))
@@ -547,15 +878,162 @@ class StaphScopeOrchestrator:
             if not self.keep_temp:
                 shutil.rmtree(temp_dir, ignore_errors=True)
 
-    # --- Helper functions ---
+    def run_visualization_analysis(self, output_dir: Path) -> bool:
+        """Run the visualization module against the CSVs and master TSV it expects."""
+        temp_dir = Path(tempfile.mkdtemp(prefix="staphscope_visualization_"))
+        self._register_temp_dir(temp_dir)
+        self.logger.info(f"Temporary directory for visualization: {temp_dir}")
+        try:
+            vis_module_orig = self.get_module_path("visualization_module")
+            # Skip stale CSVs / TSVs / HTMLs that may live in the module folder
+            shutil.copytree(
+                vis_module_orig, temp_dir, dirs_exist_ok=True,
+                ignore=shutil.ignore_patterns(
+                    '*.csv', '*.tsv', '*.html', '*.json',
+                    'STAPHSCOPE_VISUALIZATIONS', '__pycache__',
+                ),
+            )
+
+            # The visualizer reads from two final-output subfolders
+            final_report_dir = output_dir / "Staphscope_final_report"
+            gene_centric_dir = final_report_dir / "STAPHSCOPE_ULTIMATE_GENE_CENTRIC_REPORTS"
+
+            # (source_path, filename_to_copy_into_temp_dir)
+            required_files = [
+                # Master typing table
+                (final_report_dir / "staphscope_comprehensive_report.tsv",
+                 "staphscope_comprehensive_report.tsv"),
+                # Gene tables exported by the gene-centric module
+                (gene_centric_dir / "amr_genes.csv",         "amr_genes.csv"),
+                (gene_centric_dir / "virulence_genes.csv",   "virulence_genes.csv"),
+                (gene_centric_dir / "bacmet_genes.csv",      "bacmet_genes.csv"),
+                (gene_centric_dir / "plasmid_replicons.csv", "plasmid_replicons.csv"),
+                (gene_centric_dir / "mutations.csv",         "mutations.csv"),
+                (gene_centric_dir / "mge_profile.csv",       "mge_profile.csv"),
+                (gene_centric_dir / "fasta_qc.csv",          "fasta_qc.csv"),
+            ]
+
+            copied_count = 0
+            missing = []
+            for src, dest_name in required_files:
+                if src.exists():
+                    shutil.copy2(src, temp_dir / dest_name)
+                    copied_count += 1
+                    self.logger.info(f"Copied {dest_name} → visualization temp dir")
+                else:
+                    missing.append(src.name)
+                    self.logger.warning(f"Required file not found: {src}")
+
+            self.banner.display_info(
+                f"Copied {copied_count} file(s) to temporary visualization module"
+            )
+            if missing:
+                self.banner.display_warning(
+                    f"Missing files (visualizer will run degraded): {', '.join(missing)}"
+                )
+
+            vis_script = temp_dir / "staphscope_visualizer.py"
+            if not vis_script.exists():
+                self.banner.display_error(f"Visualization script not found at: {vis_script}")
+                return False
+
+            self.banner.display_info("Running visualization module...")
+            cmd = [sys.executable, str(vis_script), "-i", ".", "-o", "STAPHSCOPE_VISUALIZATIONS"]
+            result = subprocess.run(cmd, cwd=temp_dir, capture_output=True, text=True)
+
+            if result.stdout:
+                self.logger.info(result.stdout)
+            if result.stderr:
+                self.logger.warning(result.stderr)
+
+            if result.returncode != 0:
+                self.logger.error(f"Visualization failed:\n{result.stderr}")
+                self.banner.display_warning("Visualization had issues")
+                return False
+
+            self.banner.display_success("Visualization completed successfully!")
+
+            vis_output_dir = temp_dir / "STAPHSCOPE_VISUALIZATIONS"
+            if vis_output_dir.exists() and vis_output_dir.is_dir():
+                target_vis_dir = self.user_output_dir / "STAPHSCOPE_VISUALIZATIONS"
+                if target_vis_dir.exists():
+                    shutil.rmtree(target_vis_dir)
+                shutil.copytree(vis_output_dir, target_vis_dir)
+                vis_files = list(vis_output_dir.rglob("*"))
+                html_files = [f for f in vis_files if f.suffix == '.html']
+                image_files = [f for f in vis_files
+                               if f.suffix in ('.png', '.jpg', '.jpeg', '.svg')]
+                zip_files = [f for f in vis_files if f.suffix == '.zip']
+                self.banner.display_success(f"✅ Visualizations copied to: {target_vis_dir}")
+                self.banner.display_info(f"   📊 {len(html_files)} HTML report(s)")
+                self.banner.display_info(f"   🖼️  {len(image_files)} visualization image(s)")
+                if zip_files:
+                    self.banner.display_info(f"   📦 {len(zip_files)} export bundle(s)")
+            return True
+
+        except Exception as e:
+            self.logger.error(f"Visualization exception: {e}\n{traceback.format_exc()}")
+            return False
+        finally:
+            if not self.keep_temp:
+                shutil.rmtree(temp_dir, ignore_errors=True)
+                self.logger.info(f"Removed temporary directory: {temp_dir}")
+
+    def copy_summary_results_to_final_directory(self, output_dir: Path):
+        try:
+            self.banner.display_info("Copying summary results to final directory...")
+            final_report_dir = output_dir / "Staphscope_final_report"
+            final_report_dir.mkdir(parents=True, exist_ok=True)
+
+            comprehensive_files = [
+                "staphscope_comprehensive_report.html",
+                "staphscope_comprehensive_report.json",
+                "staphscope_comprehensive_report.tsv"
+            ]
+            for file_name in comprehensive_files:
+                source_file = output_dir / file_name
+                if source_file.exists():
+                    shutil.copy2(source_file, final_report_dir / file_name)
+                    self.banner.display_info(f"  ✓ Copied: {file_name}")
+
+            ultimate_reports_dir = output_dir / "STAPHSCOPE_ULTIMATE_GENE_CENTRIC_REPORTS"
+            if ultimate_reports_dir.exists() and ultimate_reports_dir.is_dir():
+                target_ultimate_dir = final_report_dir / "STAPHSCOPE_ULTIMATE_GENE_CENTRIC_REPORTS"
+                if target_ultimate_dir.exists():
+                    shutil.rmtree(target_ultimate_dir)
+                shutil.copytree(ultimate_reports_dir, target_ultimate_dir)
+                self.banner.display_info("  ✓ Copied: STAPHSCOPE_ULTIMATE_GENE_CENTRIC_REPORTS directory")
+
+            sample_centric_dir = output_dir / "STAPHSCOPE_ULTIMATE_SAMPLE_CENTRIC_REPORTS"
+            if sample_centric_dir.exists() and sample_centric_dir.is_dir():
+                target_sample_dir = final_report_dir / "STAPHSCOPE_ULTIMATE_SAMPLE_CENTRIC_REPORTS"
+                if target_sample_dir.exists():
+                    shutil.rmtree(target_sample_dir)
+                shutil.copytree(sample_centric_dir, target_sample_dir)
+                self.banner.display_info("  ✓ Copied: STAPHSCOPE_ULTIMATE_SAMPLE_CENTRIC_REPORTS directory")
+
+            self.banner.display_success(f"✅ All results copied to: {final_report_dir}")
+            self.banner.display_info("Summary Reports Generated:")
+            for file_path in sorted(final_report_dir.glob("*")):
+                if file_path.is_dir():
+                    dir_files = list(file_path.glob("*"))
+                    self.banner.display_info(f"  📁 {file_path.name} ({len(dir_files)} files)")
+                else:
+                    self.banner.display_info(f"  📄 {file_path.name}")
+        except Exception as e:
+            self.banner.display_error(f"Error copying summary results: {str(e)}")
+
+    # ------------------------------------------------------------------
+    # Helpers
+    # ------------------------------------------------------------------
 
     def find_fasta_files(self, input_path: str) -> List[Path]:
         self.banner.display_info(f"Searching for files with pattern: {input_path}")
         if '*' in input_path or '?' in input_path:
             matched_files = glob.glob(input_path)
             fasta_files = [Path(f) for f in matched_files if Path(f).is_file() and
-                          f.lower().endswith(('.fna', '.fasta')) and
-                          not Path(f).name.startswith('.')]
+                           f.lower().endswith(('.fna', '.fasta')) and
+                           not Path(f).name.startswith('.')]
             self.banner.display_success(f"Found {len(fasta_files)} FASTA files")
             return sorted(fasta_files)
         input_path_obj = Path(input_path)
@@ -595,13 +1073,12 @@ class StaphScopeOrchestrator:
             self.banner.display_error(f"AMR script not found at: {amr_script}")
             return False
 
-        # Ensure logger exists
         if self.logger is None:
             import logging
             logging.basicConfig(level=logging.INFO, format='%(message)s')
             self.logger = logging.getLogger("StaphScope")
 
-        self.banner.display_info("Updating AMRfinderPlus database...")
+        self.banner.display_info("Updating AMRFinderPlus database...")
         flag = "--force-update" if force else "--update-db"
         cmd = [sys.executable, str(amr_script), flag]
         result = subprocess.run(cmd, capture_output=True, text=True, cwd=amr_module_path)
@@ -647,251 +1124,50 @@ class StaphScopeOrchestrator:
             self.banner.display_warning("AMR database not found or outdated. Attempting automatic update...")
             return self.update_amr_database(force=False)
 
-    def run_comprehensive_and_ultimate_reports(self, output_dir: Path) -> bool:
-        """
-        Run comprehensive_report.py and staphscope_ultimate_reporter.py (gene‑centric).
-        Copies all required TSV and HTML files into a temporary directory.
-        Now includes agr_summary.tsv.
-        """
-        temp_dir = Path(tempfile.mkdtemp(prefix="staphscope_summary_"))
-        self._register_temp_dir(temp_dir)
-        self.logger.info(f"Temporary directory for summary reports: {temp_dir}")
-
-        try:
-            summary_module_path = self.get_module_path("summary_module")
-            shutil.copytree(summary_module_path, temp_dir, dirs_exist_ok=True)
-
-            # Required TSV files – now includes agr_summary.tsv
-            required_tsvs = [
-                ("mlst_results", "mlst_summary.tsv"),
-                ("spa_results", "spa_summary.tsv"),
-                ("sccmec_results", "staphscope_summary.tsv"),
-                ("agr_results", "agr_summary.tsv"),
-            ]
-            for subdir, filename in required_tsvs:
-                src = output_dir / subdir / filename
-                if src.exists():
-                    shutil.copy2(src, temp_dir / filename)
-                    self.logger.info(f"Copied {filename} to temporary summary_module directory")
-                else:
-                    self.logger.warning(f"Required TSV not found: {src}")
-
-            # Required HTML files (all abricate, amr, qc, mutation)
-            required_htmls = [
-                ("staph_amrfinder_results", "staph_amrfinder_summary_report.html"),
-                ("staph_amrfinder_results", "mutation_summary.html"),
-                ("abricate_results", "staph_card_summary_report.html"),
-                ("abricate_results", "staph_plasmidfinder_summary_report.html"),
-                ("abricate_results", "staph_ncbi_summary_report.html"),
-                ("abricate_results", "staph_vfdb_summary_report.html"),
-                ("abricate_results", "staph_megares_summary_report.html"),
-                ("abricate_results", "staph_resfinder_summary_report.html"),
-                ("abricate_results", "staph_argannot_summary_report.html"),
-                ("abricate_results", "staph_bacmet2_summary_report.html"),
-                ("fasta_qc_results", "FASTA_QC_summary.html"),
-            ]
-            for subdir, filename in required_htmls:
-                src = output_dir / subdir / filename
-                if src.exists():
-                    shutil.copy2(src, temp_dir / filename)
-                    self.logger.info(f"Copied {filename} to temporary summary_module directory")
-                else:
-                    self.logger.warning(f"Required HTML not found: {src}")
-
-            self.banner.display_info("Running comprehensive report...")
-            cmd_comp = [sys.executable, "comprehensive_report.py"]
-            result_comp = subprocess.run(cmd_comp, cwd=temp_dir, capture_output=True, text=True)
-            if result_comp.stdout:
-                self.logger.info(result_comp.stdout)
-            if result_comp.stderr:
-                self.logger.warning(result_comp.stderr)
-
-            if result_comp.returncode != 0:
-                self.logger.error(f"Comprehensive report failed:\n{result_comp.stderr}")
-                self.banner.display_warning("Comprehensive report failed – continuing with ultimate reporter")
-            else:
-                self.banner.display_success("Comprehensive report generated successfully!")
-                # Copy comprehensive report outputs to user output (top level)
-                for ext in [".html", ".json", ".tsv"]:
-                    src = temp_dir / f"staphscope_comprehensive_report{ext}"
-                    if src.exists():
-                        dst = self.user_output_dir / src.name
-                        shutil.copy2(src, dst)
-                        self.logger.info(f"Copied {src.name} to output directory")
-
-            self.banner.display_info("Running ultimate reporter (gene‑centric)...")
-            cmd_ultimate = [sys.executable, "staphscope_ultimate_reporter.py", "-i", "."]
-            result_ultimate = subprocess.run(cmd_ultimate, cwd=temp_dir, capture_output=True, text=True)
-            if result_ultimate.stdout:
-                self.logger.info(result_ultimate.stdout)
-            if result_ultimate.stderr:
-                self.logger.warning(result_ultimate.stderr)
-
-            if result_ultimate.returncode != 0:
-                self.logger.error(f"Ultimate reporter failed:\n{result_ultimate.stderr}")
-                self.banner.display_error(f"Ultimate reporter failed with exit code {result_ultimate.returncode}")
-                return False
-            else:
-                self.banner.display_success("Ultimate reporter completed successfully!")
-                src_dir = temp_dir / "STAPHSCOPE_ULTIMATE_GENE_CENTRIC_REPORTS"
-                if src_dir.exists():
-                    dst_dir = self.user_output_dir / "STAPHSCOPE_ULTIMATE_GENE_CENTRIC_REPORTS"
-                    if dst_dir.exists():
-                        shutil.rmtree(dst_dir)
-                    shutil.copytree(src_dir, dst_dir)
-                    self.logger.info(f"Ultimate reports copied to {dst_dir}")
-                return True
-
-        except Exception as e:
-            self.logger.error(f"Summary reports exception: {e}\n{traceback.format_exc()}")
-            return False
-        finally:
-            if not self.keep_temp:
-                shutil.rmtree(temp_dir, ignore_errors=True)
-                self.logger.info(f"Removed temporary directory: {temp_dir}")
-
-    def copy_summary_results_to_final_directory(self, output_dir: Path):
-        """
-        Copy only the ultimate reports and comprehensive files into Staphscope_final_report.
-        No individual module directories are copied.
-        """
-        try:
-            self.banner.display_info("Copying summary results to final directory...")
-            final_report_dir = output_dir / "Staphscope_final_report"
-            final_report_dir.mkdir(parents=True, exist_ok=True)
-
-            # Copy comprehensive report files
-            comprehensive_files = [
-                "staphscope_comprehensive_report.html",
-                "staphscope_comprehensive_report.json",
-                "staphscope_comprehensive_report.tsv"
-            ]
-            for file_name in comprehensive_files:
-                source_file = output_dir / file_name
-                if source_file.exists():
-                    shutil.copy2(source_file, final_report_dir / file_name)
-                    self.banner.display_info(f"  ✓ Copied: {file_name}")
-
-            # Copy gene‑centric ultimate reports
-            ultimate_reports_dir = output_dir / "STAPHSCOPE_ULTIMATE_GENE_CENTRIC_REPORTS"
-            if ultimate_reports_dir.exists() and ultimate_reports_dir.is_dir():
-                target_ultimate_dir = final_report_dir / "STAPHSCOPE_ULTIMATE_GENE_CENTRIC_REPORTS"
-                if target_ultimate_dir.exists():
-                    shutil.rmtree(target_ultimate_dir)
-                shutil.copytree(ultimate_reports_dir, target_ultimate_dir)
-                self.banner.display_info(f"  ✓ Copied: STAPHSCOPE_ULTIMATE_GENE_CENTRIC_REPORTS directory")
-
-            # Copy sample‑centric ultimate reports
-            sample_centric_dir = output_dir / "STAPHSCOPE_ULTIMATE_SAMPLE_CENTRIC_REPORTS"
-            if sample_centric_dir.exists() and sample_centric_dir.is_dir():
-                target_sample_dir = final_report_dir / "STAPHSCOPE_ULTIMATE_SAMPLE_CENTRIC_REPORTS"
-                if target_sample_dir.exists():
-                    shutil.rmtree(target_sample_dir)
-                shutil.copytree(sample_centric_dir, target_sample_dir)
-                self.banner.display_info(f"  ✓ Copied: STAPHSCOPE_ULTIMATE_SAMPLE_CENTRIC_REPORTS directory")
-
-            self.banner.display_success(f"✅ All results copied to: {final_report_dir}")
-            self.banner.display_info("Summary Reports Generated:")
-            for file_path in sorted(final_report_dir.glob("*")):
-                if file_path.is_dir():
-                    dir_files = list(file_path.glob("*"))
-                    self.banner.display_info(f"  📁 {file_path.name} ({len(dir_files)} files)")
-                else:
-                    self.banner.display_info(f"  📄 {file_path.name}")
-        except Exception as e:
-            self.banner.display_error(f"Error copying summary results: {str(e)}")
-
-    def run_visualization_analysis(self, output_dir: Path) -> bool:
-        temp_dir = Path(tempfile.mkdtemp(prefix="staphscope_visualization_"))
-        self._register_temp_dir(temp_dir)
-        self.logger.info(f"Temporary directory for visualization: {temp_dir}")
-        try:
-            vis_module_orig = self.get_module_path("visualization_module")
-            shutil.copytree(vis_module_orig, temp_dir, dirs_exist_ok=True)
-
-            required_files = [
-                (output_dir / "staph_amrfinder_results", "staph_amrfinder_summary_report.html"),
-                (output_dir / "abricate_results", "staph_card_summary_report.html"),
-                (output_dir / "abricate_results", "staph_plasmidfinder_summary_report.html"),
-                (output_dir / "abricate_results", "staph_ncbi_summary_report.html"),
-                (output_dir / "abricate_results", "staph_vfdb_summary_report.html"),
-                (output_dir / "abricate_results", "staph_megares_summary_report.html"),
-                (output_dir / "abricate_results", "staph_resfinder_summary_report.html"),
-                (output_dir / "abricate_results", "staph_argannot_summary_report.html"),
-                (output_dir / "agr_results", "agr_summary.tsv"),
-                (output_dir / "Staphscope_final_report", "staphscope_comprehensive_report.html"),
-            ]
-            copied_count = 0
-            for source_dir, filename in required_files:
-                src = source_dir / filename
-                if src.exists():
-                    shutil.copy2(src, temp_dir / filename)
-                    copied_count += 1
-                    self.logger.info(f"Copied {filename} to temporary visualization directory")
-                else:
-                    self.logger.warning(f"Required file not found: {src}")
-            self.banner.display_info(f"Copied {copied_count} files to temporary visualization module")
-
-            vis_script = temp_dir / "staphscope_visualizer.py"
-            if not vis_script.exists():
-                self.banner.display_error(f"Visualization script not found at: {vis_script}")
-                return False
-
-            self.banner.display_info("Running visualization module...")
-            cmd = [sys.executable, str(vis_script)]
-            result = subprocess.run(cmd, cwd=temp_dir, capture_output=True, text=True)
-
-            if result.stdout:
-                self.logger.info(result.stdout)
-            if result.stderr:
-                self.logger.warning(result.stderr)
-
-            if result.returncode != 0:
-                self.logger.error(f"Visualization failed:\n{result.stderr}")
-                self.banner.display_warning("Visualization had issues")
-                return False
-
-            self.banner.display_success("Visualization completed successfully!")
-
-            vis_output_dir = temp_dir / "STAPHSCOPE_VISUALIZATIONS"
-            if vis_output_dir.exists() and vis_output_dir.is_dir():
-                target_vis_dir = self.user_output_dir / "STAPHSCOPE_VISUALIZATIONS"
-                if target_vis_dir.exists():
-                    shutil.rmtree(target_vis_dir)
-                shutil.copytree(vis_output_dir, target_vis_dir)
-                vis_files = list(vis_output_dir.rglob("*"))
-                html_files = [f for f in vis_files if f.suffix == '.html']
-                image_files = [f for f in vis_files if f.suffix in ['.png', '.jpg', '.jpeg', '.svg']]
-                self.banner.display_success(f"✅ Visualizations copied to: {target_vis_dir}")
-                self.banner.display_info(f"   📊 {len(html_files)} HTML reports")
-                self.banner.display_info(f"   🖼️  {len(image_files)} visualization images")
-            return True
-
-        except Exception as e:
-            self.logger.error(f"Visualization exception: {e}\n{traceback.format_exc()}")
-            return False
-        finally:
-            if not self.keep_temp:
-                shutil.rmtree(temp_dir, ignore_errors=True)
-                self.logger.info(f"Removed temporary directory: {temp_dir}")
-
     def run_sequential_analyses(self, fasta_files: List[Path], output_dir: Path, threads: int,
-                               skip_modules: Dict[str, bool],
-                               amr_min_identity: float, amr_min_coverage: float,
-                               amr_skip_mutations: bool, amr_force_update: bool,
-                               abricate_min_identity: int = 80, abricate_min_coverage: int = 80) -> Dict[str, bool]:
+                                skip_modules: Dict[str, bool],
+                                amr_min_identity: float, amr_min_coverage: float,
+                                amr_skip_mutations: bool, amr_force_update: bool,
+                                abricate_min_identity: int = 80,
+                                abricate_min_coverage: int = 80) -> Dict[str, bool]:
         analysis_functions = [
-            ("FASTA QC", self.run_fasta_qc_analysis, "FASTA QC Analysis", "Sequence Quality Control & Statistics", not skip_modules.get('fasta_qc', False)),
-            ("MLST", self.run_mlst_analysis, "MLST Analysis", "Multi-Locus Sequence Typing", not skip_modules.get('mlst', False)),
-            ("spa typing", self.run_spa_typing, "SPA TYPING ANALYSIS", "Staphylococcal Protein A Typing", not skip_modules.get('spa', False)),
-            ("SCCmec", self.run_sccmec_analysis, "SCCMEC ANALYSIS", "Methicillin Resistance Cassette Typing", not skip_modules.get('sccmec', False)),
-            ("Agr", self.run_agr_analysis, "AGR TYPING", "Agr Accessory Gene Typing", not skip_modules.get('agr', False)),
-            ("AMRFinderPlus", lambda f, o, t: self.run_amrfinder_analysis(f, o, t, amr_min_identity, amr_min_coverage, amr_skip_mutations, amr_force_update),
-             "AMR ANALYSIS", "Antimicrobial Resistance Gene Detection", not skip_modules.get('amr', False)),
-            ("ABRicate", lambda f, o, t: self.run_abricate_analysis(f, o, t, abricate_min_identity, abricate_min_coverage),
-             "ABRICATE ANALYSIS", "Comprehensive Resistance, Plasmid & Virulence Gene Screening", not skip_modules.get('abricate', False))
+            ("FASTA QC", self.run_fasta_qc_analysis,
+             "FASTA QC Analysis", "Sequence Quality Control & Statistics",
+             not skip_modules.get('fasta_qc', False)),
+            ("MLST", self.run_mlst_analysis,
+             "MLST Analysis", "Multi-Locus Sequence Typing",
+             not skip_modules.get('mlst', False)),
+            ("spa typing", self.run_spa_typing,
+             "SPA TYPING ANALYSIS", "Staphylococcal Protein A Typing",
+             not skip_modules.get('spa', False)),
+            ("SCCmec (CGE)", self.run_sccmec_analysis,
+             "SCCMEC (CGE) ANALYSIS", "Methicillin Resistance Cassette Typing (CGE)",
+             not skip_modules.get('sccmec', False)),
+            ("SCCmec (RPet)", self.run_sccmec_rpet_analysis,
+             "SCCMEC (RPET) ANALYSIS", "Methicillin Resistance Cassette Typing (RPet)",
+             not skip_modules.get('sccmec_rpet', False)),
+            ("Capsule", self.run_capsule_analysis,
+             "CAPSULE TYPING", "Capsular Polysaccharide Typing",
+             not skip_modules.get('capsule', False)),
+            ("Agr", self.run_agr_analysis,
+             "AGR TYPING", "Agr Accessory Gene Typing",
+             not skip_modules.get('agr', False)),
+            ("AMRFinderPlus",
+             lambda f, o, t: self.run_amrfinder_analysis(
+                 f, o, t, amr_min_identity, amr_min_coverage, amr_skip_mutations, amr_force_update),
+             "AMR ANALYSIS", "Antimicrobial Resistance Gene Detection",
+             not skip_modules.get('amr', False)),
+            ("ABRicate",
+             lambda f, o, t: self.run_abricate_analysis(
+                 f, o, t, abricate_min_identity, abricate_min_coverage),
+             "ABRICATE ANALYSIS", "Comprehensive Resistance, Plasmid & Virulence Gene Screening",
+             not skip_modules.get('abricate', False)),
+            ("MGE", self.run_mge_analysis,
+             "MGE ANALYSIS", "Mobile Genetic Element Profiling",
+             not skip_modules.get('mge', False)),
         ]
-        active = [(name, func, header, desc) for name, func, header, desc, enabled in analysis_functions if enabled]
+        active = [(name, func, header, desc)
+                  for name, func, header, desc, enabled in analysis_functions if enabled]
         if not active:
             self.banner.display_warning("All analyses were skipped! Nothing to run.")
             return {}
@@ -900,12 +1176,7 @@ class StaphScopeOrchestrator:
         for name, func, header, desc in active:
             self.banner.display_module_header(header, desc)
             try:
-                if name == "AMRFinderPlus":
-                    success = func(fasta_files, output_dir, max(1, threads // len(active)))
-                elif name == "ABRicate":
-                    success = func(fasta_files, output_dir, max(1, threads // len(active)))
-                else:
-                    success = func(fasta_files, output_dir, max(1, threads // len(active)))
+                success = func(fasta_files, output_dir, max(1, threads // len(active)))
                 results[name] = success
                 if success:
                     self.banner.display_success(f"✅ {name} completed")
@@ -918,18 +1189,18 @@ class StaphScopeOrchestrator:
         return results
 
     def run_complete_analysis(self, input_path: str, output_dir: str, threads: int = 1,
-                             skip_modules: Dict[str, bool] = None,
-                             skip_comprehensive: bool = False,
-                             skip_visualization: bool = False,
-                             update_amr_db_only: bool = False,
-                             amr_min_identity: float = None,
-                             amr_min_coverage: float = None,
-                             amr_skip_mutations: bool = False,
-                             amr_force_update: bool = False,
-                             clean_output: bool = False,
-                             skip_sample_centric: bool = False,
-                             abricate_min_identity: int = 80,
-                             abricate_min_coverage: int = 80):
+                              skip_modules: Dict[str, bool] = None,
+                              skip_comprehensive: bool = False,
+                              skip_visualization: bool = False,
+                              update_amr_db_only: bool = False,
+                              amr_min_identity: float = None,
+                              amr_min_coverage: float = None,
+                              amr_skip_mutations: bool = False,
+                              amr_force_update: bool = False,
+                              clean_output: bool = False,
+                              skip_sample_centric: bool = False,
+                              abricate_min_identity: int = 80,
+                              abricate_min_coverage: int = 80):
         if skip_modules is None:
             skip_modules = {}
         if update_amr_db_only:
@@ -955,72 +1226,75 @@ class StaphScopeOrchestrator:
             self.banner.display_success(f"Starting analysis of {len(fasta_files)} samples")
             self.banner.display_info(f"File formats detected: {', '.join(extensions)}")
 
-            # Create output subdirectories (only for intermediate results)
-            subdirs = ["fasta_qc_results", "mlst_results", "spa_results", "sccmec_results",
-                       "abricate_results", "staph_amrfinder_results", "lineage_results",
-                       "agr_results"]
+            subdirs = ["fasta_qc_results", "mlst_results", "spa_results", "sccmec_cge_results",
+                       "sccmec_rpet_results", "capsule_results", "abricate_results",
+                       "staph_amrfinder_results", "lineage_results", "agr_results",
+                       "mge_results"]
             for subdir in subdirs:
                 (output_path / subdir).mkdir(exist_ok=True)
 
-            # Display enabled modules
             self.banner.display_module_header("Analysis Plan", "Modules to be executed")
             analyses_to_run = [
                 ("FASTA QC", not skip_modules.get('fasta_qc', False)),
                 ("MLST", not skip_modules.get('mlst', False)),
                 ("spa typing", not skip_modules.get('spa', False)),
-                ("SCCmec", not skip_modules.get('sccmec', False)),
+                ("SCCmec (CGE)", not skip_modules.get('sccmec', False)),
+                ("SCCmec (RPet)", not skip_modules.get('sccmec_rpet', False)),
+                ("Capsule typing", not skip_modules.get('capsule', False)),
                 ("Agr typing", not skip_modules.get('agr', False)),
                 ("AMRFinderPlus", not skip_modules.get('amr', False)),
-                ("ABRicate", not skip_modules.get('abricate', False)),
+                ("ABRICATE", not skip_modules.get('abricate', False)),
+                ("MGE profiling", not skip_modules.get('mge', False)),
                 ("Lineage Reference", not skip_modules.get('lineage', False)),
                 ("Comprehensive Report", not skip_comprehensive),
-                ("Ultimate Reporter (gene‑centric)", not skip_comprehensive),
-                ("Sample‑Centric Reporter", not skip_sample_centric),
-                ("Visualization", not skip_visualization)
+                ("Ultimate Reporter (gene-centric)", not skip_comprehensive),
+                ("Sample-Centric Reporter", not skip_sample_centric),
+                ("Visualization", not skip_visualization),
             ]
             for analysis, enabled in analyses_to_run:
                 status = "✅ ENABLED" if enabled else "⏸️  SKIPPED"
                 print(f"   {status} - {analysis}")
             sys.stdout.flush()
 
-            # Run primary modules
-            analysis_results = self.run_sequential_analyses(fasta_files, output_path, threads, skip_modules,
-                                                           amr_min_identity, amr_min_coverage,
-                                                           amr_skip_mutations, amr_force_update,
-                                                           abricate_min_identity, abricate_min_coverage)
+            analysis_results = self.run_sequential_analyses(
+                fasta_files, output_path, threads, skip_modules,
+                amr_min_identity, amr_min_coverage,
+                amr_skip_mutations, amr_force_update,
+                abricate_min_identity, abricate_min_coverage)
 
-            # Lineage
             if not skip_modules.get('lineage', False):
-                self.banner.display_module_header("Lineage Database", "S. aureus Lineage Reference Generation")
+                self.banner.display_module_header("Lineage Database",
+                                                  "S. aureus Lineage Reference Generation")
                 lineage_success = self.run_lineage_analysis(output_path)
                 analysis_results["Lineage Reference"] = lineage_success
                 print()
 
-            # Comprehensive + Ultimate (gene‑centric)
             if not skip_comprehensive:
-                self.banner.display_module_header("Comprehensive & Ultimate Reports", "Unified MLST, spa, SCCmec, agr and gene‑centric integration")
+                self.banner.display_module_header(
+                    "Comprehensive & Ultimate Reports",
+                    "Unified MLST, spa, SCCmec, agr, capsule and gene-centric integration")
                 summary_success = self.run_comprehensive_and_ultimate_reports(output_path)
                 analysis_results["Comprehensive & Ultimate Reports"] = summary_success
                 if not summary_success:
                     self.banner.display_warning("Summary reports had issues")
                 print()
 
-            # Sample‑centric reporter – depends on comprehensive HTML and all TSVs
             if not skip_sample_centric:
                 if skip_comprehensive:
-                    self.banner.display_warning("Sample‑centric reporter requires staphscope_comprehensive_report.html.")
-                    self.banner.display_warning("Since --skip-comprehensive was used, sample‑centric reporter will be skipped.")
-                    analysis_results["Sample‑Centric Reporter"] = False
+                    self.banner.display_warning(
+                        "Sample-centric reporter requires staphscope_comprehensive_report.html.")
+                    self.banner.display_warning(
+                        "Since --skip-comprehensive was used, sample-centric reporter will be skipped.")
+                    analysis_results["Sample-Centric Reporter"] = False
                 else:
-                    self.banner.display_module_header("Sample‑Centric Reporter", "Interactive isolate‑centric report")
+                    self.banner.display_module_header("Sample-Centric Reporter",
+                                                      "Interactive isolate-centric report")
                     sample_success = self.run_sample_centric_analysis(output_path)
-                    analysis_results["Sample‑Centric Reporter"] = sample_success
+                    analysis_results["Sample-Centric Reporter"] = sample_success
                     print()
 
-            # Now copy all results into Staphscope_final_report (only the required items)
             self.copy_summary_results_to_final_directory(output_path)
 
-            # Clean up top-level duplicates and intermediate directories
             for dup in ["staphscope_comprehensive_report.html",
                         "staphscope_comprehensive_report.json",
                         "staphscope_comprehensive_report.tsv"]:
@@ -1028,26 +1302,25 @@ class StaphScopeOrchestrator:
             shutil.rmtree(output_path / "STAPHSCOPE_ULTIMATE_GENE_CENTRIC_REPORTS", ignore_errors=True)
             shutil.rmtree(output_path / "STAPHSCOPE_ULTIMATE_SAMPLE_CENTRIC_REPORTS", ignore_errors=True)
 
-            # Visualization (runs after final cleanup, using files from Staphscope_final_report)
             if not skip_visualization:
-                self.banner.display_module_header("Visualization", "Interactive Visualizations & Dashboard")
+                self.banner.display_module_header("Visualization",
+                                                  "Interactive Visualizations & Dashboard")
                 visualization_success = self.run_visualization_analysis(output_path)
                 analysis_results["Visualization"] = visualization_success
                 print()
 
-            # Final summary
             analysis_time = datetime.now() - start_time
             analysis_time_str = str(analysis_time).split('.')[0]
             successful_count = sum(analysis_results.values())
             total_count = len(analysis_results)
 
-            self.banner.display_footer(analysis_time=analysis_time_str, samples_processed=len(fasta_files))
+            self.banner.display_footer(analysis_time=analysis_time_str,
+                                       samples_processed=len(fasta_files))
 
             if successful_count == total_count:
                 self.banner.display_success(f"🎉 All {total_count} analyses completed successfully!")
                 self.banner.display_success("🧹 All module directories have been cleaned up")
                 print("\n📁 FINAL OUTPUT STRUCTURE:")
-                # Show only Staphscope_final_report and any extra directories
                 for subdir in sorted(output_path.glob("*")):
                     if subdir.is_dir():
                         files_count = len(list(subdir.rglob("*")))
@@ -1062,7 +1335,8 @@ class StaphScopeOrchestrator:
                         elif subdir.name not in ["STAPHSCOPE_VISUALIZATIONS", "staphscope_run.log"]:
                             print(f"   📂 {subdir.name}/ ({files_count} items)")
             else:
-                self.banner.display_warning(f"⚠️  {successful_count}/{total_count} analyses completed successfully.")
+                self.banner.display_warning(
+                    f"⚠️  {successful_count}/{total_count} analyses completed successfully.")
 
             print("\n📚 Please cite our StaphScope paper:")
             print("   Beckley, B., Amarh, V. StaphScope: a species-optimized computational pipeline for rapid and accessible Staphylococcus aureus genotyping and surveillance. BMC Genomics (2026).")
@@ -1075,20 +1349,135 @@ class StaphScopeOrchestrator:
             import traceback
             traceback.print_exc()
 
+    # ------------------------------------------------------------------
+    # MLST Database Management
+    # ------------------------------------------------------------------
+
+    def _get_system_module_path(self, module_name: str) -> Path:
+        """Return the original system module path (without fallback)."""
+        if hasattr(sys, 'prefix'):
+            share_path = Path(sys.prefix) / "share" / "staphscope" / "modules" / module_name
+            if share_path.exists():
+                return share_path
+        return self.base_dir / "modules" / module_name
+
+    def pull_mlst_database(self) -> bool:
+        """
+        Also copies Python and bash scripts from the system module.
+        Requires write access to the target module directory.
+        """
+        target_path = self.get_module_path("mlst_module")
+        if not os.access(target_path, os.W_OK):
+            self.banner.display_error(f"Target directory {target_path} is not writable.")
+            self.banner.display_info("Use --update-mlst-db instead, or install StaphScope in a writable location.")
+            return False
+
+        target_path.mkdir(parents=True, exist_ok=True)
+
+        system_path = self._get_system_module_path("mlst_module")
+
+        repo_url = "https://github.com/bbeckley-hub/mlst/archive/refs/heads/master.zip"
+        temp_zip = Path(tempfile.mktemp(suffix=".zip"))
+        extract_dir = None
+
+        try:
+            self.banner.display_info("Downloading MLST data from GitHub...")
+            urllib.request.urlretrieve(repo_url, temp_zip)
+
+            extract_dir = Path(tempfile.mkdtemp(prefix="staphscope_mlst_extract_"))
+            with zipfile.ZipFile(temp_zip, 'r') as zip_ref:
+                zip_ref.extractall(extract_dir)
+
+            src_root = extract_dir / "mlst-master"
+            if not src_root.exists():
+                self.banner.display_error("Extracted repository root not found.")
+                return False
+
+            for dirname in ['bin', 'db', 'perl5', 'scripts']:
+                src = src_root / dirname
+                if src.exists():
+                    dst = target_path / dirname
+                    if dst.exists():
+                        shutil.rmtree(dst)
+                    shutil.copytree(src, dst)
+                    self.logger.info(f"Copied {dirname} to {dst}")
+                else:
+                    self.banner.display_warning(f"'{dirname}' not found in repository, skipping.")
+
+            for script in ['mlst_module.py', 'mlst_database.sh']:
+                src_script = system_path / script
+                if src_script.exists():
+                    dst_script = target_path / script
+                    shutil.copy2(src_script, dst_script)
+                    self.logger.info(f"Copied {script} to {dst_script}")
+                else:
+                    self.banner.display_warning(f"'{script}' not found in system module, skipping.")
+
+            self.banner.display_success(f"MLST module pulled to {target_path}")
+            os.environ['STAPHSCOPE_MLST_MODULE_PATH'] = str(target_path)
+            return True
+
+        except Exception as e:
+            self.banner.display_error(f"Failed to download/extract MLST data: {e}")
+            return False
+        finally:
+            if temp_zip.exists():
+                temp_zip.unlink()
+            if extract_dir and extract_dir.exists():
+                shutil.rmtree(extract_dir, ignore_errors=True)
+
+    def update_mlst_database(self) -> bool:
+        """
+        Update S. aureus MLST database using mlstdb (API key required).
+        Uses a writable database directory (module db/ if writable, else user-local).
+        """
+        db_dir = self.get_mlst_db_dir()
+        os.environ['STAPHSCOPE_MLST_DB'] = str(db_dir)
+
+        mlst_module_path = self.get_module_path("mlst_module")
+        script_dir = mlst_module_path / "bin"
+
+        try:
+            from staphscope.modules.mlst_module.mlst_module import update_mlst_database as _update
+        except ImportError:
+            sys.path.insert(0, str(self.base_dir / "modules" / "mlst_module"))
+            from mlst_module import update_mlst_database as _update
+
+        self.banner.display_info(f"Using MLST database directory: {db_dir}")
+        return _update(db_dir, script_dir)
+
 
 def main():
     parser = argparse.ArgumentParser(
-        description="StaphScope: Advanced Staphylococcus aureus Typing & Lineage Analysis Platform with FASTA QC, Agr typing, and Visualization",
+        description="StaphScope: Advanced Staphylococcus aureus Typing & Lineage Analysis Platform",
         formatter_class=ColoredHelpFormatter,
         epilog=f"""
+{ColoredHelpFormatter.BOLD}{ColoredHelpFormatter.GREEN}First-Time Setup (Non-Docker Users){ColoredHelpFormatter.RESET}
+  Before your first analysis, run these recommended commands to prepare the databases:
+
+  1. AMR database (AMRFinderPlus):
+       staphscope --update-amr-db
+     (or use --force-update-amr-db to overwrite an existing database)
+
+  2. MLST database (choose one):
+       # Quick start – download pre-built S. aureus database from GitHub (no API key)
+       staphscope --pull-mlst-db
+
+       # Advanced – fetch the latest S. aureus data from PubMLST (requires API key)
+       # First, set up your PubMLST API key (see instructions below), then:
+       staphscope --update-mlst-db
+
+  3. ABRicate databases (if you plan to use the ABRicate module):
+       abricate --setupdb
+
 {ColoredHelpFormatter.BOLD}{ColoredHelpFormatter.GREEN}Examples:{ColoredHelpFormatter.RESET}
-  # Basic analysis
+  # Basic single-sample analysis
   staphscope -i genome.fna -o results/
 
-  # Batch with glob pattern
+  # Batch analysis with glob pattern
   staphscope -i "*.fna" -o batch_results --threads 8
 
-  # Skip some modules
+  # Skip selected modules
   staphscope -i "*.fasta" -o analysis --threads 16 --skip-lineage --skip-visualization
 
   # AMR with custom thresholds and no mutation reporting
@@ -1097,20 +1486,30 @@ def main():
   # Force update AMR database before analysis
   staphscope -i "*.fna" -o results --amr-force-update
 
-  # Update AMR database only (standalone)
-  staphscope --update-amr-db
+  # AMR database maintenance
+  staphscope --update-amr-db                 # incremental update
+  staphscope --force-update-amr-db           # complete overwrite
 
-  # Force update AMR database only
-  staphscope --force-update-amr-db
+  # MLST database maintenance
+  staphscope --pull-mlst-db                  # clone from GitHub (no credentials)
+  staphscope --update-mlst-db                # update from PubMLST (API key required)
 
-  # Skip the new sample‑centric reporter
-  staphscope -i "*.fna" -o results --skip-sample-centric
-
-  # Skip agr typing
-  staphscope -i "*.fna" -o results --skip-agr
-
-  # ABRicate custom thresholds
+  # ABRicate with custom thresholds
   staphscope -i "*.fna" -o results --abricate-minid 85 --abricate-mincov 90
+
+{ColoredHelpFormatter.BOLD}{ColoredHelpFormatter.GREEN}MLST Database Management:{ColoredHelpFormatter.RESET}
+  --pull-mlst-db     : Download a pre-built S. aureus MLST database from GitHub.
+                       Recommended for first-time users (no API key needed).
+  --update-mlst-db   : Update the S. aureus MLST database directly from PubMLST.
+                       Requires one-time API key setup (see instructions below).
+                       Download may take 10-20 minutes depending on internet speed.
+
+{ColoredHelpFormatter.BOLD}{ColoredHelpFormatter.GREEN}PubMLST API Key Setup (for --update-mlst-db):{ColoredHelpFormatter.RESET}
+  1. Register/login at https://pubmlst.org/site-accounts
+  2. Generate an API key from your profile (under "API keys").
+  3. Run: mlstdb connect --db pubmlst --api-key
+  4. Paste your API key when prompted.
+  5. After setup, run staphscope --update-mlst-db whenever you want to refresh the database.
 
 {ColoredHelpFormatter.BOLD}{ColoredHelpFormatter.GREEN}Supported FASTA formats:{ColoredHelpFormatter.RESET} .fna, .fasta
 
@@ -1118,14 +1517,17 @@ def main():
   • FASTA QC (Quality Control & Statistics)
   • MLST (Multi-Locus Sequence Typing)
   • spa typing (Staphylococcal Protein A)
-  • SCCmec typing (Methicillin Resistance Cassette)
-  • Agr typing (agrVATE) – NEW
-  • AMR profiling (AMRFinderPlus) – point mutations reported by default (use --skip-amr-mutations to disable)
-  • ABRicate (Comprehensive resistance/plasmid/virulence)
+  • SCCmec typing — CGE caller (Methicillin Resistance Cassette)
+  • SCCmec typing — RPet caller (Robert Petit III's sccmec)
+  • Capsule typing (cap5/cap8 serotype)
+  • Agr typing (agrVATE)
+  • AMR profiling (AMRFinderPlus) – point mutations reported by default
+  • ABRICATE (Comprehensive resistance/plasmid/virulence)
+  • MGE profiling (mobileOG-db)
   • Lineage reference database
-  • Comprehensive report (MLST + spa + SCCmec + agr summary)
+  • Comprehensive report (MLST + spa + SCCmec + agr + capsule)
   • Ultimate reporter (Gene-centric integrated analysis)
-  • Sample‑centric reporter (Isolate‑centric interactive report) 
+  • Sample-centric reporter (Isolate-centric interactive report)
   • Visualization (Interactive dashboards & plots)
 
 {ColoredHelpFormatter.BOLD}{ColoredHelpFormatter.GREEN}Output:{ColoredHelpFormatter.RESET}
@@ -1144,33 +1546,60 @@ def main():
 {ColoredHelpFormatter.YELLOW}⭐ Star us on GitHub if you find this tool useful! ⭐{ColoredHelpFormatter.RESET}
         """
     )
-    parser.add_argument('-i', '--input', help='Input FASTA file(s) - can use glob patterns like "*.fna" or "*.fasta"')
+
+    parser.add_argument('-i', '--input',
+                        help='Input FASTA file(s) - can use glob patterns like "*.fna" or "*.fasta"')
     parser.add_argument('-o', '--output', help='Output directory for all results')
-    parser.add_argument('-t', '--threads', type=int, default=2, help='Number of threads (default: 2)')
+    parser.add_argument('-t', '--threads', type=int, default=2,
+                        help='Number of threads (default: 2)')
+
     parser.add_argument('--skip-fasta-qc', action='store_true', help='Skip FASTA QC analysis')
     parser.add_argument('--skip-mlst', action='store_true', help='Skip MLST analysis')
     parser.add_argument('--skip-spa', action='store_true', help='Skip spa typing analysis')
-    parser.add_argument('--skip-sccmec', action='store_true', help='Skip SCCmec analysis')
+    parser.add_argument('--skip-sccmec', action='store_true', help='Skip SCCmec CGE analysis')
+    parser.add_argument('--skip-sccmec-rpet', action='store_true', help='Skip SCCmec RPet typing analysis')
+    parser.add_argument('--skip-capsule', action='store_true', help='Skip capsule typing analysis')
     parser.add_argument('--skip-agr', action='store_true', help='Skip agr typing analysis')
-    parser.add_argument('--skip-amr', action='store_true', help='Skip AMR analysis (AMRfinderPlus)')
+    parser.add_argument('--skip-amr', action='store_true', help='Skip AMR analysis (AMRFinderPlus)')
     parser.add_argument('--skip-abricate', action='store_true', help='Skip ABRicate analysis')
+    parser.add_argument('--skip-mge', action='store_true', help='Skip MGE (mobileOG) profiling')
     parser.add_argument('--skip-lineage', action='store_true', help='Skip lineage reference generation')
-    parser.add_argument('--skip-comprehensive', action='store_true', help='Skip comprehensive report AND ultimate reporter (gene‑centric)')
-    parser.add_argument('--skip-sample-centric', action='store_true', help='Skip sample‑centric reporter (isolate‑centric)')
-    parser.add_argument('--skip-visualization', action='store_true', help='Skip visualization module (dashboards & plots)')
-    parser.add_argument('--amr-min-identity', type=float, help='Minimum identity for AMR hits (0..1)')
-    parser.add_argument('--amr-min-coverage', type=float, help='Minimum coverage for AMR hits (0..1)')
-    parser.add_argument('--skip-amr-mutations', action='store_true', help='Disable point mutation reporting in AMR (enabled by default)')
-    parser.add_argument('--amr-force-update', action='store_true', help='Force update AMR database before analysis')
-    parser.add_argument('--update-amr-db', action='store_true', help='Update AMRfinderPlus database (incremental) and exit')
-    parser.add_argument('--force-update-amr-db', action='store_true', help='Force complete AMR database update (overwrites old) and exit')
-    parser.add_argument('--keep-temp', action='store_true', help='Do not delete temporary directories (for debugging)')
-    parser.add_argument('--clean-output', action='store_true', help='Delete output directory before analysis (prevents mixing results from different runs)')
-    # New ABRicate threshold flags
+    parser.add_argument('--skip-comprehensive', action='store_true',
+                        help='Skip comprehensive report AND ultimate reporter (gene-centric)')
+    parser.add_argument('--skip-sample-centric', action='store_true',
+                        help='Skip sample-centric reporter (isolate-centric)')
+    parser.add_argument('--skip-visualization', action='store_true',
+                        help='Skip visualization module (dashboards & plots)')
+
+    parser.add_argument('--amr-min-identity', type=float,
+                        help='Minimum identity for AMR hits (0..1)')
+    parser.add_argument('--amr-min-coverage', type=float,
+                        help='Minimum coverage for AMR hits (0..1)')
+    parser.add_argument('--skip-amr-mutations', action='store_true',
+                        help='Disable point mutation reporting in AMR (enabled by default)')
+    parser.add_argument('--amr-force-update', action='store_true',
+                        help='Force update AMR database before analysis')
+    parser.add_argument('--update-amr-db', action='store_true',
+                        help='Update AMRFinderPlus database (incremental) and exit')
+    parser.add_argument('--force-update-amr-db', action='store_true',
+                        help='Force complete AMR database update (overwrites old) and exit')
+
+    parser.add_argument('--pull-mlst-db', action='store_true',
+                        help='Pull/refresh MLST database from GitHub fork (Recommended for first-time setup)')
+    parser.add_argument('--update-mlst-db', action='store_true',
+                        help='Update S. aureus MLST database from PubMLST (API key required)')
+
     parser.add_argument('--abricate-minid', type=int, default=80,
                         help='Minimum identity for ABRicate hits (default: 80)')
     parser.add_argument('--abricate-mincov', type=int, default=80,
                         help='Minimum coverage for ABRicate hits (default: 80)')
+
+    parser.add_argument('--keep-temp', action='store_true',
+                        help='Do not delete temporary directories (for debugging)')
+    parser.add_argument('--clean-output', action='store_true',
+                        help='Delete output directory before analysis (prevents mixing results from different runs)')
+
+    parser.add_argument('-v', '--version', action='version', version=f'StaphScope version {__version__}')
 
     args = parser.parse_args()
 
@@ -1182,17 +1611,33 @@ def main():
             orch.update_amr_database(force=False)
         sys.exit(0)
 
+    if args.pull_mlst_db or args.update_mlst_db:
+        orch = StaphScopeOrchestrator()
+        temp_log_dir = Path(tempfile.mkdtemp(prefix="staphscope_mlst_db_"))
+        orch.setup_logging(temp_log_dir)
+        if args.pull_mlst_db:
+            success = orch.pull_mlst_database()
+        else:
+            success = orch.update_mlst_database()
+        if not orch.keep_temp:
+            shutil.rmtree(temp_log_dir, ignore_errors=True)
+        sys.exit(0 if success else 1)
+
     if not args.input or not args.output:
-        parser.error("When not using --update-amr-db or --force-update-amr-db, both -i/--input and -o/--output are required.")
+        parser.error("When not using --update-amr-db, --force-update-amr-db, "
+                     "--pull-mlst-db, or --update-mlst-db, both -i/--input and -o/--output are required.")
 
     skip_modules = {
         'fasta_qc': args.skip_fasta_qc,
         'mlst': args.skip_mlst,
         'spa': args.skip_spa,
         'sccmec': args.skip_sccmec,
+        'sccmec_rpet': args.skip_sccmec_rpet,
+        'capsule': args.skip_capsule,
         'agr': args.skip_agr,
         'amr': args.skip_amr,
         'abricate': args.skip_abricate,
+        'mge': args.skip_mge,
         'lineage': args.skip_lineage,
     }
 
@@ -1212,7 +1657,7 @@ def main():
         clean_output=args.clean_output,
         skip_sample_centric=args.skip_sample_centric,
         abricate_min_identity=args.abricate_minid,
-        abricate_min_coverage=args.abricate_mincov
+        abricate_min_coverage=args.abricate_mincov,
     )
 
 

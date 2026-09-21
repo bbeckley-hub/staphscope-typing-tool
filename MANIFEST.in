@@ -15,7 +15,7 @@ include CITATION.cff
 include setup.py
 include requirements.txt
 
-# Include scripts
+# Include  all scripts
 include scripts/*
 include cleanup.sh
 

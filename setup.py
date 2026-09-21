@@ -10,7 +10,7 @@ except FileNotFoundError:
 
 setup(
     name="staphscope",
-    version="1.3.2",
+    version="2.0.0",
     author="Brown Beckley",
     author_email="brownbeckley94@gmail.com",
     description="Advanced Staphylococcus aureus Typing & Lineage Analysis Platform",
@@ -38,6 +38,7 @@ setup(
         "biopython>=1.80",  
         "psutil>=5.9.0",
         "requests>=2.28.0",
+        "mlstdb>=1.3.0",
         "tqdm>=4.64.0",
         "click>=8.0.0",
         # HTML parsing for summary/visualization

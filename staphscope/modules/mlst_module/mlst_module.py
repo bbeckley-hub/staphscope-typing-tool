@@ -4,8 +4,7 @@ MLST Module for StaphScope - Complete with Beautiful HTML Reports
 Author: Brown Beckley <brownbeckley94@gmail.com>
 GitHub: bbeckley-hub
 Affiliation: University of Ghana Medical School - Department of Medical Biochemistry
-Date: 2025/2026-07-23
-Send a quick mail for any issues or further explanations.
+Date: 2026-09-02
 """
 
 import os
@@ -15,18 +14,33 @@ import glob
 import argparse
 import subprocess
 import random
+import shutil
+import tempfile
 from pathlib import Path
 from typing import Dict, List, Optional
 import pandas as pd
 from datetime import datetime
 
+
 class ModularMLSTAnalyzer:
+    """Perform MLST typing on FASTA files and generate rich reports."""
+
     def __init__(self, database_dir: Path, script_dir: Path):
+        """
+        Initialize the analyzer.
+
+        Args:
+            database_dir: Path to the directory containing blast/ and pubmlst/.
+            script_dir: Path to the directory containing the 'mlst' executable.
+        """
+        # Allow override via environment variable (set by orchestrator)
+        env_db = os.environ.get('STAPHSCOPE_MLST_DB')
+        if env_db:
+            database_dir = Path(env_db)
         self.database_dir = database_dir
         self.script_dir = script_dir
         self.mlst_bin = script_dir / "mlst"
-        
-        # Science quotes for rotation
+
         self.science_quotes = [
             {"text": "The important thing is not to stop questioning. Curiosity has its own reason for existing.", "author": "Albert Einstein"},
             {"text": "Science is not only a disciple of reason but also one of romance and passion.", "author": "Stephen Hawking"},
@@ -44,17 +58,17 @@ class ModularMLSTAnalyzer:
             {"text": "Through Staphscope, we turn the complexity of bacterial genomes into clear, interpretable reports, empowering clinicians and researchers alike.", "author": "Brown Beckley"},
             {"text": "Staphscope is a testament to the power of bioinformatics in the modern era, making advanced pathogen typing accessible to all.", "author": "Brown Beckley"}
         ]
-    
-    def get_random_quote(self):
-        """Get a random science quote"""
+
+    def get_random_quote(self) -> dict:
+        """Return a random science quote."""
         return random.choice(self.science_quotes)
-    
+
     def find_fasta_files(self, input_path: str) -> List[Path]:
-        """Find all FASTA files using glob patterns"""
+        """Return a sorted list of unique FASTA files matching the input pattern."""
         if os.path.isfile(input_path):
             return [Path(input_path)]
-        
-        fasta_patterns = [
+
+        patterns = [
             input_path,
             f"{input_path}/*.fna", f"{input_path}/*.fasta",
             f"{input_path}/*.fa", f"{input_path}/*.fn",
@@ -62,131 +76,97 @@ class ModularMLSTAnalyzer:
             f"{input_path}/*.fa.gz", f"{input_path}/*.gb",
             f"{input_path}/*.gbk", f"{input_path}/*.gbff"
         ]
-        
-        fasta_files = []
-        for pattern in fasta_patterns:
-            matched_files = glob.glob(pattern)
-            for file_path in matched_files:
-                path = Path(file_path)
+
+        files = []
+        for pat in patterns:
+            for fname in glob.glob(pat):
+                path = Path(fname)
                 if path.is_file():
-                    fasta_files.append(path)
-        
-        return sorted(list(set(fasta_files)))
+                    files.append(path)
+        return sorted(set(files))
 
     def run_mlst_single(self, input_file: Path, output_dir: Path, scheme: str = "saureus") -> Dict:
-        """Run MLST analysis for a single file"""
+        """Run MLST on a single file and generate per‑sample reports."""
         print(f"🔬 Processing: {input_file.name}")
-        
-        # Create sample-specific output directory
-        sample_output_dir = output_dir / input_file.stem
-        sample_output_dir.mkdir(parents=True, exist_ok=True)
-        
-        # Save raw MLST output first
-        raw_output_file = sample_output_dir / "mlst_raw_output.txt"
-        
-        # Run MLST command
-        mlst_cmd = [
+        sample_out = output_dir / input_file.stem
+        sample_out.mkdir(parents=True, exist_ok=True)
+
+        cmd = [
             "perl", str(self.mlst_bin),
             str(input_file),
             "--scheme", scheme,
             "--csv",
             "--nopath"
         ]
-        
+
         try:
-            # Run and capture output
-            result = subprocess.run(mlst_cmd, capture_output=True, text=True, check=True)
-            
-            # Save raw output
-            with open(raw_output_file, 'w') as f:
-                f.write("STDOUT:\n")
-                f.write(result.stdout)
-                f.write("\nSTDERR:\n")
-                f.write(result.stderr)
-            
+            result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+            (sample_out / "mlst_raw_output.txt").write_text(f"STDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}")
+
             print(f"Raw MLST output: {result.stdout.strip()}")
-            
-            # Parse the CSV output (it's comma-separated!)
             mlst_results = self.parse_mlst_csv(result.stdout, input_file.name)
-            
-            # Add lineage information
             mlst_results.update(self.get_lineage_info(mlst_results.get('st', 'ND')))
-            
-            # Add identity and coverage information
             mlst_results.update(self.get_identity_coverage(mlst_results.get('st', 'ND')))
-            
-            # Generate only 3 output files
-            self.generate_output_files(mlst_results, sample_output_dir)
-            
+            self.generate_output_files(mlst_results, sample_out)
+
             print(f"✅ Completed: {input_file.name} -> ST{mlst_results.get('st', 'ND')}")
             return mlst_results
-            
-        except subprocess.CalledProcessError as e:
+
+        except subprocess.CalledProcessError:
             print(f"❌ MLST failed for {input_file.name}")
             error_result = self.get_fallback_results(input_file.name)
-            self.generate_output_files(error_result, sample_output_dir)
+            self.generate_output_files(error_result, sample_out)
             return error_result
 
     def parse_mlst_csv(self, stdout: str, sample_name: str) -> Dict:
-        """Parse MLST CSV output - it's comma-separated!"""
+        """Parse the comma‑separated MLST output."""
         print(f"Parsing CSV output for {sample_name}")
-        
         lines = stdout.strip().split('\n')
         if not lines:
             return self.get_empty_results(sample_name)
-        
-        # Find the result line (usually the last line with data)
+
         result_line = None
         for line in reversed(lines):
             if line.strip() and ',' in line and not line.startswith('['):
                 result_line = line.strip()
                 break
-        
+
         if not result_line:
             return self.get_empty_results(sample_name)
-        
+
         print(f"CSV result line: {result_line}")
-        
-        # Split by COMMA, not tab!
         parts = result_line.split(',')
         print(f"CSV parts: {parts}")
-        
         if len(parts) < 3:
             return self.get_empty_results(sample_name)
-        
-        # Extract components - format: filename,scheme,ST,allele1,allele2,...
-        filename = parts[0]
-        scheme = parts[1]
-        st = parts[2]
-        
-        # Extract alleles from remaining parts
+
+        filename, scheme, st = parts[0], parts[1], parts[2]
         alleles = {}
         allele_parts = []
-        
         for i in range(3, len(parts)):
             allele_str = parts[i]
             if '(' in allele_str and ')' in allele_str:
-                # Format: arcC(1)
                 gene = allele_str.split('(')[0]
                 allele = allele_str.split('(')[1].rstrip(')')
                 alleles[gene] = allele
                 allele_parts.append(f"{gene}({allele})")
-        
+
         allele_profile = '-'.join(allele_parts) if allele_parts else ""
-        
+
         return {
             "sample": sample_name,
             "st": st,
             "scheme": scheme,
             "alleles": alleles,
             "allele_profile": allele_profile,
-            "confidence": "HIGH" if st and st != '-' and st != 'ND' else "LOW",
-            "mlst_assigned": True if st and st != '-' and st != 'ND' else False
+            "confidence": "HIGH" if st and st not in ('-', 'ND') else "LOW",
+            "mlst_assigned": bool(st and st not in ('-', 'ND'))
         }
 
     def get_lineage_info(self, st: str) -> Dict:
         """Get comprehensive lineage information based on ST"""
         lineage_db = {
+            # ==================== CC1 ====================
             '1': {
                 "clonal_complex": "CC1",
                 "classification": "Community-associated MRSA",
@@ -198,6 +178,117 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["t128", "t127", "t174"],
                 "resistance_profile": ["Often community-associated resistance patterns"]
             },
+            '63': {
+                "clonal_complex": "CC1",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins SEH/SEK"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            '69': {
+                "clonal_complex": "CC1",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins SEH/SEK"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            '76': {
+                "clonal_complex": "CC1",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins SEH/SEK"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            '81': {
+                "clonal_complex": "CC1",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins SEH/SEK"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            '109': {
+                "clonal_complex": "CC1",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins SEH/SEK"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            '147': {
+                "clonal_complex": "CC1",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins SEH/SEK"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            '159': {
+                "clonal_complex": "CC1",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins SEH/SEK"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            '188': {
+                "clonal_complex": "CC1",
+                "classification": "Community-associated MRSA",
+                "geographic_distribution": "Europe, Middle East, Asia",
+                "clinical_significance": "Common CA-MRSA clone in Asia, often associated with skin infections",
+                "common_virulence": ["Enterotoxins", "Hemolysins"],
+                "outbreak_potential": "MEDIUM",
+                "typical_sccmec": ["IV", "V"],
+                "typical_spa": ["t189", "t325"],
+                "resistance_profile": ["Methicillin", "Variable resistance"]
+            },
+            '573': {
+                "clonal_complex": "CC1",
+                "classification": "Community-associated MRSA",
+                "geographic_distribution": "Asia-Pacific",
+                "clinical_significance": "Emerging CA-MRSA clone in Southeast Asia",
+                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins"],
+                "outbreak_potential": "MEDIUM",
+                "typical_sccmec": ["IV", "V"],
+                "typical_spa": ["t127", "t128"],
+                "resistance_profile": ["Methicillin", "Variable"]
+            },
+            '772': {
+                "clonal_complex": "CC1",
+                "classification": "Healthcare-associated MRSA",
+                "geographic_distribution": "Middle East, South Asia",
+                "clinical_significance": "Bengal Bay clone, emerging in hospitals, often multidrug-resistant",
+                "common_virulence": ["Enterotoxins", "Hemolysins"],
+                "outbreak_potential": "MEDIUM",
+                "typical_sccmec": ["III", "IV"],
+                "typical_spa": ["t044", "t037"],
+                "resistance_profile": ["Methicillin", "Multi-drug resistant"]
+            },
+            # ==================== CC2 ====================
             '2': {
                 "clonal_complex": "CC2",
                 "classification": "Healthcare-associated MRSA",
@@ -209,6 +300,31 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["t002", "t037"],
                 "resistance_profile": ["Methicillin", "Variable resistance"]
             },
+            # ==================== CC3 ====================
+            '3': {
+                "clonal_complex": "CC3",
+                "classification": "Healthcare-associated MRSA",
+                "geographic_distribution": "Europe, UK, Australia",
+                "clinical_significance": "EMRSA-3, major hospital-acquired clone in the UK during 1990s",
+                "common_virulence": ["Enterotoxins", "Hemolysins", "Immune evasion cluster"],
+                "outbreak_potential": "HIGH",
+                "typical_sccmec": ["III"],
+                "typical_spa": ["t037", "t045"],
+                "resistance_profile": ["Methicillin", "Multi-drug resistant including aminoglycosides"]
+            },
+            # ==================== CC4 (rare) ====================
+            '4': {
+                "clonal_complex": "CC45", 
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation; CC45 typically includes USA600 clone",
+                "common_virulence": ["Enterotoxins", "Hemolysins", "Immune evasion genes"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            # ==================== CC5 ====================
             '5': {
                 "clonal_complex": "CC5",
                 "classification": "Healthcare-associated MRSA",
@@ -220,6 +336,238 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["t002", "t242", "t548", "t688"],
                 "resistance_profile": ["Methicillin", "Multiple aminoglycosides", "Macrolides", "Tetracyclines"]
             },
+            '11': {
+                "clonal_complex": "CC5",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation; CC5 lineage often healthcare-associated",
+                "common_virulence": ["Enterotoxins (SEC, SEL, SEU)", "Immune evasion cluster"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            '73': {
+                "clonal_complex": "CC5",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Enterotoxins (SEC, SEL, SEU)", "Immune evasion cluster"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            '83': {
+                "clonal_complex": "CC5",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Enterotoxins (SEC, SEL, SEU)", "Immune evasion cluster"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            '85': {
+                "clonal_complex": "CC5",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Enterotoxins (SEC, SEL, SEU)", "Immune evasion cluster"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            '90': {
+                "clonal_complex": "CC5",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Enterotoxins (SEC, SEL, SEU)", "Immune evasion cluster"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            '98': {
+                "clonal_complex": "CC5",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Enterotoxins (SEC, SEL, SEU)", "Immune evasion cluster"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            '99': {
+                "clonal_complex": "CC5",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Enterotoxins (SEC, SEL, SEU)", "Immune evasion cluster"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            '100': {
+                "clonal_complex": "CC5",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Enterotoxins (SEC, SEL, SEU)", "Immune evasion cluster"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            '111': {
+                "clonal_complex": "CC5",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Enterotoxins (SEC, SEL, SEU)", "Immune evasion cluster"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            '114': {
+                "clonal_complex": "CC5",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Enterotoxins (SEC, SEL, SEU)", "Immune evasion cluster"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            '125': {
+                "clonal_complex": "CC5",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Enterotoxins (SEC, SEL, SEU)", "Immune evasion cluster"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            '135': {
+                "clonal_complex": "CC5",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Enterotoxins (SEC, SEL, SEU)", "Immune evasion cluster"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            '142': {
+                "clonal_complex": "CC5",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Enterotoxins (SEC, SEL, SEU)", "Immune evasion cluster"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            '143': {
+                "clonal_complex": "CC5",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Enterotoxins (SEC, SEL, SEU)", "Immune evasion cluster"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            '146': {
+                "clonal_complex": "CC5",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Enterotoxins (SEC, SEL, SEU)", "Immune evasion cluster"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            '148': {
+                "clonal_complex": "CC5",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Enterotoxins (SEC, SEL, SEU)", "Immune evasion cluster"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            '149': {
+                "clonal_complex": "CC5",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Enterotoxins (SEC, SEL, SEU)", "Immune evasion cluster"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            '225': {
+                "clonal_complex": "CC5",
+                "classification": "Healthcare-associated MRSA",
+                "geographic_distribution": "Germany, Central Europe",
+                "clinical_significance": "German epidemic clone, hospital-associated with multi-drug resistance",
+                "common_virulence": ["Enterotoxins", "Hemolysins", "Immune evasion genes"],
+                "outbreak_potential": "HIGH",
+                "typical_sccmec": ["II", "IV"],
+                "typical_spa": ["t003", "t014", "t045"],
+                "resistance_profile": ["Methicillin", "Multi-drug resistant including aminoglycosides, macrolides"]
+            },
+            '228': {
+                "clonal_complex": "CC5",
+                "classification": "Healthcare-associated MRSA",
+                "geographic_distribution": "Europe, North America",
+                "clinical_significance": "Southern German clone, HA-MRSA with high resistance",
+                "common_virulence": ["Enterotoxins", "Hemolysins"],
+                "outbreak_potential": "HIGH",
+                "typical_sccmec": ["II", "IV"],
+                "typical_spa": ["t003", "t014"],
+                "resistance_profile": ["Methicillin", "Multi-drug resistant"]
+            },
+            '231': {
+                "clonal_complex": "CC5",
+                "classification": "Rare/Uncommon MRSA",
+                "geographic_distribution": "Sporadic reports globally",
+                "clinical_significance": "Primarily MSSA lineage, rare MRSA conversion",
+                "common_virulence": ["Variable; typical CC5 factors if present"],
+                "outbreak_potential": "VERY LOW",
+                "typical_sccmec": ["Rare/occasional acquisition"],
+                "typical_spa": ["Variable"],
+                "resistance_profile": ["Variable if MRSA"]
+            },
+            '105': {
+                "clonal_complex": "CC5",
+                "classification": "Healthcare-associated MRSA",
+                "geographic_distribution": "Middle East, America, Europe, Asia",
+                "clinical_significance": "Emerging in healthcare settings, often associated with ICU outbreaks",
+                "common_virulence": ["Enterotoxins", "Hemolysins"],
+                "outbreak_potential": "MEDIUM",
+                "typical_sccmec": ["III", "IV"],
+                "typical_spa": ["t002", "t037"],
+                "resistance_profile": ["Methicillin", "Multi-drug resistant"]
+            },
+            # ==================== CC6 ====================
             '6': {
                 "clonal_complex": "CC6",
                 "classification": "Healthcare-associated MRSA",
@@ -231,6 +579,7 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["t701", "t304"],
                 "resistance_profile": ["Methicillin", "Gentamicin", "Erythromycin"]
             },
+            # ==================== CC7 ====================
             '7': {
                 "clonal_complex": "CC7",
                 "classification": "Community-associated MRSA",
@@ -242,8 +591,9 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["t091", "t657"],
                 "resistance_profile": ["Methicillin", "Fusidic acid"]
             },
+            # ==================== CC8 ====================
             '8': {
-                "clonal_complex": "CC8", 
+                "clonal_complex": "CC8",
                 "classification": "Community and Healthcare-associated MRSA",
                 "geographic_distribution": "Global",
                 "clinical_significance": "Includes pandemic USA300 clone, highly virulent and transmissible, often PVL-positive with enhanced fitness",
@@ -253,291 +603,148 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["t008", "t064", "t121", "t024"],
                 "resistance_profile": ["Methicillin", "Often fluoroquinolone resistance", "Community-associated resistance patterns"]
             },
-            '9': {
-                "clonal_complex": "CC9",
-                "classification": "Livestock-associated MRSA",
-                "geographic_distribution": "Asia, Europe",
-                "clinical_significance": "Zoonotic transmission from livestock, particularly swine, emerging public health concern",
-                "common_virulence": ["Limited virulence arsenal", "Animal-adapted factors"],
-                "outbreak_potential": "HIGH (agricultural settings)",
-                "typical_sccmec": ["IV", "V"],
-                "typical_spa": ["t899", "t337"],
-                "resistance_profile": ["Methicillin", "Tetracycline", "Multi-drug resistance common"]
-            },
-            '10': {
-                "clonal_complex": "CC81",
-                "classification": "Community-associated MRSA",
-                "geographic_distribution": "Global, Eastern Asia",
-                "clinical_significance": "Diverse lineage with both community and healthcare associations",
-                "common_virulence": ["Variable virulence factors", "Enterotoxins"],
-                "outbreak_potential": "MEDIUM",
-                "typical_sccmec": ["IV", "V"],
-                "typical_spa": ["t021", "t045"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '12': {
-                "clonal_complex": "CC12",
-                "classification": "Healthcare-associated MRSA",
-                "geographic_distribution": "Europe, North America",
-                "clinical_significance": "Includes EMRSA-12 clone, associated with hospital outbreaks",
-                "common_virulence": ["Enterotoxins", "Hemolysins"],
-                "outbreak_potential": "HIGH",
-                "typical_sccmec": ["II", "IV"],
-                "typical_spa": ["t032", "t037"],
-                "resistance_profile": ["Methicillin", "Multi-drug resistance"]
-            },
-            '15': {
-                "clonal_complex": "CC15",
-                "classification": "Community-associated MRSA",
-                "geographic_distribution": "Global",
-                "clinical_significance": "Common MSSA lineage, can acquire SCCmec to become MRSA",
-                "common_virulence": ["Enterotoxins", "Hemolysins"],
-                "outbreak_potential": "MEDIUM",
-                "typical_sccmec": ["IV", "V"],
-                "typical_spa": ["t084", "t085"],
-                "resistance_profile": ["Variable, often MSSA"]
-            },
-            '20': {
-                "clonal_complex": "CC20",
-                "classification": "Healthcare-associated MRSA",
-                "geographic_distribution": "Europe, Middle East",
-                "clinical_significance": "Associated with hospital-acquired infections and device-related infections",
-                "common_virulence": ["Enterotoxins", "Biofilm formation genes"],
-                "outbreak_potential": "MEDIUM",
-                "typical_sccmec": ["II", "IV"],
-                "typical_spa": ["t164", "t021"],
-                "resistance_profile": ["Methicillin", "Aminoglycosides"]
-            },
-            '22': {
-                "clonal_complex": "CC22",
-                "classification": "Healthcare-associated MRSA",
-                "geographic_distribution": "Europe, Middle East, Global", 
-                "clinical_significance": "Epidemic MRSA-15 (EMRSA-15), major healthcare clone with high transmission in hospital settings",
-                "common_virulence": ["Enterotoxins", "Immune evasion cluster", "Hemolysins"],
-                "outbreak_potential": "VERY HIGH",
-                "typical_sccmec": ["IV", "IVh", "IVa", "IVc", "IVd", "Vb"],
-                "typical_spa": ["t032", "t022", "t005", "t852"],
-                "resistance_profile": ["Methicillin", "Multiple drug classes", "Often gentamicin resistant"]
-            },
-            '25': {
-                "clonal_complex": "CC25",
-                "classification": "Livestock-associated MRSA",
-                "geographic_distribution": "Europe",
-                "clinical_significance": "Associated with bovine mastitis, zoonotic potential",
-                "common_virulence": ["Bovine-adapted factors", "Limited human virulence"],
-                "outbreak_potential": "LOW (human), MEDIUM (bovine)",
-                "typical_sccmec": ["IV", "V"],
-                "typical_spa": ["t078", "t387"],
-                "resistance_profile": ["Methicillin", "Penicillin", "Tetracycline"]
-            },
-            '30': {
-                "clonal_complex": "CC30",
-                "classification": "Healthcare and Community-associated",
-                "geographic_distribution": "Global",
-                "clinical_significance": "Includes EMRSA-16 and Southwest Pacific clone, often PVL-positive, associated with both hospital and community settings",
-                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins", "Hemolysins"],
-                "outbreak_potential": "HIGH",
-                "typical_sccmec": ["IV", "IVc"],
-                "typical_spa": ["t019", "t021", "t318", "t018"],
-                "resistance_profile": ["Methicillin", "Variable resistance patterns"]
-            },
-            '36': {
-                "clonal_complex": "CC30",
-                "classification": "Healthcare-associated MRSA",
-                "geographic_distribution": "Middle East, Asia, Europe",
-                "clinical_significance": "Emerging clone in Middle Eastern hospitals",
-                "common_virulence": ["Enterotoxins", "Hemolysins"],
-                "outbreak_potential": "MEDIUM",
-                "typical_sccmec": ["III", "II", "IV"],
-                "typical_spa": ["t032", "t037"],
-                "resistance_profile": ["Methicillin", "Multi-drug resistant"]
-            },
-            '45': {
-                "clonal_complex": "CC45",
-                "classification": "Community and Healthcare-associated",
-                "geographic_distribution": "Europe, North America",
-                "clinical_significance": "Includes USA600 clone, often associated with both community and healthcare settings",
-                "common_virulence": ["Enterotoxins", "Hemolysins"],
-                "outbreak_potential": "MEDIUM",
-                "typical_sccmec": ["IV", "II"],
-                "typical_spa": ["t015", "t026", "t038"],
-                "resistance_profile": ["Methicillin", "Variable resistance"]
-            },
-            '59': {
-                "clonal_complex": "CC59",
-                "classification": "Community-associated MRSA",
-                "geographic_distribution": "Asia-Pacific, Taiwan clone, USA(ST59)",
-                "clinical_significance": "Taiwan clone/ST59, highly virulent community clone in Asia and USA",
-                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins", "Hemolysins"],
-                "outbreak_potential": "HIGH",
-                "typical_sccmec": ["IV", "V"],
-                "typical_spa": ["t437", "t441", "t163"],
-                "resistance_profile": ["Methicillin", "Multi-drug resistant"]
+            '27': {
+                "clonal_complex": "CC8",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins", "Phenol-soluble modulins"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
             },
             '72': {
-                "clonal_complex": "CC72",
+                "clonal_complex": "CC8",
                 "classification": "Community-associated MRSA",
-                "geographic_distribution": "USA, South America",
-                "clinical_significance": "USA700 clone, community-associated with skin infections",
+                "geographic_distribution": "USA, South America, Asia",
+                "clinical_significance": "USA700 clone, community-associated with skin infections, also prevalent in South Korea",
                 "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins"],
                 "outbreak_potential": "MEDIUM",
                 "typical_sccmec": ["IV", "V"],
-                "typical_spa": ["t148", "t324", "t324", "t664", "t791", "t3092"],
+                "typical_spa": ["t148", "t324", "t664", "t791", "t3092"],
                 "resistance_profile": ["Methicillin", "Variable resistance"]
             },
-            '75': {
-                "clonal_complex": "CC75",
-                "classification": "Community-associated MRSA",
-                "geographic_distribution": "Australia, Asia",
-                "clinical_significance": "Western Samoan Phage Pattern clone, associated with tropical regions",
-                "common_virulence": ["Enterotoxins", "Hemolysins"],
-                "outbreak_potential": "MEDIUM",
-                "typical_sccmec": ["IV", "V"],
-                "typical_spa": ["t359", "t084"],
-                "resistance_profile": ["Methicillin", "Fusidic acid"]
+            '86': {
+                "clonal_complex": "CC8",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins", "Phenol-soluble modulins"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
             },
-            '78': {
-                "clonal_complex": "CC88",
-                "classification": "Livestock-associated MRSA",
-                "geographic_distribution": "Europe",
-                "clinical_significance": "Associated with livestock, particularly poultry",
-                "common_virulence": ["Animal-adapted virulence factors"],
-                "outbreak_potential": "LOW (human), MEDIUM (poultry)",
-                "typical_sccmec": ["IV", "V"],
-                "typical_spa": ["t078", "t1773"],
-                "resistance_profile": ["Methicillin", "Tetracycline"]
+            '94': {
+                "clonal_complex": "CC8",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins", "Phenol-soluble modulins"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
             },
-            '80': {
-                "clonal_complex": "CC80",
-                "classification": "Community-associated MRSA",
-                "geographic_distribution": "Europe, Middle East, Asia",
-                "clinical_significance": "European CA-MRSA clone, often PVL-positive, associated with skin and soft tissue infections",
-                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins"],
-                "outbreak_potential": "HIGH",
-                "typical_sccmec": ["IV", "IVc"],
-                "typical_spa": ["t044", "t131", "t186"],
-                "resistance_profile": ["Methicillin", "Often fusidic acid resistant"]
+            '110': {
+                "clonal_complex": "CC8",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins", "Phenol-soluble modulins"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
             },
-            '88': {
-                "clonal_complex": "CC88",
-                "classification": "Community-associated MRSA",
-                "geographic_distribution": "Africa, Middle East",
-                "clinical_significance": "African clone, emerging in sub-Saharan Africa",
-                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins"],
-                "outbreak_potential": "MEDIUM",
-                "typical_sccmec": ["IV", "V"],
-                "typical_spa": ["t186", "t325"],
-                "resistance_profile": ["Methicillin", "Variable resistance"]
+            '112': {
+                "clonal_complex": "CC8",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins", "Phenol-soluble modulins"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
             },
-            '93': {
-                "clonal_complex": "CC93", 
-                "classification": "Community-associated MRSA", 
-                "geographic_distribution": "Australia, Asia",
-                "clinical_significance": "Queensland clone, often associated with community infections in Australia and Asia",
-                "common_virulence": ["Enterotoxins", "Hemolysins"],
-                "outbreak_potential": "MEDIUM",
-                "typical_sccmec": ["IV", "V"],
-                "typical_spa": ["t202", "t1340"],
-                "resistance_profile": ["Methicillin", "Variable resistance"]
+            '113': {
+                "clonal_complex": "CC8",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins", "Phenol-soluble modulins"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
             },
-            '97': {
-                "clonal_complex": "CC97",
-                "classification": "Livestock-associated MRSA",
-                "geographic_distribution": "Global",
-                "clinical_significance": "Zoonotic transmission from livestock (especially cattle), emerging human infections",
-                "common_virulence": ["Animal-adapted factors", "Some human virulence genes"],
-                "outbreak_potential": "MEDIUM (human), HIGH (livestock)",
-                "typical_sccmec": ["IV", "V"],
-                "typical_spa": ["t267", "t359", "t1730"],
-                "resistance_profile": ["Methicillin", "Tetracycline", "Multi-drug resistant"]
+            '128': {
+                "clonal_complex": "CC8",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins", "Phenol-soluble modulins"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
             },
-            '101': {
-                "clonal_complex": "CC101",
-                "classification": "Community-associated MRSA",
-                "geographic_distribution": "Europe",
-                "clinical_significance": "Emerging community clone in Europe",
-                "common_virulence": ["Enterotoxins", "Hemolysins"],
-                "outbreak_potential": "LOW",
-                "typical_sccmec": ["IV", "V"],
-                "typical_spa": ["t571", "t1274"],
-                "resistance_profile": ["Methicillin", "Variable resistance"]
+            '141': {
+                "clonal_complex": "CC8",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins", "Phenol-soluble modulins"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
             },
-            '105': {
-                "clonal_complex": "CC105",
-                "classification": "Healthcare-associated MRSA",
-                "geographic_distribution": "Middle East, America, Europe, Asia",
-                "clinical_significance": "Emerging in healthcare settings",
-                "common_virulence": ["Enterotoxins", "Hemolysins"],
-                "outbreak_potential": "MEDIUM",
-                "typical_sccmec": ["III", "IV"],
-                "typical_spa": ["t002", "t037"],
-                "resistance_profile": ["Methicillin", "Multi-drug resistant"]
+            '155': {
+                "clonal_complex": "CC8",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins", "Phenol-soluble modulins"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
             },
-            '121': {
-                "clonal_complex": "CC121",
-                "classification": "Community-associated MRSA",
-                "geographic_distribution": "Europe, Global",
-                "clinical_significance": "Often associated with exotoxin production and skin infections",
-                "common_virulence": ["Exfoliative toxins", "Enterotoxins"],
-                "outbreak_potential": "MEDIUM",
-                "typical_sccmec": ["IV", "V"],
-                "typical_spa": ["t159", "t314", "t645"],
-                "resistance_profile": ["Methicillin", "Often fusidic acid resistant"]
+            '157': {
+                "clonal_complex": "CC8",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins", "Phenol-soluble modulins"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
             },
-            '130': {
-                "clonal_complex": "CC130",
-                "classification": "Livestock-associated MRSA",
-                "geographic_distribution": "Europe",
-                "clinical_significance": "Zoonotic transmission from livestock, often mecC-positive (alternative methicillin resistance)",
-                "common_virulence": ["Limited human virulence", "Animal-adapted"],
-                "outbreak_potential": "LOW (human), MEDIUM (livestock)",
-                "typical_sccmec": ["XI (mecC)", "IV"],
-                "typical_spa": ["t843", "t1736"],
-                "resistance_profile": ["Methicillin (mecC)", "Tetracycline"]
-            },
-            '133': {
-                "clonal_complex": "CC133",
-                "classification": "Livestock-associated MRSA",
-                "geographic_distribution": "Europe, Middle East",
-                "clinical_significance": "Associated with ruminants, zoonotic potential",
-                "common_virulence": ["Animal-adapted factors"],
-                "outbreak_potential": "LOW (human), MEDIUM (livestock)",
-                "typical_sccmec": ["IV", "V"],
-                "typical_spa": ["t1166", "t1730"],
-                "resistance_profile": ["Methicillin", "Tetracycline"]
-            },
-            '152': {
-                "clonal_complex": "CC152",
-                "classification": "Community-associated MRSA",
-                "geographic_distribution": "Europe, Middle East, sub-Saharan Africa,",
-                "clinical_significance": "Often PVL-positive, associated with community-acquired infections",
-                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins"],
-                "outbreak_potential": "MEDIUM",
-                "typical_sccmec": ["IV", "V"],
-                "typical_spa": ["t355", "t657"],
-                "resistance_profile": ["Methicillin", "Variable resistance"]
-            },
-            '188': {
-                "clonal_complex": "CC188",
-                "classification": "Community-associated MRSA",
-                "geographic_distribution": "Europe, Middle East",
-                "clinical_significance": "Associated with skin and soft tissue infections",
-                "common_virulence": ["Enterotoxins", "Hemolysins"],
-                "outbreak_potential": "MEDIUM",
-                "typical_sccmec": ["IV", "V"],
-                "typical_spa": ["t189", "t325"],
-                "resistance_profile": ["Methicillin", "Variable resistance"]
+            '158': {
+                "clonal_complex": "CC8",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins", "Phenol-soluble modulins"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
             },
             '239': {
-                "clonal_complex": "CC8/CC30",
+                "clonal_complex": "CC8",
                 "classification": "Healthcare-associated MRSA",
-                "geographic_distribution": "Asia, Brazil",
-                "clinical_significance": "Brazilian/Hungarian epidemic clone, multi-drug resistant hospital strain",
-                "common_virulence": ["Enterotoxins", "Hemolysins", "Biofilm formation"],
+                "geographic_distribution": "Asia (particularly China, Taiwan), Brazil, Eastern Europe",
+                "clinical_significance": "Brazilian/Hungarian epidemic clone, one of the earliest and most successful global MRSA clones with high multi-drug resistance",
+                "common_virulence": ["Enterotoxins", "Hemolysins", "Biofilm formation genes", "Often lacks PVL"],
                 "outbreak_potential": "VERY HIGH",
                 "typical_sccmec": ["III", "IIIA"],
-                "typical_spa": ["t037", "t030"],
-                "resistance_profile": ["Methicillin", "Multi-drug resistant including aminoglycosides"]
+                "typical_spa": ["t037", "t030", "t421"],
+                "resistance_profile": ["Methicillin", "High-level multi-drug resistance including aminoglycosides, fluoroquinolones"]
             },
             '247': {
                 "clonal_complex": "CC8",
@@ -561,9 +768,1354 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["t032", "t022"],
                 "resistance_profile": ["Methicillin", "Variable resistance"]
             },
+            # ==================== CC9 ====================
+            '9': {
+                "clonal_complex": "CC9",
+                "classification": "Livestock-associated MRSA",
+                "geographic_distribution": "Asia, Europe",
+                "clinical_significance": "Zoonotic transmission from livestock, particularly swine, emerging public health concern",
+                "common_virulence": ["Limited virulence arsenal", "Animal-adapted factors"],
+                "outbreak_potential": "HIGH (agricultural settings)",
+                "typical_sccmec": ["IV", "V"],
+                "typical_spa": ["t899", "t337"],
+                "resistance_profile": ["Methicillin", "Tetracycline", "Multi-drug resistance common"]
+            },
+            # ==================== CC10 ====================
+            '10': {
+                "clonal_complex": "CC81",
+                "classification": "Community-associated MRSA",
+                "geographic_distribution": "Global, Eastern Asia",
+                "clinical_significance": "Diverse lineage with both community and healthcare associations",
+                "common_virulence": ["Variable virulence factors", "Enterotoxins"],
+                "outbreak_potential": "MEDIUM",
+                "typical_sccmec": ["IV", "V"],
+                "typical_spa": ["t021", "t045"],
+                "resistance_profile": ["Variable resistance patterns"]
+            },
+            # ==================== CC12 ====================
+            '12': {
+                "clonal_complex": "CC12",
+                "classification": "Healthcare-associated MRSA",
+                "geographic_distribution": "Europe, North America",
+                "clinical_significance": "Includes EMRSA-12 clone, associated with hospital outbreaks",
+                "common_virulence": ["Enterotoxins", "Hemolysins"],
+                "outbreak_potential": "HIGH",
+                "typical_sccmec": ["II", "IV"],
+                "typical_spa": ["t032", "t037"],
+                "resistance_profile": ["Methicillin", "Multi-drug resistance"]
+            },
+            # ==================== CC13 ====================
+            '13': {
+                "clonal_complex": "CC13",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation; associated with specific geographic regions",
+                "common_virulence": ["Variable virulence factors"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            # ==================== CC14 ====================
+            '14': {
+                "clonal_complex": "CC15",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation; CC15 is common MSSA lineage",
+                "common_virulence": ["Enterotoxins", "Hemolysins"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            # ==================== CC15 ====================
+            '15': {
+                "clonal_complex": "CC15",
+                "classification": "Community-associated MRSA",
+                "geographic_distribution": "Global",
+                "clinical_significance": "Common MSSA lineage, can acquire SCCmec to become MRSA; often community-associated",
+                "common_virulence": ["Enterotoxins", "Hemolysins"],
+                "outbreak_potential": "MEDIUM",
+                "typical_sccmec": ["IV", "V"],
+                "typical_spa": ["t084", "t085"],
+                "resistance_profile": ["Variable, often MSSA"]
+            },
+            '16': {
+                "clonal_complex": "CC15",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Enterotoxins", "Hemolysins"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            '18': {
+                "clonal_complex": "CC15",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Enterotoxins", "Hemolysins"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            '35': {
+                "clonal_complex": "CC15",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Enterotoxins", "Hemolysins"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            '56': {
+                "clonal_complex": "CC15",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Enterotoxins", "Hemolysins"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            '58': {
+                "clonal_complex": "CC15",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Enterotoxins", "Hemolysins"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            '61': {
+                "clonal_complex": "CC15",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Enterotoxins", "Hemolysins"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            '582': {
+                "clonal_complex": "CC15",
+                "classification": "Community-associated MRSA",
+                "geographic_distribution": "Southeast Asia",
+                "clinical_significance": "Emerging community clone in Southeast Asia, often PVL-positive",
+                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins"],
+                "outbreak_potential": "MEDIUM",
+                "typical_sccmec": ["IV", "V"],
+                "typical_spa": ["t657", "t324"],
+                "resistance_profile": ["Methicillin", "Variable resistance"]
+            },
+            # ==================== CC17 ====================
+            '17': {
+                "clonal_complex": "CC30",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation; CC30 lineage often PVL-positive",
+                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins", "Hemolysins"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            # ==================== CC19 ====================
+            '19': {
+                "clonal_complex": "CC30",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins", "Hemolysins"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            # ==================== CC20 ====================
+            '20': {
+                "clonal_complex": "CC20",
+                "classification": "Healthcare-associated MRSA",
+                "geographic_distribution": "Europe, Middle East",
+                "clinical_significance": "Associated with hospital-acquired infections and device-related infections",
+                "common_virulence": ["Enterotoxins", "Biofilm formation genes"],
+                "outbreak_potential": "MEDIUM",
+                "typical_sccmec": ["II", "IV"],
+                "typical_spa": ["t164", "t021"],
+                "resistance_profile": ["Methicillin", "Aminoglycosides"]
+            },
+            # ==================== CC21 ====================
+            '21': {
+                "clonal_complex": "CC22",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation; CC22 includes EMRSA-15",
+                "common_virulence": ["Enterotoxins", "Immune evasion cluster", "Hemolysins"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            # ==================== CC22 ====================
+            '22': {
+                "clonal_complex": "CC22",
+                "classification": "Healthcare-associated MRSA",
+                "geographic_distribution": "Europe, Middle East, Global",
+                "clinical_significance": "Epidemic MRSA-15 (EMRSA-15), major healthcare clone with high transmission in hospital settings",
+                "common_virulence": ["Enterotoxins", "Immune evasion cluster", "Hemolysins"],
+                "outbreak_potential": "VERY HIGH",
+                "typical_sccmec": ["IV", "IVh", "IVa", "IVc", "IVd", "Vb"],
+                "typical_spa": ["t032", "t022", "t005", "t852"],
+                "resistance_profile": ["Methicillin", "Multiple drug classes", "Often gentamicin resistant"]
+            },
+            '23': {
+                "clonal_complex": "CC22",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Enterotoxins", "Immune evasion cluster", "Hemolysins"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            '44': {
+                "clonal_complex": "CC22",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Enterotoxins", "Immune evasion cluster", "Hemolysins"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            '60': {
+                "clonal_complex": "CC22",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Enterotoxins", "Immune evasion cluster", "Hemolysins"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            '79': {
+                "clonal_complex": "CC22",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Enterotoxins", "Immune evasion cluster", "Hemolysins"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            '134': {
+                "clonal_complex": "CC22",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Enterotoxins", "Immune evasion cluster", "Hemolysins"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            '137': {
+                "clonal_complex": "CC22",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Enterotoxins", "Immune evasion cluster", "Hemolysins"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            # ==================== CC24 ====================
+            '24': {
+                "clonal_complex": "CC30",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins", "Hemolysins"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            # ==================== CC25 ====================
+            '25': {
+                "clonal_complex": "CC25",
+                "classification": "Livestock-associated MRSA",
+                "geographic_distribution": "Europe",
+                "clinical_significance": "Associated with bovine mastitis, zoonotic potential",
+                "common_virulence": ["Bovine-adapted factors", "Limited human virulence"],
+                "outbreak_potential": "LOW (human), MEDIUM (bovine)",
+                "typical_sccmec": ["IV", "V"],
+                "typical_spa": ["t078", "t387"],
+                "resistance_profile": ["Methicillin", "Penicillin", "Tetracycline"]
+            },
+            # ==================== CC26 ====================
+            '26': {
+                "clonal_complex": "CC26",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Variable virulence factors"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            # ==================== CC28 ====================
+            '28': {
+                "clonal_complex": "CC28",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Variable virulence factors"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            # ==================== CC29 ====================
+            '29': {
+                "clonal_complex": "CC121",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation; CC121 often associated with exotoxin production",
+                "common_virulence": ["Exfoliative toxins", "Enterotoxins"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            # ==================== CC30 ====================
+            '30': {
+                "clonal_complex": "CC30",
+                "classification": "Healthcare and Community-associated",
+                "geographic_distribution": "Global",
+                "clinical_significance": "Includes EMRSA-16 and Southwest Pacific clone, often PVL-positive, associated with both hospital and community settings",
+                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins", "Hemolysins"],
+                "outbreak_potential": "HIGH",
+                "typical_sccmec": ["IV", "IVc"],
+                "typical_spa": ["t019", "t021", "t318", "t018"],
+                "resistance_profile": ["Methicillin", "Variable resistance patterns"]
+            },
+            '31': {
+                "clonal_complex": "CC30",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins", "Hemolysins"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            '32': {
+                "clonal_complex": "CC30",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins", "Hemolysins"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            '33': {
+                "clonal_complex": "CC30",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins", "Hemolysins"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            '34': {
+                "clonal_complex": "CC30",
+                "classification": "Community and Healthcare-associated MRSA",
+                "geographic_distribution": "Asia-Pacific, Australia (Southwest Pacific clone)",
+                "clinical_significance": "Southwest Pacific (SWP) clone, often PVL-positive, circulating in both community and hospital settings",
+                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins", "Hemolysins"],
+                "outbreak_potential": "HIGH",
+                "typical_sccmec": ["IV"],
+                "typical_spa": ["t019", "t318", "t021"],
+                "resistance_profile": ["Methicillin", "Variable resistance patterns"]
+            },
+            '36': {
+                "clonal_complex": "CC30",
+                "classification": "Healthcare-associated MRSA",
+                "geographic_distribution": "Middle East, Asia, Europe",
+                "clinical_significance": "Emerging clone in Middle Eastern hospitals",
+                "common_virulence": ["Enterotoxins", "Hemolysins"],
+                "outbreak_potential": "MEDIUM",
+                "typical_sccmec": ["III", "II", "IV"],
+                "typical_spa": ["t032", "t037"],
+                "resistance_profile": ["Methicillin", "Multi-drug resistant"]
+            },
+            '37': {
+                "clonal_complex": "CC30",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins", "Hemolysins"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            '38': {
+                "clonal_complex": "CC30",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins", "Hemolysins"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            '39': {
+                "clonal_complex": "CC30",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins", "Hemolysins"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            '40': {
+                "clonal_complex": "CC30",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins", "Hemolysins"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            '41': {
+                "clonal_complex": "CC30",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins", "Hemolysins"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            '43': {
+                "clonal_complex": "CC30",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins", "Hemolysins"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            '52': {
+                "clonal_complex": "CC30",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins", "Hemolysins"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            '57': {
+                "clonal_complex": "CC30",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins", "Hemolysins"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            '74': {
+                "clonal_complex": "CC30",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins", "Hemolysins"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            '77': {
+                "clonal_complex": "CC30",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins", "Hemolysins"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            # ==================== CC42 ====================
+            '42': {
+                "clonal_complex": "CC42",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Variable virulence factors"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            # ==================== CC45 ====================
+            '45': {
+                "clonal_complex": "CC45",
+                "classification": "Community and Healthcare-associated",
+                "geographic_distribution": "Europe, North America",
+                "clinical_significance": "Includes USA600 clone, often associated with both community and healthcare settings",
+                "common_virulence": ["Enterotoxins", "Hemolysins", "Immune evasion genes"],
+                "outbreak_potential": "MEDIUM",
+                "typical_sccmec": ["IV", "II"],
+                "typical_spa": ["t015", "t026", "t038"],
+                "resistance_profile": ["Methicillin", "Variable resistance"]
+            },
+            '46': {
+                "clonal_complex": "CC45",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Enterotoxins", "Hemolysins", "Immune evasion genes"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            '47': {
+                "clonal_complex": "CC45",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Enterotoxins", "Hemolysins", "Immune evasion genes"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            '48': {
+                "clonal_complex": "CC45",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Enterotoxins", "Hemolysins", "Immune evasion genes"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            '53': {
+                "clonal_complex": "CC45",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Enterotoxins", "Hemolysins", "Immune evasion genes"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            '54': {
+                "clonal_complex": "CC45",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Enterotoxins", "Hemolysins", "Immune evasion genes"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            '108': {
+                "clonal_complex": "CC45",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Enterotoxins", "Hemolysins", "Immune evasion genes"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            '122': {
+                "clonal_complex": "CC45",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Enterotoxins", "Hemolysins", "Immune evasion genes"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            # ==================== CC49 ====================
+            '49': {
+                "clonal_complex": "CC49",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Variable virulence factors"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            # ==================== CC50 ====================
+            '50': {
+                "clonal_complex": "CC50",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Variable virulence factors"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            # ==================== CC51 ====================
+            '51': {
+                "clonal_complex": "CC121",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Exfoliative toxins", "Enterotoxins"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            # ==================== CC55 ====================
+            '55': {
+                "clonal_complex": "CC55",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Variable virulence factors"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            # ==================== CC59 ====================
+            '59': {
+                "clonal_complex": "CC59",
+                "classification": "Community-associated MRSA",
+                "geographic_distribution": "Asia-Pacific, Taiwan, USA",
+                "clinical_significance": "Taiwan clone/ST59, highly virulent community clone in Asia and USA",
+                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins", "Hemolysins"],
+                "outbreak_potential": "HIGH",
+                "typical_sccmec": ["IV", "V"],
+                "typical_spa": ["t437", "t441", "t163"],
+                "resistance_profile": ["Methicillin", "Multi-drug resistant"]
+            },
+            '338': {
+                "clonal_complex": "CC59",
+                "classification": "Community-associated MRSA",
+                "geographic_distribution": "Asia (China, Japan, Taiwan)",
+                "clinical_significance": "Common CA-MRSA clone in East Asia, often PVL-positive",
+                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins"],
+                "outbreak_potential": "HIGH",
+                "typical_sccmec": ["IV", "V"],
+                "typical_spa": ["t437", "t163"],
+                "resistance_profile": ["Methicillin", "Often fluoroquinolone resistant"]
+            },
+            # ==================== CC64 ====================
+            '64': {
+                "clonal_complex": "CC64",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Variable virulence factors"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            # ==================== CC65 ====================
+            '65': {
+                "clonal_complex": "CC65",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Variable virulence factors"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            # ==================== CC66 ====================
+            '66': {
+                "clonal_complex": "CC66",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Variable virulence factors"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            # ==================== CC67 ====================
+            '67': {
+                "clonal_complex": "CC67",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Variable virulence factors"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            # ==================== CC68 ====================
+            '68': {
+                "clonal_complex": "CC68",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Variable virulence factors"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            # ==================== CC70-71 ====================
+            '70': {
+                "clonal_complex": "CC97",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation; CC97 is livestock-associated",
+                "common_virulence": ["Animal-adapted factors", "Some human virulence genes"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            '71': {
+                "clonal_complex": "CC97",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Animal-adapted factors", "Some human virulence genes"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            # ==================== CC78 ====================
+            '78': {
+                "clonal_complex": "CC88",
+                "classification": "Livestock-associated MRSA",
+                "geographic_distribution": "Europe",
+                "clinical_significance": "Associated with livestock, particularly poultry",
+                "common_virulence": ["Animal-adapted virulence factors"],
+                "outbreak_potential": "LOW (human), MEDIUM (poultry)",
+                "typical_sccmec": ["IV", "V"],
+                "typical_spa": ["t078", "t1773"],
+                "resistance_profile": ["Methicillin", "Tetracycline"]
+            },
+            # ==================== CC80 ====================
+            '80': {
+                "clonal_complex": "CC80",
+                "classification": "Community-associated MRSA",
+                "geographic_distribution": "Europe, Middle East, Asia",
+                "clinical_significance": "European CA-MRSA clone, often PVL-positive, associated with skin and soft tissue infections",
+                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins"],
+                "outbreak_potential": "HIGH",
+                "typical_sccmec": ["IV", "IVc"],
+                "typical_spa": ["t044", "t131", "t186"],
+                "resistance_profile": ["Methicillin", "Often fusidic acid resistant"]
+            },
+            # ==================== CC82 ====================
+            '82': {
+                "clonal_complex": "CC82",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Variable virulence factors"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            # ==================== CC84 ====================
+            '84': {
+                "clonal_complex": "CC84",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Variable virulence factors"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            # ==================== CC87 ====================
+            '87': {
+                "clonal_complex": "CC87",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Variable virulence factors"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            # ==================== CC88 ====================
+            '88': {
+                "clonal_complex": "CC88",
+                "classification": "Community-associated MRSA",
+                "geographic_distribution": "Africa, Middle East",
+                "clinical_significance": "African clone, emerging in sub-Saharan Africa",
+                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins"],
+                "outbreak_potential": "MEDIUM",
+                "typical_sccmec": ["IV", "V"],
+                "typical_spa": ["t186", "t325"],
+                "resistance_profile": ["Methicillin", "Variable resistance"]
+            },
+            # ==================== CC89 ====================
+            '89': {
+                "clonal_complex": "CC89",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Variable virulence factors"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            # ==================== CC91 ====================
+            '91': {
+                "clonal_complex": "CC91",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Variable virulence factors"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            # ==================== CC92 ====================
+            '92': {
+                "clonal_complex": "CC92",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Variable virulence factors"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            # ==================== CC93 ====================
+            '93': {
+                "clonal_complex": "CC93",
+                "classification": "Community-associated MRSA",
+                "geographic_distribution": "Australia, Asia",
+                "clinical_significance": "Queensland clone, often associated with community infections in Australia and Asia",
+                "common_virulence": ["Enterotoxins", "Hemolysins"],
+                "outbreak_potential": "MEDIUM",
+                "typical_sccmec": ["IV", "V"],
+                "typical_spa": ["t202", "t1340"],
+                "resistance_profile": ["Methicillin", "Variable resistance"]
+            },
+            # ==================== CC95 ====================
+            '95': {
+                "clonal_complex": "CC121",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Exfoliative toxins", "Enterotoxins"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            # ==================== CC96 ====================
+            '96': {
+                "clonal_complex": "CC96",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Variable virulence factors"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            # ==================== CC97 ====================
+            '97': {
+                "clonal_complex": "CC97",
+                "classification": "Livestock-associated MRSA",
+                "geographic_distribution": "Global",
+                "clinical_significance": "Zoonotic transmission from livestock (especially cattle), emerging human infections",
+                "common_virulence": ["Animal-adapted factors", "Some human virulence genes"],
+                "outbreak_potential": "MEDIUM (human), HIGH (livestock)",
+                "typical_sccmec": ["IV", "V"],
+                "typical_spa": ["t267", "t359", "t1730"],
+                "resistance_profile": ["Methicillin", "Tetracycline", "Multi-drug resistant"]
+            },
+            '115': {
+                "clonal_complex": "CC97",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Animal-adapted factors", "Some human virulence genes"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            '116': {
+                "clonal_complex": "CC97",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Animal-adapted factors", "Some human virulence genes"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            '117': {
+                "clonal_complex": "CC97",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Animal-adapted factors", "Some human virulence genes"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            '118': {
+                "clonal_complex": "CC97",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Animal-adapted factors", "Some human virulence genes"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            '119': {
+                "clonal_complex": "CC97",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Animal-adapted factors", "Some human virulence genes"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            '124': {
+                "clonal_complex": "CC97",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Animal-adapted factors", "Some human virulence genes"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            '126': {
+                "clonal_complex": "CC97",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Animal-adapted factors", "Some human virulence genes"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            '127': {
+                "clonal_complex": "CC97",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Animal-adapted factors", "Some human virulence genes"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            # ==================== CC101 ====================
+            '101': {
+                "clonal_complex": "CC101",
+                "classification": "Community-associated MRSA",
+                "geographic_distribution": "Europe",
+                "clinical_significance": "Emerging community clone in Europe",
+                "common_virulence": ["Enterotoxins", "Hemolysins"],
+                "outbreak_potential": "LOW",
+                "typical_sccmec": ["IV", "V"],
+                "typical_spa": ["t571", "t1274"],
+                "resistance_profile": ["Methicillin", "Variable resistance"]
+            },
+            # ==================== CC102 ====================
+            '102': {
+                "clonal_complex": "CC102",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Variable virulence factors"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            # ==================== CC103 ====================
+            '103': {
+                "clonal_complex": "CC103",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Variable virulence factors"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            # ==================== CC104 ====================
+            '104': {
+                "clonal_complex": "CC104",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Variable virulence factors"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            # ==================== CC106 ====================
+            '106': {
+                "clonal_complex": "CC106",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Variable virulence factors"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            # ==================== CC107 ====================
+            '107': {
+                "clonal_complex": "CC107",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Variable virulence factors"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            # ==================== CC121 ====================
+            '121': {
+                "clonal_complex": "CC121",
+                "classification": "Community-associated MRSA",
+                "geographic_distribution": "Europe, Global",
+                "clinical_significance": "Often associated with exotoxin production and skin infections",
+                "common_virulence": ["Exfoliative toxins", "Enterotoxins"],
+                "outbreak_potential": "MEDIUM",
+                "typical_sccmec": ["IV", "V"],
+                "typical_spa": ["t159", "t314", "t645"],
+                "resistance_profile": ["Methicillin", "Often fusidic acid resistant"]
+            },
+            '120': {
+                "clonal_complex": "CC121",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Exfoliative toxins", "Enterotoxins"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            '123': {
+                "clonal_complex": "CC121",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Exfoliative toxins", "Enterotoxins"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            '160': {
+                "clonal_complex": "CC121",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Exfoliative toxins", "Enterotoxins"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            # ==================== CC129 ====================
+            '129': {
+                "clonal_complex": "CC129",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Variable virulence factors"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            # ==================== CC130 ====================
+            '130': {
+                "clonal_complex": "CC130",
+                "classification": "Livestock-associated MRSA",
+                "geographic_distribution": "Europe",
+                "clinical_significance": "Zoonotic transmission from livestock, often mecC-positive (alternative methicillin resistance)",
+                "common_virulence": ["Limited human virulence", "Animal-adapted"],
+                "outbreak_potential": "LOW (human), MEDIUM (livestock)",
+                "typical_sccmec": ["XI (mecC)", "IV"],
+                "typical_spa": ["t843", "t1736"],
+                "resistance_profile": ["Methicillin (mecC)", "Tetracycline"]
+            },
+            # ==================== CC131 ====================
+            '131': {
+                "clonal_complex": "CC131",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Variable virulence factors"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            # ==================== CC132 ====================
+            '132': {
+                "clonal_complex": "CC132",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Variable virulence factors"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            # ==================== CC133 ====================
+            '133': {
+                "clonal_complex": "CC133",
+                "classification": "Livestock-associated MRSA",
+                "geographic_distribution": "Europe, Middle East",
+                "clinical_significance": "Associated with ruminants, zoonotic potential",
+                "common_virulence": ["Animal-adapted factors"],
+                "outbreak_potential": "LOW (human), MEDIUM (livestock)",
+                "typical_sccmec": ["IV", "V"],
+                "typical_spa": ["t1166", "t1730"],
+                "resistance_profile": ["Methicillin", "Tetracycline"]
+            },
+            # ==================== CC136 ====================
+            '136': {
+                "clonal_complex": "CC136",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Variable virulence factors"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            # ==================== CC138 ====================
+            '138': {
+                "clonal_complex": "CC138",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Variable virulence factors"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            # ==================== CC139 ====================
+            '139': {
+                "clonal_complex": "CC139",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Variable virulence factors"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            # ==================== CC140 ====================
+            '140': {
+                "clonal_complex": "CC140",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Variable virulence factors"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            # ==================== CC144 ====================
+            '144': {
+                "clonal_complex": "CC144",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Variable virulence factors"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            # ==================== CC145 ====================
+            '145': {
+                "clonal_complex": "CC145",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Variable virulence factors"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            # ==================== CC150 ====================
+            '150': {
+                "clonal_complex": "CC150",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Variable virulence factors"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            # ==================== CC151 ====================
+            '151': {
+                "clonal_complex": "CC151",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Variable virulence factors"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            # ==================== CC152 ====================
+            '152': {
+                "clonal_complex": "CC152",
+                "classification": "Community-associated MRSA",
+                "geographic_distribution": "Europe, Middle East, sub-Saharan Africa",
+                "clinical_significance": "Often PVL-positive, associated with community-acquired infections",
+                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins"],
+                "outbreak_potential": "MEDIUM",
+                "typical_sccmec": ["IV", "V"],
+                "typical_spa": ["t355", "t657"],
+                "resistance_profile": ["Methicillin", "Variable resistance"]
+            },
+            # ==================== CC153 ====================
+            '153': {
+                "clonal_complex": "CC153",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Variable virulence factors"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            # ==================== CC154 ====================
+            '154': {
+                "clonal_complex": "CC154",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Variable virulence factors"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            # ==================== CC156 ====================
+            '156': {
+                "clonal_complex": "CC156",
+                "classification": "Rare lineage",
+                "geographic_distribution": "Variable",
+                "clinical_significance": "Limited documentation",
+                "common_virulence": ["Variable virulence factors"],
+                "outbreak_potential": "Unknown",
+                "typical_sccmec": ["Variable"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Variable"]
+            },
+            # ==================== CC352 ====================
+            '352': {
+                "clonal_complex": "CC352",
+                "classification": "Community-associated MRSA",
+                "geographic_distribution": "Europe, South America",
+                "clinical_significance": "Emerging community clone, often associated with skin infections",
+                "common_virulence": ["Enterotoxins", "Hemolysins"],
+                "outbreak_potential": "MEDIUM",
+                "typical_sccmec": ["IV", "V"],
+                "typical_spa": ["t1048", "t2370"],
+                "resistance_profile": ["Methicillin", "Variable resistance"]
+            },
+            # ==================== CC398 ====================
             '398': {
-                "clonal_complex": "CC398", 
-                "classification": "Livestock-associated MRSA", 
+                "clonal_complex": "CC398",
+                "classification": "Livestock-associated MRSA",
                 "geographic_distribution": "Global",
                 "clinical_significance": "Zoonotic transmission from livestock, emerging public health concern with human infections",
                 "common_virulence": ["Limited virulence arsenal", "Adapted to animal hosts"],
@@ -572,6 +2124,7 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["t011", "t034", "t108"],
                 "resistance_profile": ["Methicillin", "Tetracycline", "Often multidrug-resistant"]
             },
+            # ==================== CC425 ====================
             '425': {
                 "clonal_complex": "CC425",
                 "classification": "Livestock-associated MRSA",
@@ -583,1505 +2136,20 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["t2245", "t1730"],
                 "resistance_profile": ["Methicillin", "Tetracycline"]
             },
-            '582': {
-                "clonal_complex": "CC15",
+            # ==================== CC672 ====================
+            '672': {
+                "clonal_complex": "CC672",
                 "classification": "Community-associated MRSA",
-                "geographic_distribution": "Southeast Asia",
-                "clinical_significance": "Emerging community clone in Southeast Asia",
+                "geographic_distribution": "India, Middle East",
+                "clinical_significance": "Emerging CA-MRSA clone in the Indian subcontinent, often multidrug-resistant",
                 "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins"],
                 "outbreak_potential": "MEDIUM",
                 "typical_sccmec": ["IV", "V"],
-                "typical_spa": ["t657", "t324"],
-                "resistance_profile": ["Methicillin", "Variable resistance"]
-            },
-            '772': {
-                "clonal_complex": "CC1",
-                "classification": "Healthcare-associated MRSA",
-                "geographic_distribution": "Middle East",
-                "clinical_significance": "Emerging in Middle Eastern hospitals",
-                "common_virulence": ["Enterotoxins", "Hemolysins"],
-                "outbreak_potential": "MEDIUM",
-                "typical_sccmec": ["III", "IV"],
-                "typical_spa": ["t044", "t037"],
+                "typical_spa": ["t664", "t3092"],
                 "resistance_profile": ["Methicillin", "Multi-drug resistant"]
-            },   
-            '3': {
-                "clonal_complex": "CC3",
-                "classification": "Healthcare-associated MRSA",
-                "geographic_distribution": "Europe, UK (prevalent), Australia",
-                "clinical_significance": "EMRSA-3 (Epidemic MRSA-3), major hospital-acquired clone in the UK during 1990s, often associated with surgical site infections and bacteremia",
-                "common_virulence": ["Enterotoxins", "Hemolysins", "Immune evasion cluster (scn, sak, chp)"],
-                "outbreak_potential": "HIGH (historical epidemic)",
-                "typical_sccmec": ["III"],
-                "typical_spa": ["t037", "t045"],
-                "resistance_profile": ["Methicillin", "Multi-drug resistant including aminoglycosides"]
             },
-            '4': {
-                "clonal_complex": "CC45",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation; CC45 typically includes USA600 clone with both community and healthcare associations",
-                "common_virulence": ["Enterotoxins", "Hemolysins", "Immune evasion genes (typical of CC45)"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '11': {
-                "clonal_complex": "CC5",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation; CC5 lineage often healthcare-associated with extensive virulence arsenal",
-                "common_virulence": ["Enterotoxins (SEC, SEL, SEU)", "Immune evasion cluster", "Hemolysins", "Proteases"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '13': {
-                "clonal_complex": "CC13",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation; associated with specific geographic regions",
-                "common_virulence": ["Variable virulence factors"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '14': {
-                "clonal_complex": "CC15",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation; CC15 is common MSSA lineage that can acquire SCCmec",
-                "common_virulence": ["Enterotoxins", "Hemolysins", "Typical CC15 virulence factors"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '16': {
-                "clonal_complex": "CC15",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Enterotoxins", "Hemolysins"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '17': {
-                "clonal_complex": "CC30",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation; CC30 lineage often PVL-positive with both hospital and community associations",
-                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins", "Hemolysins"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '18': {
-                "clonal_complex": "CC15",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Enterotoxins", "Hemolysins"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '19': {
-                "clonal_complex": "CC30",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins", "Hemolysins"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '21': {
-                "clonal_complex": "CC22",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation; CC22 includes EMRSA-15 with high hospital transmission",
-                "common_virulence": ["Enterotoxins", "Immune evasion cluster", "Hemolysins"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '23': {
-                "clonal_complex": "CC22",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Enterotoxins", "Immune evasion cluster", "Hemolysins"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '24': {
-                "clonal_complex": "CC30",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins", "Hemolysins"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '26': {
-                "clonal_complex": "CC26",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Variable virulence factors"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '27': {
-                "clonal_complex": "CC8",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation; CC8 includes pandemic USA300 clone with high virulence",
-                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins", "Phenol-soluble modulins"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '28': {
-                "clonal_complex": "CC28",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Variable virulence factors"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '29': {
-                "clonal_complex": "CC121",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation; CC121 often associated with exotoxin production",
-                "common_virulence": ["Exfoliative toxins", "Enterotoxins"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '31': {
-                "clonal_complex": "CC30",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins", "Hemolysins"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '32': {
-                "clonal_complex": "CC30",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins", "Hemolysins"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '33': {
-                "clonal_complex": "CC30",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins", "Hemolysins"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '34': {
-                "clonal_complex": "CC30",
-                "classification": "Community and Healthcare-associated MRSA",
-                "geographic_distribution": "Asia-Pacific, Australia (Southwest Pacific clone)",
-                "clinical_significance": "Southwest Pacific (SWP) clone, often PVL-positive, circulating in both community and hospital settings with significant transmissibility",
-                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins", "Hemolysins"],
-                "outbreak_potential": "HIGH",
-                "typical_sccmec": ["IV"],
-                "typical_spa": ["t019", "t318", "t021"],
-                "resistance_profile": ["Methicillin", "Variable resistance patterns"]
-            },
-            '35': {
-                "clonal_complex": "CC15",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Enterotoxins", "Hemolysins"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '37': {
-                "clonal_complex": "CC30",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins", "Hemolysins"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '38': {
-                "clonal_complex": "CC30",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins", "Hemolysins"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '39': {
-                "clonal_complex": "CC30",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins", "Hemolysins"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '40': {
-                "clonal_complex": "CC30",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins", "Hemolysins"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '41': {
-                "clonal_complex": "CC30",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins", "Hemolysins"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '42': {
-                "clonal_complex": "CC42",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Variable virulence factors"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '43': {
-                "clonal_complex": "CC30",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins", "Hemolysins"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '44': {
-                "clonal_complex": "CC22",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Enterotoxins", "Immune evasion cluster", "Hemolysins"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '46': {
-                "clonal_complex": "CC45",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Enterotoxins", "Hemolysins", "Immune evasion genes"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '47': {
-                "clonal_complex": "CC45",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Enterotoxins", "Hemolysins", "Immune evasion genes"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '48': {
-                "clonal_complex": "CC45",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Enterotoxins", "Hemolysins", "Immune evasion genes"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '49': {
-                "clonal_complex": "CC49",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Variable virulence factors"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '50': {
-                "clonal_complex": "CC50",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Variable virulence factors"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '51': {
-                "clonal_complex": "CC121",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Exfoliative toxins", "Enterotoxins"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '52': {
-                "clonal_complex": "CC30",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins", "Hemolysins"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '53': {
-                "clonal_complex": "CC45",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Enterotoxins", "Hemolysins", "Immune evasion genes"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '54': {
-                "clonal_complex": "CC45",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Enterotoxins", "Hemolysins", "Immune evasion genes"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '55': {
-                "clonal_complex": "CC55",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Variable virulence factors"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '56': {
-                "clonal_complex": "CC15",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Enterotoxins", "Hemolysins"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '57': {
-                "clonal_complex": "CC30",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins", "Hemolysins"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '58': {
-                "clonal_complex": "CC15",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Enterotoxins", "Hemolysins"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '60': {
-                "clonal_complex": "CC22",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Enterotoxins", "Immune evasion cluster", "Hemolysins"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '61': {
-                "clonal_complex": "CC15",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Enterotoxins", "Hemolysins"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '62': {
-                "clonal_complex": "CC121",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Exfoliative toxins", "Enterotoxins"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '63': {
-                "clonal_complex": "CC1",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation; CC1 includes USA400 clone often PVL-positive",
-                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins SEH/SEK", "Hemolysins"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '64': {
-                "clonal_complex": "CC64",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Variable virulence factors"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '65': {
-                "clonal_complex": "CC65",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Variable virulence factors"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '66': {
-                "clonal_complex": "CC66",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Variable virulence factors"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '67': {
-                "clonal_complex": "CC67",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Variable virulence factors"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '68': {
-                "clonal_complex": "CC68",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Variable virulence factors"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '69': {
-                "clonal_complex": "CC1",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins SEH/SEK", "Hemolysins"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '70': {
-                "clonal_complex": "CC97",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation; CC97 is livestock-associated with zoonotic potential",
-                "common_virulence": ["Animal-adapted factors", "Some human virulence genes"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '71': {
-                "clonal_complex": "CC97",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Animal-adapted factors", "Some human virulence genes"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '73': {
-                "clonal_complex": "CC5",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Enterotoxins (SEC, SEL, SEU)", "Immune evasion cluster", "Hemolysins"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '74': {
-                "clonal_complex": "CC30",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins", "Hemolysins"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '76': {
-                "clonal_complex": "CC1",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins SEH/SEK", "Hemolysins"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '77': {
-                "clonal_complex": "CC30",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins", "Hemolysins"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '79': {
-                "clonal_complex": "CC22",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Enterotoxins", "Immune evasion cluster", "Hemolysins"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '81': {
-                "clonal_complex": "CC1",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins SEH/SEK", "Hemolysins"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '82': {
-                "clonal_complex": "CC82",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Variable virulence factors"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '83': {
-                "clonal_complex": "CC5",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Enterotoxins (SEC, SEL, SEU)", "Immune evasion cluster", "Hemolysins"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '84': {
-                "clonal_complex": "CC84",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Variable virulence factors"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '85': {
-                "clonal_complex": "CC5",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Enterotoxins (SEC, SEL, SEU)", "Immune evasion cluster", "Hemolysins"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '86': {
-                "clonal_complex": "CC8",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins", "Phenol-soluble modulins"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '87': {
-                "clonal_complex": "CC87",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Variable virulence factors"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '89': {
-                "clonal_complex": "CC89",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Variable virulence factors"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '90': {
-                "clonal_complex": "CC5",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Enterotoxins (SEC, SEL, SEU)", "Immune evasion cluster", "Hemolysins"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '91': {
-                "clonal_complex": "CC91",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Variable virulence factors"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '92': {
-                "clonal_complex": "CC92",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Variable virulence factors"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '94': {
-                "clonal_complex": "CC8",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins", "Phenol-soluble modulins"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '95': {
-                "clonal_complex": "CC121",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Exfoliative toxins", "Enterotoxins"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '96': {
-                "clonal_complex": "CC96",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Variable virulence factors"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '98': {
-                "clonal_complex": "CC5",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Enterotoxins (SEC, SEL, SEU)", "Immune evasion cluster", "Hemolysins"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '99': {
-                "clonal_complex": "CC5",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Enterotoxins (SEC, SEL, SEU)", "Immune evasion cluster", "Hemolysins"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '100': {
-                "clonal_complex": "CC5",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Enterotoxins (SEC, SEL, SEU)", "Immune evasion cluster", "Hemolysins"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '102': {
-                "clonal_complex": "CC102",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Variable virulence factors"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '103': {
-                "clonal_complex": "CC103",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Variable virulence factors"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '104': {
-                "clonal_complex": "CC104",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Variable virulence factors"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '106': {
-                "clonal_complex": "CC106",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Variable virulence factors"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '107': {
-                "clonal_complex": "CC107",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Variable virulence factors"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '108': {
-                "clonal_complex": "CC45",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Enterotoxins", "Hemolysins", "Immune evasion genes"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '109': {
-                "clonal_complex": "CC1",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins SEH/SEK", "Hemolysins"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '110': {
-                "clonal_complex": "CC8",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins", "Phenol-soluble modulins"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '111': {
-                "clonal_complex": "CC5",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Enterotoxins (SEC, SEL, SEU)", "Immune evasion cluster", "Hemolysins"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '112': {
-                "clonal_complex": "CC8",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins", "Phenol-soluble modulins"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '113': {
-                "clonal_complex": "CC8",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins", "Phenol-soluble modulins"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '114': {
-                "clonal_complex": "CC5",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Enterotoxins (SEC, SEL, SEU)", "Immune evasion cluster", "Hemolysins"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '115': {
-                "clonal_complex": "CC97",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Animal-adapted factors", "Some human virulence genes"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '116': {
-                "clonal_complex": "CC97",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Animal-adapted factors", "Some human virulence genes"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '117': {
-                "clonal_complex": "CC97",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Animal-adapted factors", "Some human virulence genes"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '118': {
-                "clonal_complex": "CC97",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Animal-adapted factors", "Some human virulence genes"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '119': {
-                "clonal_complex": "CC97",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Animal-adapted factors", "Some human virulence genes"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '120': {
-                "clonal_complex": "CC121",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Exfoliative toxins", "Enterotoxins"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            # Continuing with ST122-200...
-            '122': {
-                "clonal_complex": "CC45",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Enterotoxins", "Hemolysins", "Immune evasion genes"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '123': {
-                "clonal_complex": "CC121",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Exfoliative toxins", "Enterotoxins"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '124': {
-                "clonal_complex": "CC97",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Animal-adapted factors", "Some human virulence genes"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '125': {
-                "clonal_complex": "CC5",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Enterotoxins (SEC, SEL, SEU)", "Immune evasion cluster", "Hemolysins"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '126': {
-                "clonal_complex": "CC97",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Animal-adapted factors", "Some human virulence genes"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '127': {
-                "clonal_complex": "CC97",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Animal-adapted factors", "Some human virulence genes"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '128': {
-                "clonal_complex": "CC8",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins", "Phenol-soluble modulins"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '129': {
-                "clonal_complex": "CC129",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Variable virulence factors"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '131': {
-                "clonal_complex": "CC131",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Variable virulence factors"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '132': {
-                "clonal_complex": "CC132",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Variable virulence factors"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '134': {
-                "clonal_complex": "CC22",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Enterotoxins", "Immune evasion cluster", "Hemolysins"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '135': {
-                "clonal_complex": "CC5",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Enterotoxins (SEC, SEL, SEU)", "Immune evasion cluster", "Hemolysins"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '136': {
-                "clonal_complex": "CC136",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Variable virulence factors"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '137': {
-                "clonal_complex": "CC22",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Enterotoxins", "Immune evasion cluster", "Hemolysins"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '138': {
-                "clonal_complex": "CC138",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Variable virulence factors"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '139': {
-                "clonal_complex": "CC139",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Variable virulence factors"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '140': {
-                "clonal_complex": "CC140",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Variable virulence factors"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '141': {
-                "clonal_complex": "CC8",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins", "Phenol-soluble modulins"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '142': {
-                "clonal_complex": "CC5",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Enterotoxins (SEC, SEL, SEU)", "Immune evasion cluster", "Hemolysins"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '143': {
-                "clonal_complex": "CC5",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Enterotoxins (SEC, SEL, SEU)", "Immune evasion cluster", "Hemolysins"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '144': {
-                "clonal_complex": "CC144",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Variable virulence factors"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '145': {
-                "clonal_complex": "CC145",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Variable virulence factors"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '146': {
-                "clonal_complex": "CC5",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Enterotoxins (SEC, SEL, SEU)", "Immune evasion cluster", "Hemolysins"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '147': {
-                "clonal_complex": "CC1",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins SEH/SEK", "Hemolysins"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '148': {
-                "clonal_complex": "CC5",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Enterotoxins (SEC, SEL, SEU)", "Immune evasion cluster", "Hemolysins"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '149': {
-                "clonal_complex": "CC5",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Enterotoxins (SEC, SEL, SEU)", "Immune evasion cluster", "Hemolysins"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '150': {
-                "clonal_complex": "CC150",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Variable virulence factors"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '151': {
-                "clonal_complex": "CC151",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Variable virulence factors"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '153': {
-                "clonal_complex": "CC153",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Variable virulence factors"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '154': {
-                "clonal_complex": "CC154",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Variable virulence factors"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '155': {
-                "clonal_complex": "CC8",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins", "Phenol-soluble modulins"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '156': {
-                "clonal_complex": "CC156",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Variable virulence factors"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '157': {
-                "clonal_complex": "CC8",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins", "Phenol-soluble modulins"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '158': {
-                "clonal_complex": "CC8",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins", "Phenol-soluble modulins"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '159': {
-                "clonal_complex": "CC1",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Panton-Valentine Leukocidin", "Enterotoxins SEH/SEK", "Hemolysins"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '160': {
-                "clonal_complex": "CC121",
-                "classification": "Rare lineage",
-                "geographic_distribution": "Variable",
-                "clinical_significance": "Limited documentation",
-                "common_virulence": ["Exfoliative toxins", "Enterotoxins"],
-                "outbreak_potential": "Unknown",
-                "typical_sccmec": ["Variable"],
-                "typical_spa": ["Unknown or variable"],
-                "resistance_profile": ["Variable resistance patterns"]
-            },
-            '188': {
-                "clonal_complex": "CC1",
-                "classification": "Community-associated MRSA",
-                "geographic_distribution": "Europe, Middle East",
-                "clinical_significance": "Associated with skin and soft tissue infections",
-                "common_virulence": ["Enterotoxins", "Hemolysins"],
-                "outbreak_potential": "MEDIUM",
-                "typical_sccmec": ["IV", "V"],
-                "typical_spa": ["t189", "t325"],
-                "resistance_profile": ["Methicillin", "Variable resistance"]
-            },
-            '225': {  
-                "clonal_complex": "CC5",
-                "classification": "Healthcare-associated MRSA",
-                "geographic_distribution": "Germany, Central Europe",
-                "clinical_significance": "German epidemic clone (GEC), hospital-associated with multi-drug resistance, particularly prevalent in German-speaking countries",
-                "common_virulence": ["Enterotoxins", "Hemolysins", "Immune evasion genes"],
-                "outbreak_potential": "HIGH",
-                "typical_sccmec": ["II", "IV"],
-                "typical_spa": ["t003", "t014", "t045"],
-                "resistance_profile": ["Methicillin", "Multi-drug resistant including aminoglycosides, macrolides"]
-            },
-            '231': {  
-                "clonal_complex": "CC5",
-                "classification": "Rare/Uncommon MRSA",
-                "geographic_distribution": "Sporadic reports globally",
-                "clinical_significance": "Primarily MSSA lineage, rare MRSA conversion reported; limited clinical significance as MRSA",
-                "common_virulence": ["Variable; typical CC5 factors if present"],
-                "outbreak_potential": "VERY LOW",
-                "typical_sccmec": ["Rare/occasional acquisition"],
-                "typical_spa": ["Variable"],
-                "resistance_profile": ["Variable if MRSA"]
-            },
-
-            '239': {
-                "clonal_complex": "CC8",  
-                "classification": "Healthcare-associated MRSA",
-                "geographic_distribution": "Asia (particularly China, Taiwan), Brazil, Eastern Europe",
-                "clinical_significance": "Brazilian/Hungarian epidemic clone, one of the earliest and most successful global MRSA clones with high multi-drug resistance",
-                "common_virulence": ["Enterotoxins", "Hemolysins", "Biofilm formation genes", "Often lacks PVL"],
-                "outbreak_potential": "VERY HIGH",
-                "typical_sccmec": ["III", "IIIA"],
-                "typical_spa": ["t037", "t030", "t421"],
-                "resistance_profile": ["Methicillin", "High-level multi-drug resistance including aminoglycosides, fluoroquinolones"]
-            },
-            '291': {  
+            # ==================== Additional rare/novel ====================
+            '291': {
                 "clonal_complex": "CC291",
                 "classification": "Emerging lineage",
                 "geographic_distribution": "Sporadic reports, limited distribution",
@@ -2091,10 +2159,120 @@ class ModularMLSTAnalyzer:
                 "typical_sccmec": ["Variable"],
                 "typical_spa": ["Unknown"],
                 "resistance_profile": ["Variable resistance patterns"]
-            }
+            },
+            '1910': {
+                "clonal_complex": "Unknown",
+                "classification": "Novel/emerging",
+                "geographic_distribution": "Sporadic",
+                "clinical_significance": "Recently identified; clinical significance under investigation",
+                "common_virulence": ["Unknown"],
+                "outbreak_potential": "UNKNOWN",
+                "typical_sccmec": ["Unknown"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Unknown"]
+            },
+            '5529': {
+                "clonal_complex": "Unknown",
+                "classification": "Novel/emerging",
+                "geographic_distribution": "Sporadic",
+                "clinical_significance": "Recently identified; clinical significance under investigation",
+                "common_virulence": ["Unknown"],
+                "outbreak_potential": "UNKNOWN",
+                "typical_sccmec": ["Unknown"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Unknown"]
+            },
+            '5939': {
+                "clonal_complex": "Unknown",
+                "classification": "Novel/emerging",
+                "geographic_distribution": "Sporadic",
+                "clinical_significance": "Recently identified; clinical significance under investigation",
+                "common_virulence": ["Unknown"],
+                "outbreak_potential": "UNKNOWN",
+                "typical_sccmec": ["Unknown"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Unknown"]
+            },
+            '7442': {
+                "clonal_complex": "Unknown",
+                "classification": "Novel/emerging",
+                "geographic_distribution": "Sporadic",
+                "clinical_significance": "Recently identified; clinical significance under investigation",
+                "common_virulence": ["Unknown"],
+                "outbreak_potential": "UNKNOWN",
+                "typical_sccmec": ["Unknown"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Unknown"]
+            },
+            '8495': {
+                "clonal_complex": "Unknown",
+                "classification": "Novel/emerging",
+                "geographic_distribution": "Sporadic",
+                "clinical_significance": "Recently identified; clinical significance under investigation",
+                "common_virulence": ["Unknown"],
+                "outbreak_potential": "UNKNOWN",
+                "typical_sccmec": ["Unknown"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Unknown"]
+            },
+            '8500': {
+                "clonal_complex": "Unknown",
+                "classification": "Novel/emerging",
+                "geographic_distribution": "Sporadic",
+                "clinical_significance": "Recently identified; clinical significance under investigation",
+                "common_virulence": ["Unknown"],
+                "outbreak_potential": "UNKNOWN",
+                "typical_sccmec": ["Unknown"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Unknown"]
+            },
+            '8501': {
+                "clonal_complex": "Unknown",
+                "classification": "Novel/emerging",
+                "geographic_distribution": "Sporadic",
+                "clinical_significance": "Recently identified; clinical significance under investigation",
+                "common_virulence": ["Unknown"],
+                "outbreak_potential": "UNKNOWN",
+                "typical_sccmec": ["Unknown"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Unknown"]
+            },
+            '6082': {
+                "clonal_complex": "Unknown",
+                "classification": "Novel/emerging",
+                "geographic_distribution": "Sporadic",
+                "clinical_significance": "Recently identified; clinical significance under investigation",
+                "common_virulence": ["Unknown"],
+                "outbreak_potential": "UNKNOWN",
+                "typical_sccmec": ["Unknown"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Unknown"]
+            },
+            '6091': {
+                "clonal_complex": "Unknown",
+                "classification": "Novel/emerging",
+                "geographic_distribution": "Sporadic",
+                "clinical_significance": "Recently identified; clinical significance under investigation",
+                "common_virulence": ["Unknown"],
+                "outbreak_potential": "UNKNOWN",
+                "typical_sccmec": ["Unknown"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Unknown"]
+            },
+            '9162': {
+                "clonal_complex": "Unknown",
+                "classification": "Novel/emerging",
+                "geographic_distribution": "Sporadic",
+                "clinical_significance": "Recently identified; clinical significance under investigation",
+                "common_virulence": ["Unknown"],
+                "outbreak_potential": "UNKNOWN",
+                "typical_sccmec": ["Unknown"],
+                "typical_spa": ["Unknown"],
+                "resistance_profile": ["Unknown"]
+            },
         }
-            
-        # Check if ST is in database
+
+        # Existing logic for known STs
         if st in lineage_db:
             return lineage_db[st]
         else:
@@ -2125,7 +2303,7 @@ class ModularMLSTAnalyzer:
                     "typical_spa": ["Cannot determine"],
                     "resistance_profile": ["Cannot determine"]
                 }
-            
+                
     def get_identity_coverage(self, st: str) -> Dict:
         """Get identity and coverage information based on MLST assignment"""
         if st and st != '-' and st != 'ND' and st != 'UNKNOWN':
@@ -3389,31 +3567,127 @@ Database Match: {mlst_results['quality_metrics'].get('database_match', 'Unknown'
         
         return results
 
+
+def update_mlst_database(db_dir: Path, script_dir: Path) -> bool:
+    """
+    Update MLST database using mlstdb.
+    Runs mlstdb inside a temporary directory, then copies S. aureus scheme
+    into db_dir, prunes others, and rebuilds BLAST.
+    """
+    if not shutil.which('mlstdb'):
+        print("❌ 'mlstdb' not found. Install with: pip install mlstdb")
+        print("   Then set up API key: mlstdb connect --db pubmlst --api-key")
+        return False
+
+    db_dir.mkdir(parents=True, exist_ok=True)
+
+    temp_dir = Path(tempfile.mkdtemp(prefix="staphscope_mlst_update_"))
+    print(f"📂 Temporary download directory: {temp_dir}")
+
+    try:
+        print("🔄 Running mlstdb update (full download, may take 10-20 minutes)...")
+        print("   Progress will be shown below:\n")
+
+        # Run mlstdb from the temporary directory – it will write into ./pubmlst/ and ./blast/
+        result = subprocess.run(
+            ['mlstdb', 'update'],
+            input='y\n',
+            text=True,
+            cwd=temp_dir,
+            env=os.environ.copy()
+        )
+
+        if result.returncode != 0:
+            print(f"\n❌ mlstdb update failed with exit code {result.returncode}")
+            return False
+
+        print("\n✅ Download completed.")
+
+        # Locate S. aureus scheme in temp_dir
+        saureus_src = temp_dir / "pubmlst" / "saureus"
+        if not saureus_src.exists():
+            print("❌ S. aureus scheme not found in downloaded data.")
+            return False
+
+        # Copy S. aureus scheme to final db_dir/pubmlst/
+        target_pubmlst = db_dir / "pubmlst"
+        target_pubmlst.mkdir(parents=True, exist_ok=True)
+        target_saureus = target_pubmlst / "saureus"
+        if target_saureus.exists():
+            shutil.rmtree(target_saureus)
+        shutil.copytree(saureus_src, target_saureus)
+        print(f"📁 Copied S. aureus scheme to {target_saureus}")
+
+        # Copy BLAST database if it exists
+        blast_src = temp_dir / "blast"
+        if blast_src.exists():
+            target_blast = db_dir / "blast"
+            if target_blast.exists():
+                shutil.rmtree(target_blast)
+            shutil.copytree(blast_src, target_blast)
+            print(f"📁 Copied BLAST database to {target_blast}")
+
+        # Prune any other schemes in db_dir/pubmlst/
+        removed = 0
+        for item in target_pubmlst.iterdir():
+            if item.is_dir() and item.name != "saureus":
+                shutil.rmtree(item)
+                removed += 1
+                print(f"   🗑️  Removed scheme: {item.name}")
+        if removed:
+            print(f"✅ Removed {removed} non‑S. aureus schemes.")
+        else:
+            print("✅ No extra schemes to remove.")
+
+        # Rebuild BLAST to ensure indices match
+        rebuild_script = script_dir.parent / "scripts" / "mlst-make_blast_db"
+        if rebuild_script.exists():
+            print("🔄 Rebuilding BLAST database for S. aureus...")
+            subprocess.run(['perl', str(rebuild_script)], check=True, cwd=script_dir.parent)
+            print("✅ BLAST database rebuilt successfully.")
+        else:
+            print("⚠️  mlst-make_blast_db not found; BLAST may be stale.")
+
+        print(f"✅ MLST database updated and pruned to S. aureus only in {db_dir}")
+        return True
+
+    except subprocess.CalledProcessError as e:
+        print(f"❌ Update failed: {e}")
+        return False
+    except Exception as e:
+        print(f"❌ Unexpected error: {e}")
+        return False
+    finally:
+        shutil.rmtree(temp_dir, ignore_errors=True)
+        print(f"🧹 Removed temporary directory: {temp_dir}")
+
+
 def main():
     parser = argparse.ArgumentParser(description='StaphScope Modular MLST Analyzer')
-    parser.add_argument('-i', '--input', required=True, 
-                       help='Input FASTA file or directory (supports wildcards)')
-    parser.add_argument('-o', '--output-dir', required=True, 
-                       help='Output directory')
-    parser.add_argument('-db', '--database-dir', required=True,
-                       help='Database directory')
-    parser.add_argument('-sc', '--script-dir', required=True,
-                       help='Script directory (contains mlst binary)')
-    parser.add_argument('-s', '--scheme', default='saureus',
-                       help='MLST scheme (default: saureus)')
-    parser.add_argument('--batch', action='store_true',
-                       help='Process multiple files')
-    
+    parser.add_argument('-i', '--input', help='Input FASTA file or directory (supports wildcards)')
+    parser.add_argument('-o', '--output-dir', help='Output directory')
+    parser.add_argument('-db', '--database-dir', required=True, help='Database directory')
+    parser.add_argument('-sc', '--script-dir', required=True, help='Script directory (contains mlst binary)')
+    parser.add_argument('-s', '--scheme', default='saureus', help='MLST scheme (default: saureus)')
+    parser.add_argument('--batch', action='store_true', help='Process multiple files')
+    parser.add_argument('--update-db', action='store_true', help='Update S. aureus MLST database and exit')
+
     args = parser.parse_args()
-    
-    analyzer = ModularMLSTAnalyzer(
-        database_dir=Path(args.database_dir),
-        script_dir=Path(args.script_dir)
-    )
-    
+
+    db_dir = Path(args.database_dir)
+    script_dir = Path(args.script_dir)
+
+    if args.update_db:
+        success = update_mlst_database(db_dir, script_dir)
+        sys.exit(0 if success else 1)
+
+    if not args.input or not args.output_dir:
+        parser.error("When not using --update-db, -i and -o are required.")
+
+    analyzer = ModularMLSTAnalyzer(db_dir, script_dir)
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
-    
+
     if args.batch:
         results = analyzer.run_mlst_batch(args.input, output_dir, args.scheme)
         print(f"🎉 Batch MLST completed! Processed {len(results)} samples")
@@ -3424,6 +3698,7 @@ def main():
             print(f"🎉 MLST completed for {input_file.name}: ST{result.get('st', 'ND')}")
         else:
             print(f"❌ Input file not found: {args.input}")
+
 
 if __name__ == "__main__":
     main()

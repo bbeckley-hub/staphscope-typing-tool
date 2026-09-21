@@ -24,3 +24,27 @@ venv/
 # OS metadata
 .DS_Store
 Thumbs.db
+
+# ---------------------------------------------------------------------------
+# Large reference data — packaged as separate bioconda data packages
+# ---------------------------------------------------------------------------
+staphscope/modules/mge_module/mobileOG-db/
+staphscope/modules/mlst_module/bin/
+staphscope/modules/mlst_module/db/
+staphscope/modules/mlst_module/perl5/
+staphscope/modules/mlst_module/scripts/
+
+# ---------------------------------------------------------------------------
+# Editor / build artefacts
+# ---------------------------------------------------------------------------
+*.bak
+*.orig
+*.swp
+*~
+
+
+# ---------------------------------------------------------------------------
+# SCCmec CGE template database (large binary blobs — packaged separately)
+# ---------------------------------------------------------------------------
+staphscope/modules/sccmec_module_cge/database/template_db/*.p
+staphscope/modules/sccmec_module_cge/database/template_db/

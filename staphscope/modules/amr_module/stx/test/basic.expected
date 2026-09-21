@@ -1,8 +1,0 @@
-#target_contig	stx_type	operon	identity	target_start	target_stop	target_strand	A_reference	A_reference_subtype	A_identity	A_coverage	B_reference	B_reference_subtype	B_identity	B_coverage
-partial	stx2	PARTIAL	99.40	27	1045	+	AAA16362.1	stxA2c	99.19	77.12	AAS07607.1	stxB2a	100.00	100.00
-partial_contig_end	stx2	PARTIAL_CONTIG_END	100.00	3	661	-	AAA16362.1	stxA2c	100.00	58.31	AAM70046.1	stxB2a	100.00	32.58
-stx1a	stx1a	COMPLETE	100.00	218	1441	+	AAA98347.1	stxA1a	100.00	100.00	AAA71894.1	stxB1a	100.00	100.00
-stx2_fs	stx2	FRAMESHIFT	99.71	2165	3229	+	AAG01033.1	stxA2c	99.62	82.13	AAA16363.1	stxB2c	100.00	100.00
-stx2_novel	stx2	COMPLETE_NOVEL	99.75	216	1453	+	AAA19623.1	stxA2	99.69	100.00	AAA16363.1	stxB2c	100.00	100.00
-stx2c	stx2c	COMPLETE	100.00	1301	2538	-	AAS07596.1	stxA2	100.00	100.00	AAA16363.1	stxB2c	100.00	100.00
-stxB2b_stop	stx2	INTERNAL_STOP	99.26	159	1391	+	BAB82998.1	stxA2b	99.37	100.00	AAA16361.1	stxB2b	98.85	100.00

@@ -5,7 +5,7 @@
 set -e  # exit on error
 
 REPO_URL="https://github.com/bbeckley-hub/mlst.git"
-BRANCH="master"          # your fork's default branch
+BRANCH="master"          
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 echo "Fetching MLST data from $REPO_URL (branch $BRANCH)"

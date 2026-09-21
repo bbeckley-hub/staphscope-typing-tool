@@ -4,9 +4,9 @@ StaphScope ABRicate Standalone Module
 Comprehensive ABRicate analysis with HTML, TSV, and JSON reporting - MAXIMUM SPEED VERSION
 Author: Beckley Brown <brownbeckley94@gmail.com>
 Affiliation: University of Ghana Medical School-Department of Medical Biochemistry
-Date: 2026-07-23
+Date: 2026-09-01
 Send a quick mail for any issues or further explanations.
-version-1.3.2
+version-2.0.0
 """
 
 import subprocess
@@ -68,7 +68,7 @@ class AbricateExecutor:
         
         self.metadata = {
             "tool_name": "StaphScope ABRicate",
-            "version": "1.3.2", 
+            "version": "2.0.0", 
             "authors": ["Brown Beckley"],
             "email": "brownbeckley94@gmail.com",
             "github": "https://github.com/bbeckley-hub",
