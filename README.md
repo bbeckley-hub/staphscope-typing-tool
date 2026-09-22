@@ -244,21 +244,32 @@ The tab highlights genuine disagreements — but only *genuine* ones. Naming-for
 
 ## 📋 **Table of Contents**
 
+**🚀 Getting Started**
 - [🎉 What's New in v2.0.0](#-whats-new-in-v200--september-2026)
-- [🔥 Feature Deep-Dives](#-feature-deep-dives)
 - [🎯 Overview](#-overview)
 - [✨ Key Features](#-key-features)
-- [🧰 StaphScope Toolkit – iTOL Metadata Made Easy](#-staphscope-toolkit--itol-metadata-made-easy)
-- [🌐 StaphScope Web Platform](#-staphscope-web-platform)
 - [⚡ Quick Start (CLI)](#-quick-start-cli)
 - [🔧 Installation (CLI)](#-installation-cli)
-- [🐳 Docker & Singularity](#-staphscope-docker--singularity-usage)
-- [🔗 Integrated External Tools](#-integrated-external-tools--dependencies)
+- [🐳 Docker & Singularity](#-staphscope-docker--singularity-usage--avoid-the-padlock-)
+
+**🧬 Using StaphScope**
 - [🚀 Usage Guide (CLI)](#-usage-guide-cli)
 - [📁 Output Structure](#-output-structure)
 - [🔍 Analytical Modules](#-analytical-modules)
+- [📊 Sample Integrated Reports](#-sample-integrated-reports)
+- [🔥 Feature Deep-Dives](#-feature-deep-dives)
+
+**🌐 Beyond the CLI**
+- [🌐 StaphScope Web Platform](#-staphscope-web-platform)
+- [🧰 StaphScope Toolkit](#-staphscope-toolkit--itol-metadata-made-easy)
+
+**🔬 Reference**
+- [🔗 Integrated External Tools](#-integrated-external-tools--dependencies)
 - [📈 Performance Benchmarks](#-performance-benchmarks)
 - [🔬 Validation & Accuracy](#-validation--accuracy)
+- [🚨 Breaking Changes](#-breaking-changes-in-v200)
+
+**🤝 Community & Support**
 - [🤖 AI Integration Guide](#-ai-integration-guide)
 - [🔮 Future Development](#-future-development)
 - [❓ FAQ](#-frequently-asked-questions)
