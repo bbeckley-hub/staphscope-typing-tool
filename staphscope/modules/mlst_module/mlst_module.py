@@ -96,12 +96,21 @@ class ModularMLSTAnalyzer:
             str(input_file),
             "--scheme", scheme,
             "--csv",
-            "--nopath"
+            "--nopath",
         ]
 
+        # The perl mlst script reads its database location from the
+        # MLST_DATADIR environment variable. Without it, it falls back to
+        # <bin>/../db/. Setting it here lets the orchestrator point mlst at
+        # a user-local or scratch database without touching the packaged tree.
+        env = os.environ.copy()
+        env["MLST_DATADIR"] = str(self.database_dir)
+
         try:
-            result = subprocess.run(cmd, capture_output=True, text=True, check=True)
-            (sample_out / "mlst_raw_output.txt").write_text(f"STDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}")
+            result = subprocess.run(cmd, capture_output=True, text=True, check=True, env=env)
+            (sample_out / "mlst_raw_output.txt").write_text(
+                f"STDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}"
+            )
 
             print(f"Raw MLST output: {result.stdout.strip()}")
             mlst_results = self.parse_mlst_csv(result.stdout, input_file.name)
@@ -112,8 +121,11 @@ class ModularMLSTAnalyzer:
             print(f"✅ Completed: {input_file.name} -> ST{mlst_results.get('st', 'ND')}")
             return mlst_results
 
-        except subprocess.CalledProcessError:
+        except subprocess.CalledProcessError as e:
             print(f"❌ MLST failed for {input_file.name}")
+            print(f"   exit code: {e.returncode}")
+            print(f"   stdout: {e.stdout}")
+            print(f"   stderr: {e.stderr}")
             error_result = self.get_fallback_results(input_file.name)
             self.generate_output_files(error_result, sample_out)
             return error_result
@@ -3639,14 +3651,30 @@ def update_mlst_database(db_dir: Path, script_dir: Path) -> bool:
         else:
             print("✅ No extra schemes to remove.")
 
-        # Rebuild BLAST to ensure indices match
+        # Rebuild BLAST to ensure indices match.
+        # The perl mlst-make_blast_db script reads its database location from
+        # the MLST_DATADIR environment variable (it does NOT accept --datadir),
+        # so we set it here to point at the user-local target db_dir.
         rebuild_script = script_dir.parent / "scripts" / "mlst-make_blast_db"
         if rebuild_script.exists():
             print("🔄 Rebuilding BLAST database for S. aureus...")
-            subprocess.run(['perl', str(rebuild_script)], check=True, cwd=script_dir.parent)
-            print("✅ BLAST database rebuilt successfully.")
+            rebuild_env = os.environ.copy()
+            rebuild_env["MLST_DATADIR"] = str(db_dir)
+            try:
+                subprocess.run(
+                    ['perl', str(rebuild_script)],
+                    check=True,
+                    cwd=str(script_dir.parent),
+                    env=rebuild_env,
+                )
+                print("✅ BLAST database rebuilt successfully.")
+            except subprocess.CalledProcessError as e:
+                print(f"⚠️  BLAST rebuild failed ({e}); the mlstdb download already")
+                print("   produced a blast/ directory, so analysis can still proceed.")
         else:
-            print("⚠️  mlst-make_blast_db not found; BLAST may be stale.")
+            print(f"⚠️  mlst-make_blast_db not found at {rebuild_script}")
+            print("    The mlstdb download already produced a blast/ directory,")
+            print("    so analysis can proceed; rebuild manually if you see errors.")
 
         print(f"✅ MLST database updated and pruned to S. aureus only in {db_dir}")
         return True

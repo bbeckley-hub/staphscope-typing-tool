@@ -1,0 +1,3919 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STAPHSCOPE - Enhanced SCCmec Summary Report</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #7e22ce 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #ffffff;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .ascii-container {
+            background: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            border: 2px solid rgba(0, 255, 0, 0.3);
+        }
+        
+        .ascii-art {
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.1;
+            white-space: pre;
+            color: #00ff00;
+            text-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+            text-align: center;
+            overflow-x: auto;
+        }
+        
+        .quote-container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            text-align: center;
+            min-height: 100px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: opacity 0.5s ease-in-out;
+        }
+        
+        .quote-text {
+            font-size: 18px;
+            font-style: italic;
+            margin-bottom: 10px;
+            color: #ffffff;
+        }
+        
+        .quote-author {
+            font-size: 14px;
+            color: #fbbf24;
+            font-weight: bold;
+        }
+        
+        .summary-section {
+            background: rgba(255, 255, 255, 0.95);
+            color: #1f2937;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .summary-section h2 {
+            color: #1e3a8a;
+            border-bottom: 3px solid #3b82f6;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+        
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            font-size: 12px;
+        }
+        
+        .results-table th {
+            background: #1e40af;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: bold;
+            position: sticky;
+            top: 0;
+        }
+        
+        .results-table td {
+            padding: 10px;
+            border-bottom: 1px solid #e5e7eb;
+            vertical-align: top;
+        }
+        
+        .results-table tr:hover {
+            background: #f3f4f6;
+        }
+        
+        .status-mrsa {
+            background: #dc2626;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 11px;
+        }
+        
+        .status-mssa {
+            background: #16a34a;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 11px;
+        }
+        
+        .confidence-high {
+            background: #16a34a;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 10px;
+        }
+        
+        .confidence-medium {
+            background: #f59e0b;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 10px;
+        }
+        
+        .confidence-low {
+            background: #dc2626;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 10px;
+        }
+        
+        .confidence-very-high {
+            background: #1e40af;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 10px;
+        }
+        
+        .method-gene {
+            background: #10b981;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 10px;
+        }
+        
+        .method-kmer {
+            background: #8b5cf6;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 10px;
+        }
+        
+        .method-insufficient {
+            background: #6b7280;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 10px;
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .metric-card {
+            background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            text-align: center;
+        }
+        
+        .metric-label {
+            font-size: 12px;
+            opacity: 0.9;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .metric-value {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .metric-subtitle {
+            font-size: 10px;
+            opacity: 0.8;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            font-size: 14px;
+        }
+        
+        .timestamp {
+            color: #fbbf24;
+            font-weight: bold;
+        }
+        
+        .authorship {
+            margin-top: 15px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            font-size: 12px;
+        }
+        
+        .evidence-cell {
+            font-size: 10px;
+            color: #4b5563;
+            max-width: 300px;
+            overflow: visible;
+            white-space: normal;
+            word-wrap: break-word;
+        }
+        
+        .no-assignment {
+            color: #dc2626;
+            font-weight: bold;
+            font-style: italic;
+        }
+        
+        .kmer-cell {
+            font-size: 10px;
+            color: #374151;
+        }
+        
+        @media (max-width: 768px) {
+            .results-table {
+                font-size: 10px;
+            }
+            .ascii-art {
+                font-size: 8px;
+            }
+            .metrics-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .evidence-cell {
+                max-width: 150px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="ascii-container">
+                <div class="ascii-art">
+███████╗████████╗ █████╗ ██████╗ ██╗  ██╗███████╗ ██████╗ ██████╗ ██████╗ ███████╗
+██╔════╝╚══██╔══╝██╔══██╗██╔══██╗██║  ██║██╔════╝██╔════╝██╔═══██╗██╔══██╗██╔════╝
+███████╗   ██║   ███████║██████╔╝███████║███████╗██║     ██║   ██║██████╔╝█████╗  
+╚════██║   ██║   ██╔══██║██╔═══╝ ██╔══██║╚════██║██║     ██║   ██║██╔═══╝ ██╔══╝  
+███████║   ██║   ██║  ██║██║     ██║  ██║███████║╚██████╗╚██████╔╝██║     ███████╗
+╚══════╝   ╚═╝   ╚═╝  ╚═╝╚═╝     ╚═╝  ╚═╝╚══════╝ ╚═════╝ ╚═════╝ ╚═╝     ╚══════╝
+                </div>
+            </div>
+            
+            <div class="quote-container" id="quoteContainer">
+                <div class="quote-text" id="quoteText"></div>
+                <div class="quote-author" id="quoteAuthor"></div>
+            </div>
+        </div>
+        
+        <div class="summary-section">
+            <h2>📊 SCCmec Analysis Summary</h2>
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-label">Total Samples</div>
+                    <div class="metric-value">386</div>
+                    <div class="metric-subtitle">Processed Successfully</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">MRSA Isolates</div>
+                    <div class="metric-value">328</div>
+                    <div class="metric-subtitle">
+                        14 low confidence
+                    </div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">MSSA Isolates</div>
+                    <div class="metric-value">58</div>
+                    <div class="metric-subtitle">No mecA/mecC detected</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">SCCmec Types</div>
+                    <div class="metric-value">328</div>
+                    <div class="metric-subtitle">
+                        Gene-based: 314
+                    </div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">K-mer Based</div>
+                    <div class="metric-value">14</div>
+                    <div class="metric-subtitle">Low confidence with evidence</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Not Assigned</div>
+                    <div class="metric-value">58</div>
+                    <div class="metric-subtitle">Low confidence, no evidence</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="summary-section">
+            <h2>🧬 Detailed Results</h2>
+            <div style="max-height: 800px; overflow-y: auto;">
+                <table class="results-table">
+                    <thead>
+                        <tr>
+                            <th>Sample Name</th>
+                            <th>SCCmec Type</th>
+                            <th>MRSA Status</th>
+                            <th>Confidence</th>
+                            <th>Prediction Method</th>
+                            <th>K-mer Top Hits</th>
+                            <th>Evidence</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+<tr>
+<td><strong>GCA_000009665.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (100.00/99.94%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000010445.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (100.00/99.97%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000010465.1</strong></td>
+<td><span class='no-assignment'>Not Assigned</span></td>
+<td><span class="status-mssa">MSSA</span></td>
+<td><span class="confidence-low">LOW</span></td>
+<td><span class="method-insufficient">Insufficient evidence</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_I(1B) (19.61/15.17%)</td>
+<td class="evidence-cell"></td>
+</tr>
+<tr>
+<td><strong>GCA_000011265.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (100.00/90.72%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000011505.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (100.00/97.69%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000011525.1</strong></td>
+<td><span class='no-assignment'>Not Assigned</span></td>
+<td><span class="status-mssa">MSSA</span></td>
+<td><span class="confidence-low">LOW</span></td>
+<td><span class="method-insufficient">Insufficient evidence</span></td>
+<td class="kmer-cell">SCCmec_type_VI(4B)/SCCmec_type_I(1B) (29.86/19.25%)</td>
+<td class="evidence-cell"></td>
+</tr>
+<tr>
+<td><strong>GCA_000012045.1</strong></td>
+<td>SCCmec_type_I(1B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_I(1B)/SCCmec_type_I(1B) (100.00/99.53%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_I_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000149015.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (99.86/90.71%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000153665.1</strong></td>
+<td><span class='no-assignment'>Not Assigned</span></td>
+<td><span class="status-mssa">MSSA</span></td>
+<td><span class="confidence-low">LOW</span></td>
+<td><span class="method-insufficient">Insufficient evidence</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_I(1B) (14.97/7.60%)</td>
+<td class="evidence-cell"></td>
+</tr>
+<tr>
+<td><strong>GCA_000159535.2</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (84.30/81.96%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000159555.1</strong></td>
+<td><span class='no-assignment'>Not Assigned</span></td>
+<td><span class="status-mssa">MSSA</span></td>
+<td><span class="confidence-low">LOW</span></td>
+<td><span class="method-insufficient">Insufficient evidence</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_II(2A) (14.10/6.07%)</td>
+<td class="evidence-cell"></td>
+</tr>
+<tr>
+<td><strong>GCA_000160195.1</strong></td>
+<td><span class='no-assignment'>Not Assigned</span></td>
+<td><span class="status-mssa">MSSA</span></td>
+<td><span class="confidence-low">LOW</span></td>
+<td><span class="method-insufficient">Insufficient evidence</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_II(2A) (25.79/12.66%)</td>
+<td class="evidence-cell"></td>
+</tr>
+<tr>
+<td><strong>GCA_000160335.2</strong></td>
+<td><span class='no-assignment'>Not Assigned</span></td>
+<td><span class="status-mssa">MSSA</span></td>
+<td><span class="confidence-low">LOW</span></td>
+<td><span class="method-insufficient">Insufficient evidence</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_II(2A) (27.99/13.24%)</td>
+<td class="evidence-cell"></td>
+</tr>
+<tr>
+<td><strong>GCA_000160355.1</strong></td>
+<td><span class='no-assignment'>Not Assigned</span></td>
+<td><span class="status-mssa">MSSA</span></td>
+<td><span class="confidence-low">LOW</span></td>
+<td><span class="method-insufficient">Insufficient evidence</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_II(2A) (27.83/24.50%)</td>
+<td class="evidence-cell"></td>
+</tr>
+<tr>
+<td><strong>GCA_000160375.1</strong></td>
+<td><span class='no-assignment'>Not Assigned</span></td>
+<td><span class="status-mssa">MSSA</span></td>
+<td><span class="confidence-low">LOW</span></td>
+<td><span class="method-insufficient">Insufficient evidence</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_II(2A) (25.44/23.23%)</td>
+<td class="evidence-cell"></td>
+</tr>
+<tr>
+<td><strong>GCA_000160395.1</strong></td>
+<td><span class='no-assignment'>Not Assigned</span></td>
+<td><span class="status-mssa">MSSA</span></td>
+<td><span class="confidence-low">LOW</span></td>
+<td><span class="method-insufficient">Insufficient evidence</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_II(2A) (27.79/13.18%)</td>
+<td class="evidence-cell"></td>
+</tr>
+<tr>
+<td><strong>GCA_000160415.1</strong></td>
+<td><span class='no-assignment'>Not Assigned</span></td>
+<td><span class="status-mssa">MSSA</span></td>
+<td><span class="confidence-low">LOW</span></td>
+<td><span class="method-insufficient">Insufficient evidence</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_II(2A) (27.67/13.13%)</td>
+<td class="evidence-cell"></td>
+</tr>
+<tr>
+<td><strong>GCA_000162595.1</strong></td>
+<td><span class='no-assignment'>Not Assigned</span></td>
+<td><span class="status-mssa">MSSA</span></td>
+<td><span class="confidence-low">LOW</span></td>
+<td><span class="method-insufficient">Insufficient evidence</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_III(3A) (27.75/18.86%)</td>
+<td class="evidence-cell"></td>
+</tr>
+<tr>
+<td><strong>GCA_000162615.1</strong></td>
+<td><span class='no-assignment'>Not Assigned</span></td>
+<td><span class="status-mssa">MSSA</span></td>
+<td><span class="confidence-low">LOW</span></td>
+<td><span class="method-insufficient">Insufficient evidence</span></td>
+<td class="kmer-cell">SCCmec_type_III(3A)/SCCmec_type_IV(2B) (12.85/10.38%)</td>
+<td class="evidence-cell"></td>
+</tr>
+<tr>
+<td><strong>GCA_000162735.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (97.84/79.77%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000172855.1</strong></td>
+<td>SCCmec_type_III(3A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_III(3A)/SCCmec_type_VIII(4A) (77.01/59.86%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_III_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000174495.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.83/99.79%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000174615.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.75/99.69%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000174955.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (93.08/82.95%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000177995.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (93.80/88.94%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000187145.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (95.25/94.11%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000204665.1</strong></td>
+<td>SCCmec_type_III(3A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_III(3A)/SCCmec_type_VIII(4A) (83.00/67.97%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_III_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000239235.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (88.73/80.30%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000239615.2</strong></td>
+<td><span class='no-assignment'>Not Assigned</span></td>
+<td><span class="status-mssa">MSSA</span></td>
+<td><span class="confidence-low">LOW</span></td>
+<td><span class="method-insufficient">Insufficient evidence</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_I(1B) (19.64/15.14%)</td>
+<td class="evidence-cell"></td>
+</tr>
+<tr>
+<td><strong>GCA_000239635.2</strong></td>
+<td><span class='no-assignment'>Not Assigned</span></td>
+<td><span class="status-mssa">MSSA</span></td>
+<td><span class="confidence-low">LOW</span></td>
+<td><span class="method-insufficient">Insufficient evidence</span></td>
+<td class="kmer-cell">SCCmec_type_VIII(4A)/SCCmec_type_VIII(4A) (24.23/24.09%)</td>
+<td class="evidence-cell"></td>
+</tr>
+<tr>
+<td><strong>GCA_000239655.2</strong></td>
+<td><span class='no-assignment'>Not Assigned</span></td>
+<td><span class="status-mssa">MSSA</span></td>
+<td><span class="confidence-low">LOW</span></td>
+<td><span class="method-insufficient">Insufficient evidence</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_IV(2B) (6.06/5.60%)</td>
+<td class="evidence-cell"></td>
+</tr>
+<tr>
+<td><strong>GCA_000242475.2</strong></td>
+<td><span class='no-assignment'>Not Assigned</span></td>
+<td><span class="status-mssa">MSSA</span></td>
+<td><span class="confidence-low">LOW</span></td>
+<td><span class="method-insufficient">Insufficient evidence</span></td>
+<td class="kmer-cell">SCCmec_type_V(5C2)/SCCmec_type_V(5C2&5) (7.57/6.94%)</td>
+<td class="evidence-cell"></td>
+</tr>
+<tr>
+<td><strong>GCA_000242515.2</strong></td>
+<td><span class='no-assignment'>Not Assigned</span></td>
+<td><span class="status-mssa">MSSA</span></td>
+<td><span class="confidence-low">LOW</span></td>
+<td><span class="method-insufficient">Insufficient evidence</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_II(2A) (25.58/12.61%)</td>
+<td class="evidence-cell"></td>
+</tr>
+<tr>
+<td><strong>GCA_000242535.2</strong></td>
+<td><span class='no-assignment'>Not Assigned</span></td>
+<td><span class="status-mssa">MSSA</span></td>
+<td><span class="confidence-low">LOW</span></td>
+<td><span class="method-insufficient">Insufficient evidence</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_I(1B) (21.87/13.84%)</td>
+<td class="evidence-cell"></td>
+</tr>
+<tr>
+<td><strong>GCA_000242555.2</strong></td>
+<td><span class='no-assignment'>Not Assigned</span></td>
+<td><span class="status-mssa">MSSA</span></td>
+<td><span class="confidence-low">LOW</span></td>
+<td><span class="method-insufficient">Insufficient evidence</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_I(1B) (20.77/16.84%)</td>
+<td class="evidence-cell"></td>
+</tr>
+<tr>
+<td><strong>GCA_000245495.1</strong></td>
+<td><span class='no-assignment'>Not Assigned</span></td>
+<td><span class="status-mssa">MSSA</span></td>
+<td><span class="confidence-low">LOW</span></td>
+<td><span class="method-insufficient">Insufficient evidence</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_I(1B) (19.50/15.03%)</td>
+<td class="evidence-cell"></td>
+</tr>
+<tr>
+<td><strong>GCA_000245595.2</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (86.89/82.66%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000245615.2</strong></td>
+<td><span class='no-assignment'>Not Assigned</span></td>
+<td><span class="status-mssa">MSSA</span></td>
+<td><span class="confidence-low">LOW</span></td>
+<td><span class="method-insufficient">Insufficient evidence</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_II(2A) (25.62/12.59%)</td>
+<td class="evidence-cell"></td>
+</tr>
+<tr>
+<td><strong>GCA_000247295.2</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.74/99.73%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000247315.2</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (95.84/90.91%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000247415.2</strong></td>
+<td><span class='no-assignment'>Not Assigned</span></td>
+<td><span class="status-mssa">MSSA</span></td>
+<td><span class="confidence-low">LOW</span></td>
+<td><span class="method-insufficient">Insufficient evidence</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_I(1B) (21.93/13.90%)</td>
+<td class="evidence-cell"></td>
+</tr>
+<tr>
+<td><strong>GCA_000248495.2</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (99.77/80.49%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000248515.2</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.89/99.87%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000248695.2</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.87/99.87%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000248715.2</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (94.89/77.65%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000248735.2</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.94/97.80%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000248795.2</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (99.55/80.41%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000248855.2</strong></td>
+<td><span class='no-assignment'>Not Assigned</span></td>
+<td><span class="status-mssa">MSSA</span></td>
+<td><span class="confidence-low">LOW</span></td>
+<td><span class="method-insufficient">Insufficient evidence</span></td>
+<td class="kmer-cell">SCCmec_type_V(5C2)/SCCmec_type_V(5C2&5) (7.60/6.96%)</td>
+<td class="evidence-cell"></td>
+</tr>
+<tr>
+<td><strong>GCA_000248895.2</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.58/97.46%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000248915.2</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (96.28/95.76%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000248935.2</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (96.26/91.44%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000248955.2</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.84/97.67%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000249035.2</strong></td>
+<td><span class='no-assignment'>Not Assigned</span></td>
+<td><span class="status-mssa">MSSA</span></td>
+<td><span class="confidence-low">LOW</span></td>
+<td><span class="method-insufficient">Insufficient evidence</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_II(2A) (12.37/6.64%)</td>
+<td class="evidence-cell"></td>
+</tr>
+<tr>
+<td><strong>GCA_000253135.1</strong></td>
+<td><span class='no-assignment'>Not Assigned</span></td>
+<td><span class="status-mssa">MSSA</span></td>
+<td><span class="confidence-low">LOW</span></td>
+<td><span class="method-insufficient">Insufficient evidence</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (44.26/41.22%)</td>
+<td class="evidence-cell"></td>
+</tr>
+<tr>
+<td><strong>GCA_000257985.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.68/99.66%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000258685.1</strong></td>
+<td><span class='no-assignment'>Not Assigned</span></td>
+<td><span class="status-mssa">MSSA</span></td>
+<td><span class="confidence-low">LOW</span></td>
+<td><span class="method-insufficient">Insufficient evidence</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (16.00/13.44%)</td>
+<td class="evidence-cell"></td>
+</tr>
+<tr>
+<td><strong>GCA_000259715.1</strong></td>
+<td>SCCmec_type_V(5C2)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-low">LOW</span></td>
+<td><span class="method-kmer">K-mer based</span></td>
+<td class="kmer-cell">SCCmec_type_V(5C2)/SCCmec_type_V(5C2&5) (48.64/42.48%)</td>
+<td class="evidence-cell">mecA_detected</td>
+</tr>
+<tr>
+<td><strong>GCA_000259995.1</strong></td>
+<td>SCCmec_type_III(3A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_III(3A)/SCCmec_type_VIII(4A) (83.90/60.95%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_III_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000260015.1</strong></td>
+<td>SCCmec_type_III(3A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_III(3A)/SCCmec_type_VIII(4A) (84.00/60.96%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_III_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000260055.1</strong></td>
+<td>SCCmec_type_III(3A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_III(3A)/SCCmec_type_VII(5C1) (95.82/62.76%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_III_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000260315.1</strong></td>
+<td><span class='no-assignment'>Not Assigned</span></td>
+<td><span class="status-mssa">MSSA</span></td>
+<td><span class="confidence-low">LOW</span></td>
+<td><span class="method-insufficient">Insufficient evidence</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_II(2A) (12.77/6.67%)</td>
+<td class="evidence-cell"></td>
+</tr>
+<tr>
+<td><strong>GCA_000261165.1</strong></td>
+<td><span class='no-assignment'>Not Assigned</span></td>
+<td><span class="status-mssa">MSSA</span></td>
+<td><span class="confidence-low">LOW</span></td>
+<td><span class="method-insufficient">Insufficient evidence</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_II(2A) (25.53/12.56%)</td>
+<td class="evidence-cell"></td>
+</tr>
+<tr>
+<td><strong>GCA_000262815.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.80/99.75%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000262835.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.80/99.74%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000262915.1</strong></td>
+<td>SCCmec_type_VIII(4A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-low">LOW</span></td>
+<td><span class="method-kmer">K-mer based</span></td>
+<td class="kmer-cell">SCCmec_type_VIII(4A)/SCCmec_type_VIII(4A) (64.60/62.71%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected</td>
+</tr>
+<tr>
+<td><strong>GCA_000276625.1</strong></td>
+<td><span class='no-assignment'>Not Assigned</span></td>
+<td><span class="status-mssa">MSSA</span></td>
+<td><span class="confidence-low">LOW</span></td>
+<td><span class="method-insufficient">Insufficient evidence</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_I(1B) (15.97/8.59%)</td>
+<td class="evidence-cell"></td>
+</tr>
+<tr>
+<td><strong>GCA_000280745.1</strong></td>
+<td>SCCmec_type_V(5C2&5)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-low">LOW</span></td>
+<td><span class="method-kmer">K-mer based</span></td>
+<td class="kmer-cell">SCCmec_type_V(5C2&5)/SCCmec_type_V(5C2&5) (63.63/63.62%)</td>
+<td class="evidence-cell">mecA_detected</td>
+</tr>
+<tr>
+<td><strong>GCA_000296595.1</strong></td>
+<td>SCCmec_type_V(5C2)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-low">LOW</span></td>
+<td><span class="method-kmer">K-mer based</span></td>
+<td class="kmer-cell">SCCmec_type_V(5C2)/SCCmec_type_V(5C2&5) (46.94/41.11%)</td>
+<td class="evidence-cell">mecA_detected</td>
+</tr>
+<tr>
+<td><strong>GCA_000312985.1</strong></td>
+<td>SCCmec_type_III(3A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_III(3A)/SCCmec_type_VIII(4A) (75.47/53.62%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_III_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000313005.1</strong></td>
+<td>SCCmec_type_III(3A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_III(3A)/SCCmec_type_VIII(4A) (78.20/57.36%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_III_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000313595.1</strong></td>
+<td>SCCmec_type_III(3A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_III(3A)/SCCmec_type_VII(5C1) (82.48/71.75%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_III_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000330685.1</strong></td>
+<td><span class='no-assignment'>Not Assigned</span></td>
+<td><span class="status-mssa">MSSA</span></td>
+<td><span class="confidence-low">LOW</span></td>
+<td><span class="method-insufficient">Insufficient evidence</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_I(1B) (20.07/15.67%)</td>
+<td class="evidence-cell"></td>
+</tr>
+<tr>
+<td><strong>GCA_000330825.2</strong></td>
+<td><span class='no-assignment'>Not Assigned</span></td>
+<td><span class="status-mssa">MSSA</span></td>
+<td><span class="confidence-low">LOW</span></td>
+<td><span class="method-insufficient">Insufficient evidence</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_I(1B) (20.16/15.25%)</td>
+<td class="evidence-cell"></td>
+</tr>
+<tr>
+<td><strong>GCA_000332665.1</strong></td>
+<td><span class='no-assignment'>Not Assigned</span></td>
+<td><span class="status-mssa">MSSA</span></td>
+<td><span class="confidence-low">LOW</span></td>
+<td><span class="method-insufficient">Insufficient evidence</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_I(1B) (21.86/13.85%)</td>
+<td class="evidence-cell"></td>
+</tr>
+<tr>
+<td><strong>GCA_000332685.1</strong></td>
+<td><span class='no-assignment'>Not Assigned</span></td>
+<td><span class="status-mssa">MSSA</span></td>
+<td><span class="confidence-low">LOW</span></td>
+<td><span class="method-insufficient">Insufficient evidence</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_II(2A) (36.05/26.27%)</td>
+<td class="evidence-cell"></td>
+</tr>
+<tr>
+<td><strong>GCA_000336295.1</strong></td>
+<td>SCCmec_type_V(5C2)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-low">LOW</span></td>
+<td><span class="method-kmer">K-mer based</span></td>
+<td class="kmer-cell">SCCmec_type_V(5C2)/SCCmec_type_V(5C2&5) (50.55/43.84%)</td>
+<td class="evidence-cell">mecA_detected</td>
+</tr>
+<tr>
+<td><strong>GCA_000336315.1</strong></td>
+<td>SCCmec_type_V(5C2)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-low">LOW</span></td>
+<td><span class="method-kmer">K-mer based</span></td>
+<td class="kmer-cell">SCCmec_type_V(5C2)/SCCmec_type_V(5C2&5) (50.57/43.96%)</td>
+<td class="evidence-cell">mecA_detected</td>
+</tr>
+<tr>
+<td><strong>GCA_000336335.1</strong></td>
+<td>SCCmec_type_V(5C2)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-low">LOW</span></td>
+<td><span class="method-kmer">K-mer based</span></td>
+<td class="kmer-cell">SCCmec_type_V(5C2)/SCCmec_type_V(5C2&5) (50.50/43.90%)</td>
+<td class="evidence-cell">mecA_detected</td>
+</tr>
+<tr>
+<td><strong>GCA_000336515.1</strong></td>
+<td><span class='no-assignment'>Not Assigned</span></td>
+<td><span class="status-mssa">MSSA</span></td>
+<td><span class="confidence-low">LOW</span></td>
+<td><span class="method-insufficient">Insufficient evidence</span></td>
+<td class="kmer-cell">SCCmec_type_VI(4B)/SCCmec_type_I(1B) (33.20/22.10%)</td>
+<td class="evidence-cell"></td>
+</tr>
+<tr>
+<td><strong>GCA_000336595.1</strong></td>
+<td>SCCmec_type_V(5C2)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-low">LOW</span></td>
+<td><span class="method-kmer">K-mer based</span></td>
+<td class="kmer-cell">SCCmec_type_V(5C2)/SCCmec_type_V(5C2&5) (49.39/42.87%)</td>
+<td class="evidence-cell">mecA_detected</td>
+</tr>
+<tr>
+<td><strong>GCA_000350425.2</strong></td>
+<td><span class='no-assignment'>Not Assigned</span></td>
+<td><span class="status-mssa">MSSA</span></td>
+<td><span class="confidence-low">LOW</span></td>
+<td><span class="method-insufficient">Insufficient evidence</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_I(1B) (14.33/8.44%)</td>
+<td class="evidence-cell"></td>
+</tr>
+<tr>
+<td><strong>GCA_000359665.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (93.73/88.93%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000359765.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (93.87/89.06%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000359805.1</strong></td>
+<td><span class='no-assignment'>Not Assigned</span></td>
+<td><span class="status-mssa">MSSA</span></td>
+<td><span class="confidence-low">LOW</span></td>
+<td><span class="method-insufficient">Insufficient evidence</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_I(1B) (20.77/17.05%)</td>
+<td class="evidence-cell"></td>
+</tr>
+<tr>
+<td><strong>GCA_000359825.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (92.84/92.80%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000359865.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (93.87/89.06%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000359925.1</strong></td>
+<td><span class='no-assignment'>Not Assigned</span></td>
+<td><span class="status-mssa">MSSA</span></td>
+<td><span class="confidence-low">LOW</span></td>
+<td><span class="method-insufficient">Insufficient evidence</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_I(1B) (19.59/15.07%)</td>
+<td class="evidence-cell"></td>
+</tr>
+<tr>
+<td><strong>GCA_000360005.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.87/99.87%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000360025.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.90/99.90%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000360065.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.92/99.90%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000360145.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.88/99.85%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000360305.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.92/99.90%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000360325.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.88/99.85%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000360405.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.92/99.90%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000360505.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.78/99.75%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000360525.1</strong></td>
+<td><span class='no-assignment'>Not Assigned</span></td>
+<td><span class="status-mssa">MSSA</span></td>
+<td><span class="confidence-low">LOW</span></td>
+<td><span class="method-insufficient">Insufficient evidence</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_I(1B) (14.39/7.50%)</td>
+<td class="evidence-cell"></td>
+</tr>
+<tr>
+<td><strong>GCA_000360565.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.89/99.87%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000360645.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.87/99.84%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000360685.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.92/99.90%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000360765.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.95/99.93%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000360785.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.70/99.65%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000360925.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.80/99.79%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000360985.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.91/99.90%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000361065.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.59/99.49%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000361205.1</strong></td>
+<td><span class='no-assignment'>Not Assigned</span></td>
+<td><span class="status-mssa">MSSA</span></td>
+<td><span class="confidence-low">LOW</span></td>
+<td><span class="method-insufficient">Insufficient evidence</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_I(1B) (21.88/13.85%)</td>
+<td class="evidence-cell"></td>
+</tr>
+<tr>
+<td><strong>GCA_000361245.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.92/99.90%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000361265.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (96.07/77.19%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000361325.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.91/99.90%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000361365.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.92/99.90%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000361405.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (98.67/98.36%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000361425.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.92/99.90%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000361445.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (81.34/80.12%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000361565.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.92/99.90%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000361605.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.80/99.79%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000361665.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.74/99.68%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000361745.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.92/99.90%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000361765.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.85/99.81%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000361785.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.92/99.90%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000361805.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.89/99.87%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000361825.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.91/99.89%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000361845.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.76/99.73%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000361905.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.92/99.90%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000362005.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.92/99.90%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000362085.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.95/99.93%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000362245.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.91/99.90%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000362345.1</strong></td>
+<td><span class='no-assignment'>Not Assigned</span></td>
+<td><span class="status-mssa">MSSA</span></td>
+<td><span class="confidence-low">LOW</span></td>
+<td><span class="method-insufficient">Insufficient evidence</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_VIII(4A) (33.06/25.40%)</td>
+<td class="evidence-cell"></td>
+</tr>
+<tr>
+<td><strong>GCA_000362365.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.85/99.81%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000362425.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (94.53/75.56%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000362465.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.56/99.49%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000362505.1</strong></td>
+<td><span class='no-assignment'>Not Assigned</span></td>
+<td><span class="status-mssa">MSSA</span></td>
+<td><span class="confidence-low">LOW</span></td>
+<td><span class="method-insufficient">Insufficient evidence</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_II(2A) (25.73/23.33%)</td>
+<td class="evidence-cell"></td>
+</tr>
+<tr>
+<td><strong>GCA_000362565.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.80/99.75%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000362625.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.95/99.93%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000362805.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.89/99.86%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000362965.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.92/99.90%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000362985.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.92/99.90%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000363165.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (97.98/79.97%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000363205.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.84/99.80%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000363305.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.28/97.92%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000363425.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.75/99.69%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000363445.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.80/99.79%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000363585.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.92/99.90%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000363745.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.77/99.72%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000363765.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.89/99.86%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000363865.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.86/99.86%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000364065.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.91/99.89%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000364465.1</strong></td>
+<td><span class='no-assignment'>Not Assigned</span></td>
+<td><span class="status-mssa">MSSA</span></td>
+<td><span class="confidence-low">LOW</span></td>
+<td><span class="method-insufficient">Insufficient evidence</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_V(5C2&5) (5.80/5.38%)</td>
+<td class="evidence-cell"></td>
+</tr>
+<tr>
+<td><strong>GCA_000364485.1</strong></td>
+<td><span class='no-assignment'>Not Assigned</span></td>
+<td><span class="status-mssa">MSSA</span></td>
+<td><span class="confidence-low">LOW</span></td>
+<td><span class="method-insufficient">Insufficient evidence</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_V(5C2&5) (5.81/5.38%)</td>
+<td class="evidence-cell"></td>
+</tr>
+<tr>
+<td><strong>GCA_000364505.1</strong></td>
+<td>SCCmec_type_V(5C2&5)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-low">LOW</span></td>
+<td><span class="method-kmer">K-mer based</span></td>
+<td class="kmer-cell">SCCmec_type_V(5C2&5)/SCCmec_type_V(5C2&5) (64.37/64.34%)</td>
+<td class="evidence-cell">mecA_detected</td>
+</tr>
+<tr>
+<td><strong>GCA_000364525.1</strong></td>
+<td>SCCmec_type_V(5C2)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-low">LOW</span></td>
+<td><span class="method-kmer">K-mer based</span></td>
+<td class="kmer-cell">SCCmec_type_V(5C2)/SCCmec_type_V(5C2&5) (50.10/43.64%)</td>
+<td class="evidence-cell">mecA_detected</td>
+</tr>
+<tr>
+<td><strong>GCA_000382965.1</strong></td>
+<td>SCCmec_type_I(1B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_I(1B)/SCCmec_type_I(1B) (90.73/90.11%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_I_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000382985.1</strong></td>
+<td>SCCmec_type_I(1B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_I(1B)/SCCmec_type_I(1B) (90.70/90.10%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_I_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000390205.1</strong></td>
+<td><span class='no-assignment'>Not Assigned</span></td>
+<td><span class="status-mssa">MSSA</span></td>
+<td><span class="confidence-low">LOW</span></td>
+<td><span class="method-insufficient">Insufficient evidence</span></td>
+<td class="kmer-cell">SCCmec_type_I(1B)/SCCmec_type_II(2A) (26.60/24.74%)</td>
+<td class="evidence-cell"></td>
+</tr>
+<tr>
+<td><strong>GCA_000401595.1</strong></td>
+<td>SCCmec_type_V(5C2&5)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-low">LOW</span></td>
+<td><span class="method-kmer">K-mer based</span></td>
+<td class="kmer-cell">SCCmec_type_V(5C2&5)/SCCmec_type_V(5C2&5) (96.72/58.18%)</td>
+<td class="evidence-cell">mecA_detected</td>
+</tr>
+<tr>
+<td><strong>GCA_000403115.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.71/99.64%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000403685.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (79.70/72.75%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000409165.1</strong></td>
+<td><span class='no-assignment'>Not Assigned</span></td>
+<td><span class="status-mssa">MSSA</span></td>
+<td><span class="confidence-low">LOW</span></td>
+<td><span class="method-insufficient">Insufficient evidence</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (35.78/34.18%)</td>
+<td class="evidence-cell"></td>
+</tr>
+<tr>
+<td><strong>GCA_000412775.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.25/97.80%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000421995.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (95.29/81.32%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000439835.1</strong></td>
+<td><span class='no-assignment'>Not Assigned</span></td>
+<td><span class="status-mssa">MSSA</span></td>
+<td><span class="confidence-low">LOW</span></td>
+<td><span class="method-insufficient">Insufficient evidence</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_II(2A) (25.49/12.56%)</td>
+<td class="evidence-cell"></td>
+</tr>
+<tr>
+<td><strong>GCA_000443125.1</strong></td>
+<td><span class='no-assignment'>Not Assigned</span></td>
+<td><span class="status-mssa">MSSA</span></td>
+<td><span class="confidence-low">LOW</span></td>
+<td><span class="method-insufficient">Insufficient evidence</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (16.02/13.48%)</td>
+<td class="evidence-cell"></td>
+</tr>
+<tr>
+<td><strong>GCA_000443245.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (86.74/82.36%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000443265.1</strong></td>
+<td><span class='no-assignment'>Not Assigned</span></td>
+<td><span class="status-mssa">MSSA</span></td>
+<td><span class="confidence-low">LOW</span></td>
+<td><span class="method-insufficient">Insufficient evidence</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (11.15/6.92%)</td>
+<td class="evidence-cell"></td>
+</tr>
+<tr>
+<td><strong>GCA_000443285.1</strong></td>
+<td><span class='no-assignment'>Not Assigned</span></td>
+<td><span class="status-mssa">MSSA</span></td>
+<td><span class="confidence-low">LOW</span></td>
+<td><span class="method-insufficient">Insufficient evidence</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (11.38/7.12%)</td>
+<td class="evidence-cell"></td>
+</tr>
+<tr>
+<td><strong>GCA_000452385.2</strong></td>
+<td><span class='no-assignment'>Not Assigned</span></td>
+<td><span class="status-mssa">MSSA</span></td>
+<td><span class="confidence-low">LOW</span></td>
+<td><span class="method-insufficient">Insufficient evidence</span></td>
+<td class="kmer-cell">SCCmec_type_V(5C2&5)/SCCmec_type_IV(2B) (16.97/4.79%)</td>
+<td class="evidence-cell"></td>
+</tr>
+<tr>
+<td><strong>GCA_000452885.1</strong></td>
+<td><span class='no-assignment'>Not Assigned</span></td>
+<td><span class="status-mssa">MSSA</span></td>
+<td><span class="confidence-low">LOW</span></td>
+<td><span class="method-insufficient">Insufficient evidence</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_II(2A) (8.83/7.38%)</td>
+<td class="evidence-cell"></td>
+</tr>
+<tr>
+<td><strong>GCA_000455725.2</strong></td>
+<td>SCCmec_type_V(5C2&5)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-low">LOW</span></td>
+<td><span class="method-kmer">K-mer based</span></td>
+<td class="kmer-cell">SCCmec_type_V(5C2&5)/SCCmec_type_V(5C2&5) (99.79/60.82%)</td>
+<td class="evidence-cell">mecA_detected</td>
+</tr>
+<tr>
+<td><strong>GCA_000462955.1</strong></td>
+<td><span class='no-assignment'>Not Assigned</span></td>
+<td><span class="status-mssa">MSSA</span></td>
+<td><span class="confidence-low">LOW</span></td>
+<td><span class="method-insufficient">Insufficient evidence</span></td>
+<td class="kmer-cell">SCCmec_type_III(3A)/SCCmec_type_IV(2B) (17.06/12.59%)</td>
+<td class="evidence-cell"></td>
+</tr>
+<tr>
+<td><strong>GCA_000463055.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (99.45/78.26%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000470845.1</strong></td>
+<td>SCCmec_type_V(5C2&5)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-low">LOW</span></td>
+<td><span class="method-kmer">K-mer based</span></td>
+<td class="kmer-cell">SCCmec_type_V(5C2&5)/SCCmec_type_V(5C2&5) (99.44/99.40%)</td>
+<td class="evidence-cell">mecA_detected</td>
+</tr>
+<tr>
+<td><strong>GCA_000507705.1</strong></td>
+<td><span class='no-assignment'>Not Assigned</span></td>
+<td><span class="status-mssa">MSSA</span></td>
+<td><span class="confidence-low">LOW</span></td>
+<td><span class="method-insufficient">Insufficient evidence</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_I(1B) (17.89/11.98%)</td>
+<td class="evidence-cell"></td>
+</tr>
+<tr>
+<td><strong>GCA_000512545.1</strong></td>
+<td>SCCmec_type_V(5C2&5)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-low">LOW</span></td>
+<td><span class="method-kmer">K-mer based</span></td>
+<td class="kmer-cell">SCCmec_type_V(5C2&5)/SCCmec_type_V(5C2&5) (64.69/64.66%)</td>
+<td class="evidence-cell">mecA_detected</td>
+</tr>
+<tr>
+<td><strong>GCA_000525105.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (81.78/76.79%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000525125.1</strong></td>
+<td><span class='no-assignment'>Not Assigned</span></td>
+<td><span class="status-mssa">MSSA</span></td>
+<td><span class="confidence-low">LOW</span></td>
+<td><span class="method-insufficient">Insufficient evidence</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_IV(2B) (23.04/16.45%)</td>
+<td class="evidence-cell"></td>
+</tr>
+<tr>
+<td><strong>GCA_000525145.1</strong></td>
+<td><span class='no-assignment'>Not Assigned</span></td>
+<td><span class="status-mssa">MSSA</span></td>
+<td><span class="confidence-low">LOW</span></td>
+<td><span class="method-insufficient">Insufficient evidence</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_VIII(4A) (33.14/25.43%)</td>
+<td class="evidence-cell"></td>
+</tr>
+<tr>
+<td><strong>GCA_000525165.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.93/99.92%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000525205.1</strong></td>
+<td><span class='no-assignment'>Not Assigned</span></td>
+<td><span class="status-mssa">MSSA</span></td>
+<td><span class="confidence-low">LOW</span></td>
+<td><span class="method-insufficient">Insufficient evidence</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_I(1B) (21.88/13.80%)</td>
+<td class="evidence-cell"></td>
+</tr>
+<tr>
+<td><strong>GCA_000525245.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (93.83/92.55%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000525405.1</strong></td>
+<td>SCCmec_type_I(1B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_I(1B)/SCCmec_type_I(1B) (95.61/94.78%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_I_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000527375.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.71/99.66%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000527435.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.91/99.90%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000527555.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.88/99.86%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000527615.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.91/99.90%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000527655.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.87/99.83%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000527735.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (91.79/76.91%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000527755.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.51/99.39%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000527835.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (91.69/77.18%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000527915.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.46/99.33%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000527935.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (89.90/74.97%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000527975.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.84/99.80%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000528035.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.82/99.78%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000528055.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.22/99.03%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000528095.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (91.81/76.92%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000528135.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.91/99.90%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000528155.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.91/99.90%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000528175.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (89.61/74.71%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000528235.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (91.69/77.18%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000528255.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.86/99.83%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000528335.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.45/99.34%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000528375.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.17/98.96%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000528415.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.51/99.39%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000528435.1</strong></td>
+<td><span class='no-assignment'>Not Assigned</span></td>
+<td><span class="status-mssa">MSSA</span></td>
+<td><span class="confidence-low">LOW</span></td>
+<td><span class="method-insufficient">Insufficient evidence</span></td>
+<td class="kmer-cell">SCCmec_type_I(1B)/SCCmec_type_VIII(4A) (23.83/22.02%)</td>
+<td class="evidence-cell"></td>
+</tr>
+<tr>
+<td><strong>GCA_000528475.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.84/99.80%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000528495.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.92/99.90%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000528515.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (98.26/96.97%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000528575.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.53/99.42%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000528655.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.74/99.68%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000528735.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (91.68/76.85%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000528755.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.92/99.90%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000528815.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.87/99.83%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000528915.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.53/99.42%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000528955.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (91.69/77.18%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000528975.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (91.69/77.04%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000529095.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.92/99.90%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000529115.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.80/99.76%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000529195.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.92/99.90%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000529475.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.88/99.87%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000529515.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (96.17/76.91%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000529575.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (96.23/77.18%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000529875.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.89/99.87%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000530035.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.71/99.64%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000530215.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (94.58/93.24%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000530315.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (97.98/97.51%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000530515.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.91/99.89%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000530545.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.88/99.85%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000530615.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.92/99.90%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000530815.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.74/99.68%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000530995.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.74/99.68%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000531015.1</strong></td>
+<td><span class='no-assignment'>Not Assigned</span></td>
+<td><span class="status-mssa">MSSA</span></td>
+<td><span class="confidence-low">LOW</span></td>
+<td><span class="method-insufficient">Insufficient evidence</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_II(2A) (14.43/6.05%)</td>
+<td class="evidence-cell"></td>
+</tr>
+<tr>
+<td><strong>GCA_000531035.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.78/99.72%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000531115.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.86/99.83%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000531325.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.95/99.93%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000531375.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (96.05/77.18%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000531495.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.80/99.79%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000531555.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.46/99.36%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000531835.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.43/99.31%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000531855.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (96.13/77.07%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000531915.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.78/99.73%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000531995.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.91/99.90%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000532115.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.91/99.90%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000532375.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.89/99.87%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000532395.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.76/99.74%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000532495.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.87/99.83%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000532515.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.90/99.88%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000532555.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (96.17/76.92%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000532795.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.92/99.90%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000532815.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.76/99.76%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000532915.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.92/99.90%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000533015.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.88/99.85%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000533255.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.39/99.24%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000533375.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.83/99.79%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000533415.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.53/99.42%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000533515.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.88/99.85%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000533555.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.92/99.90%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000533595.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.75/99.69%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000533635.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.88/99.85%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000533655.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.92/99.90%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000533715.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.53/99.42%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000533735.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.95/99.93%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000533795.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.87/99.84%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000533875.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.53/99.42%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000534855.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (89.93/74.05%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000534955.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.47/99.33%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000534975.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.65/99.58%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000535035.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.49/99.36%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000535055.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.91/99.90%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000535095.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.76/99.70%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000535135.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (98.98/98.72%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000535175.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.89/99.87%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000535315.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.88/99.85%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000535535.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.89/99.87%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000535635.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.44/99.30%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000535655.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.89/99.88%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000535675.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.91/99.89%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000535695.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.89/99.87%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000535755.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.92/99.90%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000535815.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.90/99.89%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000535915.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.54/99.42%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000535935.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.91/99.88%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000535955.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.91/99.90%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000535975.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.86/99.85%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000535995.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.04/98.80%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000536055.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.86/99.85%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000536095.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.53/99.42%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000536135.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.42/99.28%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000536195.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (96.53/96.12%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000536255.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.10/98.88%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000536295.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.47/99.34%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000536415.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.44/99.30%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000536435.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.90/99.89%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000536455.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.81/99.76%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000536515.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (93.39/88.61%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000536555.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (93.54/88.76%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000536575.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (93.40/88.62%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000536595.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (92.72/87.98%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000536615.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (93.60/88.80%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000536635.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (93.86/89.05%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000536655.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (93.67/88.88%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000536755.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (93.32/88.55%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000536775.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (93.23/88.46%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000536795.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (92.93/88.12%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000536815.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (93.46/88.69%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000536855.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (93.16/88.41%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000536875.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (93.47/88.68%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000536895.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (93.31/88.57%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000536915.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (93.62/88.82%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000536935.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (93.51/88.72%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000536955.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (92.72/87.98%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000536975.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (93.29/88.52%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000536995.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (93.66/88.87%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000537015.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (93.61/88.81%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000537055.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (92.20/87.50%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000537075.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (93.14/88.38%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000537095.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (93.40/88.62%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000537115.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.89/99.87%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000537135.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (93.31/88.51%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000537175.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (93.67/88.88%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000537235.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (93.58/88.79%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000537275.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (93.40/88.62%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000537295.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (93.87/89.06%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000537315.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.87/99.87%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000537355.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.87/99.84%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000537375.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (93.73/88.93%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000537395.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.80/99.76%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000537495.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (93.67/88.88%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000537515.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (93.64/88.84%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000537535.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (93.37/88.60%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000537575.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (93.40/88.62%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000537595.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (93.52/88.74%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000537695.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (93.07/88.35%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000537715.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (93.37/88.60%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000537855.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (93.67/88.88%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000537895.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (92.93/88.18%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000537915.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (80.58/79.19%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000537955.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (93.43/88.65%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000538055.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.76/99.70%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000538075.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (98.76/98.45%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000538135.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.59/99.57%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000538155.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.87/99.85%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000538255.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (93.37/88.60%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000538355.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.56/99.45%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000538475.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.77/99.76%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000538655.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (93.53/88.74%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000538675.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (78.35/77.62%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000538695.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (93.36/88.58%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000538715.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.49/99.36%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000538735.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (93.37/88.60%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000538775.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.79/99.77%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000538815.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (93.51/88.72%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000538835.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (80.04/78.71%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000538875.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (93.64/88.85%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000538895.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (93.59/88.80%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000538915.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.53/99.41%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000538935.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (82.09/79.12%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000538975.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (93.61/88.81%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000538995.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (93.66/88.87%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000539015.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (93.48/88.69%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000539055.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (90.82/86.21%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000539075.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (93.81/89.00%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000539115.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (93.86/89.05%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000539175.1</strong></td>
+<td>SCCmec_type_III(3A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_III(3A)/SCCmec_type_VII(5C1) (94.99/60.81%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_III_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000539235.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (96.74/91.42%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000539255.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (93.48/88.70%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000539335.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (93.44/88.66%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000539355.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (74.50/71.96%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000539375.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.77/99.71%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000539395.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (93.06/88.31%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000539415.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (93.56/88.77%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000539455.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (93.29/88.45%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000539475.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (93.67/88.81%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000539515.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (93.16/88.39%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000539595.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.80/99.80%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000539635.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.89/99.87%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000539655.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (93.73/88.93%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000539695.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.71/99.63%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000539715.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.48/99.35%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000539735.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (93.00/88.25%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000539795.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (93.61/88.82%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000539815.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (93.25/88.48%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000539875.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.87/99.87%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000539895.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (93.33/88.55%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000539935.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (93.14/88.34%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000539975.1</strong></td>
+<td>SCCmec_type_II(2A)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_II(2A)/SCCmec_type_II(2A) (99.90/99.89%)</td>
+<td class="evidence-cell">mecA_detected  mecR1_detected  sccmec_II_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000540055.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (93.30/88.52%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>GCA_000540115.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (93.61/88.82%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+<tr>
+<td><strong>LGA251</strong></td>
+<td>SCCmec_type_XI(8E)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-very-high">VERY_HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_XI(8E)/SCCmec_type_II(2A) (100.00/12.49%)</td>
+<td class="evidence-cell">mecC_detected  mecR1_detected  sccmec_XI_present</td>
+</tr>
+<tr>
+<td><strong>NZ_CP183317.1</strong></td>
+<td>SCCmec_type_IV(2B)</td>
+<td><span class="status-mrsa">MRSA</span></td>
+<td><span class="confidence-high">HIGH</span></td>
+<td><span class="method-gene">Gene-based</span></td>
+<td class="kmer-cell">SCCmec_type_IV(2B)/SCCmec_type_IV(2B) (93.85/89.04%)</td>
+<td class="evidence-cell">mecA_detected  sccmec_IV_present</td>
+</tr>
+                    </tbody>
+                </table>
+            </div>
+            <div style="margin-top: 20px; padding: 10px; background: #f8fafc; border-radius: 6px; font-size: 11px; color: #4b5563;">
+                <strong>Interpretation Rules:</strong><br>
+                1. <span class="method-gene" style="margin-left: 5px;">Gene-based</span> = High/Very High confidence predictions<br>
+                2. <span class="method-kmer" style="margin-left: 5px;">K-mer based</span> = Low confidence WITH evidence (mecA/mecC detected)<br>
+                3. <span class="method-insufficient" style="margin-left: 5px;">Insufficient evidence</span> = Low confidence WITHOUT evidence → No SCCmec type assigned<br>
+                4. <span class="no-assignment" style="margin-left: 5px;">Not Assigned</span> = Low confidence, no evidence (shown in red)<br>
+                5. All samples show k-mer hits for reference (gene-based and k-mer based)
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p><strong>STAPHSCOPE</strong> - Enhanced SCCmec Cassette Analysis Summary</p>
+            <p class="timestamp">Generated: 2026-09-21 17:24:21</p>
+            <p style="margin-top: 10px; font-size: 12px;">
+                Total samples: 386 | 
+                Gene-based: 314 | 
+                K-mer based: 14 |
+                Not assigned: 58
+            </p>
+            
+            <div class="authorship">
+                <p><strong>Technical Support & Inquiries:</strong></p>
+                <p>Author: Brown Beckley</p>
+                <p>GitHub: <a href="https://github.com/bbeckley-hub" style="color: #fbbf24;">bbeckley-hub</a></p>
+                <p>Email: <a href="mailto:brownbeckley94@gmail.com" style="color: #fbbf24;">brownbeckley94@gmail.com</a></p>
+                <p>Affiliation: University of Ghana Medical School - Department of Medical Biochemistry</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const quotes = [
+            { text: "The important thing is not to stop questioning. Curiosity has its own reason for existing.", author: "Albert Einstein" },
+            { text: "Science is not only a disciple of reason but also one of romance and passion.", author: "Stephen Hawking" },
+            { text: "Somewhere, something incredible is waiting to be known.", author: "Carl Sagan" },
+            { text: "The good thing about science is that it's true whether or not you believe in it.", author: "Neil deGrasse Tyson" },
+            { text: "In science, there are no shortcuts to truth.", author: "Karl Popper" },
+            { text: "Science knows no country, because knowledge belongs to humanity.", author: "Louis Pasteur" },
+            { text: "The science of today is the technology of tomorrow.", author: "Edward Teller" },
+            { text: "Nothing in life is to be feared, it is only to be understood.", author: "Marie Curie" },
+            { text: "Research is what I'm doing when I don't know what I'm doing.", author: "Wernher von Braun" },
+            { text: "The universe is not required to be in perfect harmony with human ambition.", author: "Carl Sagan" }
+        ];
+
+        const quoteContainer = document.getElementById('quoteContainer');
+        const quoteText = document.getElementById('quoteText');
+        const quoteAuthor = document.getElementById('quoteAuthor');
+
+        function getRandomQuote() {
+            return quotes[Math.floor(Math.random() * quotes.length)];
+        }
+
+        function displayQuote() {
+            quoteContainer.style.opacity = '0';
+            
+            setTimeout(() => {
+                const quote = getRandomQuote();
+                quoteText.textContent = "\"" + quote.text + "\"";
+                quoteAuthor.textContent = "— " + quote.author;
+                quoteContainer.style.opacity = '1';
+            }, 500);
+        }
+
+        displayQuote();
+        setInterval(displayQuote, 10000);
+    </script>
+</body>
+</html>
