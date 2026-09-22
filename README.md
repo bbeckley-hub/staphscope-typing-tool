@@ -248,6 +248,7 @@ The tab highlights genuine disagreements — but only *genuine* ones. Naming-for
 - [🔥 Feature Deep-Dives](#-feature-deep-dives)
 - [🎯 Overview](#-overview)
 - [✨ Key Features](#-key-features)
+- [🧰 StaphScope Toolkit – iTOL Metadata Made Easy](#-staphscope-toolkit--itol-metadata-made-easy)
 - [🌐 StaphScope Web Platform](#-staphscope-web-platform)
 - [⚡ Quick Start (CLI)](#-quick-start-cli)
 - [🔧 Installation (CLI)](#-installation-cli)
@@ -314,16 +315,30 @@ StaphScope delivers:
 | **Visualization Suite** | Interactive dashboard + publication plots | HTML dashboard, PNG, PDF, SVG, ZIP bundle | 1-2 min |
 | **Lineage Database** | Global epidemiological context | 50 major lineages, geographical distribution | Instant |
 
-### 📊 Sample Integrated Reports
+---
 
-| Report Type | Link |
-|-------------|------|
-| **Comprehensive Report** | [![View Comprehensive Report](https://img.shields.io/badge/📄-Comprehensive_Report-FF9800)](https://bbeckley-hub.github.io/staphscope-typing-tool/staphscope_comprehensive_report.html) |
-| **Gene‑Centric Report** | [![View Gene‑Centric Report](https://img.shields.io/badge/📊-Gene_Centric_Report-red)](https://bbeckley-hub.github.io/staphscope-typing-tool/staphscope_ultimate_gene_centric_report.html) |
-| **Sample‑Centric Report** | [![View Sample‑Centric Report](https://img.shields.io/badge/📋-Sample_Centric_Report-purple)](https://bbeckley-hub.github.io/staphscope-typing-tool/staphscope_ultimate_sample_centric_report.html) |
-| **Interactive Dashboard** | [![View Dashboard](https://img.shields.io/badge/📊-Interactive_Dashboard-16A085)](https://bbeckley-hub.github.io/staphscope-typing-tool/staphscope_dashboard.html) |
+### 📊 **Sample Integrated Reports**
 
-> **Note:** Reports may take a few seconds to load. For the best experience, download the HTML files and open them locally.
+Every report in one interactive hub — browse, search, preview, and open any StaphScope output. **[Open the Live Report Hub →](https://bbeckley-hub.github.io/staphscope-typing-tool/)**
+
+| Report Type | What it shows | Direct link |
+|---|---|---|
+| **📄 Comprehensive Report** | Master typing table — MLST, spa, SCCmec (CGE + RPet + subtype), agr, capsule, MRSA/MSSA | [![View](https://img.shields.io/badge/📄-Comprehensive_Report-FF9800)](https://bbeckley-hub.github.io/staphscope-typing-tool/staphscope_comprehensive_report.html) |
+| **🧬 Gene-Centric Report** | Every AMR / virulence / BACMET / plasmid / mutation gene, with all genomes that carry it | [![View](https://img.shields.io/badge/🧬-Gene_Centric_Report-red)](https://bbeckley-hub.github.io/staphscope-typing-tool/staphscope_ultimate_gene_centric_report.html) |
+| **📋 Sample-Centric Report** | Per-isolate lazy-loaded boxes with a full Compare &amp; Cluster tab | [![View](https://img.shields.io/badge/📋-Sample_Centric_Report-purple)](https://bbeckley-hub.github.io/staphscope-typing-tool/staphscope_ultimate_sample_centric_report.html) |
+| **📈 Interactive Dashboard** | Plotly dashboard — Overview, Typing, QC, AMR, Virulence, MGE, Alerts, Story, Compare | [![View](https://img.shields.io/badge/📈-Interactive_Dashboard-16A085)](https://bbeckley-hub.github.io/staphscope-typing-tool/staphscope_dashboard.html) |
+| **🔬 MLST Summary** | Sequence types + allele profiles across your cohort | [![View](https://img.shields.io/badge/🔬-MLST_Summary-10b981)](https://bbeckley-hub.github.io/staphscope-typing-tool/mlst_summary.html) |
+| **🧬 spa Summary** | spa types + repeat patterns | [![View](https://img.shields.io/badge/🧬-spa_Summary-10b981)](https://bbeckley-hub.github.io/staphscope-typing-tool/spa_summary.html) |
+| **🛡️ SCCmec (CGE)** | Cassette type, *mec* class, *ccr* complex | [![View](https://img.shields.io/badge/🛡️-SCCmec_CGE-10b981)](https://bbeckley-hub.github.io/staphscope-typing-tool/staphscope_sccmec_cge_summary.html) |
+| **🛡️ SCCmec (RPet)** | Independent caller + fine-grained subtype | [![View](https://img.shields.io/badge/🛡️-SCCmec_RPet-10b981)](https://bbeckley-hub.github.io/staphscope-typing-tool/staphscope_sccmec_rpet_summary.html) |
+| **🧬 agr Summary** | agr types I–IV (AgrVATE) | [![View](https://img.shields.io/badge/🧬-agr_Summary-10b981)](https://bbeckley-hub.github.io/staphscope-typing-tool/agr_summary.html) |
+| **📏 FASTA QC** | N50 / GC / contigs + fastANI species confirmation | [![View](https://img.shields.io/badge/📏-FASTA_QC-06b6d4)](https://bbeckley-hub.github.io/staphscope-typing-tool/FASTA_QC_summary.html) |
+| **💊 Capsule Typing** | cap5 / cap8 serotype with completeness score | [![View](https://img.shields.io/badge/💊-Capsule_Typing-06b6d4)](https://bbeckley-hub.github.io/staphscope-typing-tool/staphscope_capsule_summary.html) |
+| **📱 MGE Profile** | mobileOG-db counts across 10 functional categories | [![View](https://img.shields.io/badge/📱-MGE_Profile-14b8a6)](https://bbeckley-hub.github.io/staphscope-typing-tool/staphscope_mge_summary.html) |
+| **🔍 Per-Sample MGE** | Example deep-dive — one page per isolate | [![View](https://img.shields.io/badge/🔍-Per--Sample_MGE-14b8a6)](https://bbeckley-hub.github.io/staphscope-typing-tool/GCA_000160335.2_mge.html) |
+
+> **Note:** Reports may take a few seconds to load. For the best experience, download the HTML files and open them locally — every report is fully self-contained and offline-capable.
+---
 
 ### 🛡️ **MRSA-Specific Innovations**
 - **Automated MRSA Classification**: Based on concurrent *mecA/mecC* + SCC*mec* detection.
@@ -384,7 +399,44 @@ flowchart TB
     SAMPLE --> FINAL
     VIZ --> FINAL
 ```
+---
 
+## 🧰 **StaphScope Toolkit – iTOL Metadata Made Easy**
+
+**Data wrangling got you down?** We built a companion toolkit that automatically generates iTOL-ready annotation files from your StaphScope outputs — **no Excel gymnastics required.**
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/bbeckley-hub/staphscope-typing-tool/main/images/staphscope_itol.png" alt="iTOL tree annotated with StaphScope typing metadata" width="85%">
+</p>
+
+<p align="center"><em>Core-genome phylogeny annotated with MLST, spa, SCCmec, agr, capsule, AMR, and virulence metadata — generated automatically from StaphScope outputs.</em></p>
+
+### **What it does**
+
+- ✅ Converts your StaphScope CSVs into **iTOL colour strips** and **binary matrices**
+- ✅ Handles **MLST, spa, SCCmec, agr, MRSA status, AMR genes, virulence factors, mutations, BacMet, and plasmid replicons**
+- ✅ **Auto-selects top genes/mutations** so you never get empty files
+- ✅ Customise with `--top_st`, `--custom_amr`, or a YAML config file
+
+### **Quick start**
+
+```bash
+# Clone the toolkit
+git clone https://github.com/bbeckley-hub/staphscope-toolkit.git
+cd staphscope-toolkit
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Generate iTOL metadata from your StaphScope run
+python staphscope_itol.py --input_dir /path/to/Staphscope_final_report
+```
+
+Drag and drop the generated files into [iTOL](https://itol.embl.de) — that's it.
+
+> 📖 **[Full documentation & examples →](https://github.com/bbeckley-hub/staphscope-toolkit)**
+
+> *"From 3 hours of Excel gymnastics to 30 seconds of drag-and-drop. You're welcome."* 😉
 ---
 
 ## 🌐 **StaphScope Web Platform**
@@ -482,42 +534,173 @@ staphscope --force-update-amr-db    # full overwrite
 
 # MLST database (choose one)
 staphscope --pull-mlst-db           # from GitHub (no credentials)
-staphscope --update-mlst-db         # from PubMLST (API key required)
+staphscope --update-mlst-db         # from PubMLST only sareus scheme updates (API key required)
 ```
 
 ---
 
 ## 🐳 **StaphScope Docker & Singularity Usage – avoid the padlock 🔓**
 
-By default, Docker runs containers as `root`, so files written to bind‑mounted directories end up owned by `root:root`. **The fix is simple:** add `-u $(id -u):$(id -g)`.
+Docker and Singularity users get **everything pre-installed** — no first-run database setup, no `--pull-mlst-db`, no `--update-amr-db`, no `abricate --setupdb`. Every database (MLST scheme, AMRFinderPlus, ABRicate DBs, mobileOG-db) and every tool (BLAST, DIAMOND, Prodigal, fastANI, agrVATE) is baked into the image. **Pull and run.**
+
+> **Conda users:** you must run `staphscope --pull-mlst-db` and `staphscope --update-amr-db` once after install. Docker and Singularity users skip that entirely.
+
+---
+
+### **Docker (laptops, workstations, cloud VMs)**
+
+Docker runs containers as `root` by default, so files written to bind-mounted directories come out owned by `root:root`. **Fix: add `-u $(id -u):$(id -g)`.**
 
 ```bash
-# Pull the latest image
-docker pull bbeckleyhub/staphscope:latest
+# Pull the image
+docker pull bbeckleyhub/staphscope:2.0.0
 
-# ✅ Recommended (no padlock, no sudo chown)
+# Run (no padlock, no sudo chown)
 docker run --rm \
   -u $(id -u):$(id -g) \
   -v $(pwd):/data \
-  bbeckleyhub/staphscope:latest \
-  -i "/data/*.fasta" -o /data/output -t 4
+  bbeckleyhub/staphscope:2.0.0 \
+  -i "/data/*.fna" -o /data/output -t 4
 ```
 
-**Why `-u $(id -u):$(id -g)`?** It runs the container process with your host UID/GID, so files are owned by you. No padlock, no `sudo chown`, no angry HPC emails.
+- `-u $(id -u):$(id -g)` → files owned by **you**
+- `-v $(pwd):/data` → mounts your current dir as `/data` inside the container
+- `-i "/data/*.fna"` → uses the **container path**, not your host path
+- `-o /data/output` → lands at `./output/` on your host
 
-### **Singularity / Apptainer (HPC clusters)**
+Verify:
+```bash
+docker run --rm bbeckleyhub/staphscope:2.0.0 --help
+```
+
+Interactive shell (for debugging):
+```bash
+docker run --rm -it bbeckleyhub/staphscope:2.0.0 bash
+```
+
+Image size: ~1.7 GB compressed / ~8 GB on disk.
+
+---
+
+### **Singularity / Apptainer (HPC clusters) — recommended for HPC**
+
+**HPC users should use Singularity, not Docker.** HPC login and compute nodes don't run the Docker daemon; Singularity (or its successor Apptainer) is the standard. Same SIF format, rootless by default, and no UID juggling — it runs as your real user automatically.
+
+#### 1. Load the runtime
+
+Module names vary by cluster — check with `module avail`:
 
 ```bash
-singularity pull staphscope.sif docker://bbeckleyhub/staphscope:latest
-singularity run -B $(pwd):/data staphscope.sif -i "/data/*.fasta" -o /data/output
+# Newer clusters — Apptainer
+module load apptainer
+
+# Older clusters — Singularity
+module load containers/singularity/3.6.4
+
+# Pulling the image ALSO needs mksquashfs from squashfs-tools
+module load squashfs-tools/4.4
+
+singularity --version   # or: apptainer --version
 ```
 
-Singularity always maps your host UID automatically — no padlock, no extra flags needed.
+#### 2. Pull the image (one-time, needs internet on login node)
 
-| Platform | Recommended command | Output ownership |
-|----------|--------------------|--------------------|
-| **Docker** | `docker run --rm -u $(id -u):$(id -g) -v "$PWD:/data" …` | Your user |
-| **Singularity** | `singularity run -B "$PWD:/data" staphscope.sif …` | Your user (automatic) |
+```bash
+singularity pull staphscope_2.0.0.sif docker://bbeckleyhub/staphscope:2.0.0
+```
+
+Creates `staphscope_2.0.0.sif` (~1.7 GB) in the current directory. **`squashfs-tools` is only needed for the pull, not for running.**
+
+#### 3. Run
+
+```bash
+singularity run --bind $(pwd):/data \
+  staphscope_2.0.0.sif \
+  -i "/data/*.fna" -o /data/output -t 16
+```
+
+- `--bind $(pwd):/data` — HPC equivalent of Docker's `-v`
+- **No `-u` needed** — Singularity runs as your real UID
+- **No `-e HOME=` needed** — Singularity uses your real `$HOME`, so MLST and AMR caches persist between runs
+
+> **Use `singularity run`, not `singularity exec`.** The image's entrypoint sets up `PATH` and `LD_LIBRARY_PATH` for the conda environment — `run` invokes it, `exec` skips it, which will break AMRFinderPlus.
+
+#### 4. SLURM job script
+
+```bash
+#!/bin/bash
+#SBATCH --job-name=staphscope
+#SBATCH --cpus-per-task=16
+#SBATCH --mem=32G
+#SBATCH --time=04:00:00
+#SBATCH --output=staphscope_%j.log
+
+module load containers/singularity/3.6.4
+
+cd $SLURM_SUBMIT_DIR
+
+singularity run --bind $(pwd):/data \
+  /path/to/staphscope_2.0.0.sif \
+  -i "/data/*.fna" \
+  -o /data/output \
+  -t ${SLURM_CPUS_PER_TASK}
+```
+
+#### 5. PBS / Torque job script
+
+```bash
+#!/bin/bash
+#PBS -N staphscope
+#PBS -l nodes=1:ppn=16
+#PBS -l walltime=04:00:00
+#PBS -j oe
+
+module load containers/singularity/3.6.4
+
+cd $PBS_O_WORKDIR
+
+singularity run --bind $(pwd):/data \
+  /path/to/staphscope_2.0.0.sif \
+  -i "/data/*.fna" \
+  -o /data/output \
+  -t 16
+```
+
+#### 6. HPC notes
+
+- **No `module load` needed at runtime** — only the login-node pull requires `squashfs-tools`. Compute nodes just need Singularity.
+- **Pull once, run everywhere** — the SIF is a single self-contained file. Share it on your scratch filesystem and every compute node can use it.
+- **Small home quota?** Redirect the Singularity build cache to scratch:
+  ```bash
+  export SINGULARITY_CACHEDIR=/scratch/$USER/singularity_cache
+  ```
+- **MLST / AMR caches** live under `$HOME/.local/share/staphscope/` by default. On tight home quotas:
+  ```bash
+  export STAPHSCOPE_MLST_DB=/scratch/$USER/staphscope/mlst_db
+  ```
+
+#### 7. Troubleshooting
+
+| Error | Fix |
+|---|---|
+| `mksquashfs: executable file not found` | `module load squashfs-tools/4.4` before `singularity pull` |
+| `manifest unknown` | The Docker tag hasn't been pushed, or the name is wrong — check https://hub.docker.com/r/bbeckleyhub/staphscope/tags |
+| `singularity: command not found` | `module avail 2>&1 \| grep -i singularity` to find the module name |
+| Pull hangs (blocked registry) | Download the SIF from the GitHub release page instead |
+| `BUNDLED AMRfinderPlus not properly installed` | You used `singularity exec` — use `singularity run` instead |
+
+---
+
+### **Which should you use?**
+
+| Platform | Recommendation | Command pattern | Output ownership |
+|---|---|---|---|
+| **Laptop / workstation** | Docker | `docker run --rm -u $(id -u):$(id -g) -v "$PWD:/data" …` | You |
+| **HPC login + compute nodes** | **Singularity (or Apptainer)** | `singularity run --bind "$PWD:/data" staphscope.sif …` | You (automatic) |
+| **Cloud VM** | Either — Docker is simpler | see above | You |
+| **Shared cluster without Docker** | Singularity | see above | You (automatic) |
+
+**The rule:** Docker on machines where you control the daemon; Singularity on shared HPC systems where you don't.
 
 ---
 
