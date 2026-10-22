@@ -143,14 +143,48 @@ class StaphScopeOrchestrator:
                 return share_path
         return self.base_dir / "modules" / module_name
 
-    def get_mlst_db_dir(self) -> Path:
-        """Return a writable directory for the MLST database."""
+    def get_mlst_db_dir(self, for_update: bool = False) -> Path:
+        """Return the MLST database directory.
+
+        Resolution order:
+          1. $STAPHSCOPE_MLST_DB env override (wins in all cases)
+          2. User-local module db/ if it contains a populated scheme
+          3. Packaged module db/ as fallback
+
+        When for_update=True, always return a writable path (never the
+        packaged tree) so updates can't fail on read-only installs.
+        """
+        env_db = os.environ.get("STAPHSCOPE_MLST_DB")
+        if env_db:
+            env_path = Path(env_db)
+            if for_update:
+                env_path.mkdir(parents=True, exist_ok=True)
+                return env_path
+            if (env_path / "pubmlst" / "saureus").exists():
+                return env_path
+
+        user_module = Path(os.environ.get(
+            "STAPHSCOPE_MLST_MODULE_PATH",
+            Path.home() / ".local" / "share" / "staphscope" / "mlst_module",
+        ))
+        user_db = user_module / "db"
+
+        if for_update:
+            user_db.mkdir(parents=True, exist_ok=True)
+            return user_db
+
+        if (user_db / "pubmlst" / "saureus").exists():
+            self.banner.display_info(f"Using user-local MLST database: {user_db}")
+            return user_db
+
         module_db = self.get_module_path("mlst_module") / "db"
-        if module_db.exists() and os.access(module_db, os.W_OK):
+        if module_db.exists():
             return module_db
-        user_db = Path.home() / ".local" / "share" / "staphscope" / "mlst_db"
+
+        self.banner.display_warning(
+            "No populated MLST database found. Run `staphscope --pull-mlst-db`."
+        )
         user_db.mkdir(parents=True, exist_ok=True)
-        self.banner.display_info(f"Using user-local MLST database: {user_db}")
         return user_db
 
     def run_module_in_temp(self, module_name: str, fasta_files: List[Path],
@@ -237,7 +271,7 @@ class StaphScopeOrchestrator:
 
             script = temp_dir / "mlst_module.py"
             cmd = [sys.executable, str(script), "-i", pattern_unquoted,
-                   "-o", "mlst_results", "-db", "db", "-sc", "bin", "--batch"]
+                   "-o", "mlst_results", "-db", str(db_dir), "-sc", "bin", "--batch"]
             result = subprocess.run(cmd, cwd=temp_dir, env=env, capture_output=True, text=True)
 
             if result.stdout:
@@ -1362,17 +1396,29 @@ class StaphScopeOrchestrator:
         return self.base_dir / "modules" / module_name
 
     def pull_mlst_database(self) -> bool:
-        """
-        Also copies Python and bash scripts from the system module.
-        Requires write access to the target module directory.
-        """
-        target_path = self.get_module_path("mlst_module")
-        if not os.access(target_path, os.W_OK):
-            self.banner.display_error(f"Target directory {target_path} is not writable.")
-            self.banner.display_info("Use --update-mlst-db instead, or install StaphScope in a writable location.")
-            return False
+        """Download the prebuilt S. aureus MLST database from GitHub.
 
-        target_path.mkdir(parents=True, exist_ok=True)
+        Writes into the packaged module directory if writable (user-local conda),
+        otherwise falls back to ~/.local/share/staphscope/mlst_module/ (Docker,
+        Apptainer, shared conda). The user-local path is exposed via
+        STAPHSCOPE_MLST_MODULE_PATH and STAPHSCOPE_MLST_DB so subsequent calls
+        in this process use it, and future processes pick it up automatically
+        because get_mlst_db_dir() prefers a populated user-local db/.
+        """
+        module_path = self.get_module_path("mlst_module")
+
+        if os.access(module_path, os.W_OK):
+            target_path = module_path
+            self.banner.display_info(f"Using writable module directory: {target_path}")
+        else:
+            target_path = Path(os.environ.get(
+                "STAPHSCOPE_MLST_MODULE_PATH",
+                Path.home() / ".local" / "share" / "staphscope" / "mlst_module",
+            ))
+            target_path.mkdir(parents=True, exist_ok=True)
+            self.banner.display_info(
+                f"System MLST module is read-only; using user-local path: {target_path}"
+            )
 
         system_path = self._get_system_module_path("mlst_module")
 
@@ -1404,17 +1450,23 @@ class StaphScopeOrchestrator:
                 else:
                     self.banner.display_warning(f"'{dirname}' not found in repository, skipping.")
 
-            for script in ['mlst_module.py', 'mlst_database.sh']:
-                src_script = system_path / script
-                if src_script.exists():
-                    dst_script = target_path / script
-                    shutil.copy2(src_script, dst_script)
-                    self.logger.info(f"Copied {script} to {dst_script}")
-                else:
-                    self.banner.display_warning(f"'{script}' not found in system module, skipping.")
+            # Copy helper scripts when writing to a user-local target
+            if target_path != system_path:
+                for script in ['mlst_module.py', 'mlst_database.sh']:
+                    src_script = system_path / script
+                    if src_script.exists():
+                        shutil.copy2(src_script, target_path / script)
+                        self.logger.info(f"Copied {script} to {target_path / script}")
+
+            # Verify the scheme landed
+            db_check = target_path / "db" / "pubmlst" / "saureus"
+            if not db_check.exists():
+                self.banner.display_error(f"MLST scheme missing after pull: {db_check}")
+                return False
 
             self.banner.display_success(f"MLST module pulled to {target_path}")
             os.environ['STAPHSCOPE_MLST_MODULE_PATH'] = str(target_path)
+            os.environ['STAPHSCOPE_MLST_DB'] = str(target_path / "db")
             return True
 
         except Exception as e:
@@ -1427,15 +1479,45 @@ class StaphScopeOrchestrator:
                 shutil.rmtree(extract_dir, ignore_errors=True)
 
     def update_mlst_database(self) -> bool:
-        """
-        Update S. aureus MLST database using mlstdb (API key required).
-        Uses a writable database directory (module db/ if writable, else user-local).
-        """
-        db_dir = self.get_mlst_db_dir()
-        os.environ['STAPHSCOPE_MLST_DB'] = str(db_dir)
+        """Refresh the S. aureus MLST scheme from PubMLST (API key required).
 
-        mlst_module_path = self.get_module_path("mlst_module")
-        script_dir = mlst_module_path / "bin"
+        Targets the same module tree that --pull-mlst-db populates:
+          - packaged module dir if writable, otherwise
+          - ~/.local/share/staphscope/mlst_module/
+
+        Does NOT pull scripts or seed metadata — it only updates
+        <db_dir>/pubmlst/saureus/ and rebuilds <db_dir>/blast/.
+        Run --pull-mlst-db first on a fresh install.
+        """
+        module_path = self.get_module_path("mlst_module")
+        if os.access(module_path, os.W_OK):
+            target_module = module_path
+        else:
+            target_module = Path(os.environ.get(
+                "STAPHSCOPE_MLST_MODULE_PATH",
+                Path.home() / ".local" / "share" / "staphscope" / "mlst_module",
+            ))
+
+        db_dir = target_module / "db"
+        script_dir = target_module / "bin"
+        scheme_map = db_dir / "scheme_species_map.tab"
+
+        if not scheme_map.exists():
+            self.banner.display_error(
+                f"MLST module tree is not populated at {target_module}"
+            )
+            self.banner.display_info(
+                "Run `staphscope --pull-mlst-db` first to install the module, "
+                "then run `staphscope --update-mlst-db` to refresh the scheme."
+            )
+            return False
+
+        if not script_dir.exists():
+            self.banner.display_error(f"MLST bin/ not found at {script_dir}")
+            return False
+
+        os.environ['STAPHSCOPE_MLST_MODULE_PATH'] = str(target_module)
+        os.environ['STAPHSCOPE_MLST_DB'] = str(db_dir)
 
         try:
             from staphscope.modules.mlst_module.mlst_module import update_mlst_database as _update
