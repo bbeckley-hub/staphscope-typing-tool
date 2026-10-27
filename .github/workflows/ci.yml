@@ -10,30 +10,30 @@ jobs:
   test:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         python-version: ["3.9", "3.10", "3.11", "3.12"]
 
     steps:
-    - uses: actions/checkout@v7
+      - uses: actions/checkout@v4
 
-    - name: Setup Miniconda and create environment
-      uses: conda-incubator/setup-miniconda@v4
-      with:
-        auto-update-conda: false
-        python-version: ${{ matrix.python-version }}
-        activate-environment: staphscope
-        environment-file: false
-        channels: conda-forge,bioconda
-        channel-priority: strict
-        miniforge-variant: Miniforge3
-        use-mamba: true
+      - name: Setup Miniconda (create + activate 'staphscope' env)
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          auto-update-conda: false
+          python-version: ${{ matrix.python-version }}
+          activate-environment: staphscope
+          channels: conda-forge,bioconda
+          channel-priority: strict
+          use-mamba: true
 
-    - name: Install staphscope
-      shell: bash -l {0}
-      run: |
-        conda install -n staphscope -c conda-forge -c bioconda staphscope -y
+      - name: Install staphscope
+        shell: bash -l {0}
+        run: |
+          conda install -n staphscope -c conda-forge -c bioconda staphscope -y
 
-    - name: Test staphscope help
-      shell: bash -l {0}
-      run: |
-        conda run -n staphscope staphscope --help
+      - name: Verify staphscope runs
+        shell: bash -l {0}
+        run: |
+          conda run -n staphscope staphscope --help
+          conda run -n staphscope staphscope --version
