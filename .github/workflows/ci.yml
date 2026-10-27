@@ -15,28 +15,25 @@ jobs:
 
     steps:
     - uses: actions/checkout@v7
-    
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v7
-      with:
-        python-version: ${{ matrix.python-version }}
-    
-    - name: Install conda
+
+    - name: Setup Miniconda and create environment
       uses: conda-incubator/setup-miniconda@v4
       with:
-        auto-update-conda: true
+        auto-update-conda: false
         python-version: ${{ matrix.python-version }}
-    
-    - name: Install staphscope from bioconda channel
+        activate-environment: staphscope
+        environment-file: false
+        channels: conda-forge,bioconda
+        channel-priority: strict
+        miniforge-variant: Miniforge3
+        use-mamba: true
+
+    - name: Install staphscope
       shell: bash -l {0}
       run: |
-        conda config --add channels conda-forge
-        conda config --add channels bioconda
-        conda create -n staphscope -c conda-forge -c bioconda staphscope python=${{ matrix.python-version }} -y
-        conda activate staphscope
-    
+        conda install -n staphscope -c conda-forge -c bioconda staphscope -y
+
     - name: Test staphscope help
       shell: bash -l {0}
       run: |
-        conda activate staphscope
-        staphscope --help
+        conda run -n staphscope staphscope --help
