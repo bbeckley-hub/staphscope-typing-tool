@@ -2,9 +2,17 @@
 """
 StaphScope Agr Typing Module - Using agrVATE
 Author: Brown Beckley <brownbeckley94@gmail.com>
-Date: 2026-07-18
+Date: 2026-10-22
 Affiliation: University of Ghana Medical School - Department of Medical Biochemistry
 MIT
+
+Per-sample output (1 file each):
+  • agr_typing_report.html
+
+Batch-level outputs:
+  • agr_summary.tsv
+  • agr_summary.html
+  • agr_summary.json
 """
 
 import os
@@ -59,6 +67,13 @@ class AgrTypingAnalyzer:
             {"text": "Staphscope is a testament to the power of bioinformatics in the modern era, making advanced "
                     "pathogen typing accessible to all.", "author": "Brown Beckley"}
         ]
+
+        # agrVATE citation
+        self.citation = (
+            "agrVATE – Raghuram V, et al. Species-Wide Phylogenomics of the Staphylococcus aureus "
+            "Agr Operon Revealed Convergent Evolution of Frameshift Mutations. "
+            "Microbiol Spectr. 2022;10(1):e0133421."
+        )
 
     def get_random_quote(self):
         """Get a random science quote"""
@@ -265,68 +280,31 @@ class AgrTypingAnalyzer:
         }
 
     def generate_output_files(self, hits: List[Dict], sample_name: str, output_dir: Path, error: bool = False):
-        """Generate output files: HTML, TXT, and TSV"""
+        """Generate per-sample output file: HTML report only"""
         self.generate_html_report(hits, sample_name, output_dir, error)
-        self.generate_text_report(hits, sample_name, output_dir, error)
-        self.generate_tsv_report(hits, sample_name, output_dir)
 
-    def generate_text_report(self, hits: List[Dict], sample_name: str, output_dir: Path, error: bool = False):
-        """Generate detailed text report"""
-        analysis = self._analyze_agr_results(hits)
+    def _render_footer(self, title: str) -> str:
+        """Shared footer renderer — used by both per-sample and batch HTML reports.
 
-        report = f"""agr Typing Analysis Report
-==========================
-
-Sample: {sample_name}
-Analysis Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-
-SUMMARY:
---------
-Total agr hits: {analysis['total_hits']}
-Unique agr types: {analysis['total_types']}
-Most common type: {analysis['most_common_type']}
-
-"""
-
-        if not error and hits:
-            primary = hits[0]
-            report += f"""PRIMARY RESULT:
--------------
-agr Type: {primary['agr_type']} (Group: {primary['agr_group']})
-Match Score: {primary['match_score']}
-Canonical AgrD: {primary['canonical_agrD']}
-Multiple Agr: {primary['multiple_agr']}
-Frameshifts: {primary['frameshifts']}
-
-"""
-        elif error:
-            report += f"ERROR: {analysis.get('error', 'Agr typing failed')}\n\n"
-
-        if analysis['agr_types']:
-            report += "DETAILED RESULTS:\n"
-            report += "-----------------\n"
-            for ag_type, info in analysis['agr_types'].items():
-                report += f"Type: {ag_type}\n"
-                report += f"  Group: {info['agr_group']}\n"
-                report += f"  Match Score: {info['match_score']}\n"
-                report += f"  Frameshifts: {info['frameshifts']}\n"
-                report += f"  Count: {info['count']}\n\n"
-
-        with open(output_dir / "agr_typing_report.txt", 'w') as f:
-            f.write(report)
-
-    def generate_tsv_report(self, hits: List[Dict], sample_name: str, output_dir: Path):
-        """Generate simple TSV report"""
-        if hits:
-            tsv_content = "Sample\tagr_Type\tagr_Group\tMatch_Score\tCanonical_AgrD\tMultiple_Agr\tFrameshifts\n"
-            for hit in hits:
-                tsv_content += f"{sample_name}\t{hit['agr_type']}\t{hit['agr_group']}\t{hit['match_score']}\t{hit['canonical_agrD']}\t{hit['multiple_agr']}\t{hit['frameshifts']}\n"
-        else:
-            tsv_content = "Sample\tagr_Type\tagr_Group\tMatch_Score\tCanonical_AgrD\tMultiple_Agr\tFrameshifts\n"
-            tsv_content += f"{sample_name}\tNA\tNA\tNA\tNA\tNA\tNA\n"
-
-        with open(output_dir / "agr_typing_report.tsv", 'w') as f:
-            f.write(tsv_content)
+        Ensures every StaphScope HTML report ends with identical authorship,
+        affiliation, and tool-citation information.
+        """
+        generated = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        return f'''
+        <div class="footer">
+            <p><strong>STAPHSCOPE</strong> - {title}</p>
+            <p class="timestamp">Generated: {generated}</p>
+            <div class="authorship">
+                <p><strong>Technical Support & Inquiries:</strong></p>
+                <p>Author: Brown Beckley | GitHub: bbeckley-hub</p>
+                <p>Email: brownbeckley94@gmail.com</p>
+                <p>Affiliation: University of Ghana Medical School - Department of Medical Biochemistry</p>
+                <p style="margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255, 255, 255, 0.2);">
+                    <strong>Citation:</strong>
+                </p>
+                <p>{self.citation}</p>
+            </div>
+        </div>'''
 
     def generate_html_report(self, hits: List[Dict], sample_name: str, output_dir: Path, error: bool = False):
         """Generate beautiful HTML report"""
@@ -591,50 +569,42 @@ Frameshifts: {primary['frameshifts']}
         </div>
 '''
 
-        html_content += f'''
-        <div class="footer">
-            <p><strong>STAPHSCOPE</strong> - agr Typing Analysis Module</p>
-            <p class="timestamp">Generated: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}</p>
-            <div class="authorship">
-                <p><strong>Technical Support & Inquiries:</strong></p>
-                <p>Author: Brown Beckley | GitHub: bbeckley-hub</p>
-                <p>Email: brownbeckley94@gmail.com</p>
-                <p>Affiliation: University of Ghana Medical School - Department of Medical Biochemistry</p>
-            </div>
-        </div>
+        html_content += self._render_footer("agr Typing Analysis Module")
+
+        html_content += '''
     </div>
 
     <script>
         const quotes = [
-            {{"text": "The important thing is not to stop questioning. Curiosity has its own reason for existing.", "author": "Albert Einstein"}},
-            {{"text": "Science is not only a disciple of reason but also one of romance and passion.", "author": "Stephen Hawking"}},
-            {{"text": "Somewhere, something incredible is waiting to be known.", "author": "Carl Sagan"}},
-            {{"text": "The good thing about science is that it's true whether or not you believe in it.", "author": "Neil deGrasse Tyson"}},
-            {{"text": "In science, there are no shortcuts to truth.", "author": "Karl Popper"}},
-            {{"text": "Science knows no country, because knowledge belongs to humanity.", "author": "Louis Pasteur"}},
-            {{"text": "The science of today is the technology of tomorrow.", "author": "Edward Teller"}},
-            {{"text": "Nothing in life is to be feared, it is only to be understood.", "author": "Marie Curie"}},
-            {{"text": "Research is what I'm doing when I don't know what I'm doing.", "author": "Wernher von Braun"}},
-            {{"text": "The universe is not required to be in perfect harmony with human ambition.", "author": "Carl Sagan"}}
+            {"text": "The important thing is not to stop questioning. Curiosity has its own reason for existing.", "author": "Albert Einstein"},
+            {"text": "Science is not only a disciple of reason but also one of romance and passion.", "author": "Stephen Hawking"},
+            {"text": "Somewhere, something incredible is waiting to be known.", "author": "Carl Sagan"},
+            {"text": "The good thing about science is that it's true whether or not you believe in it.", "author": "Neil deGrasse Tyson"},
+            {"text": "In science, there are no shortcuts to truth.", "author": "Karl Popper"},
+            {"text": "Science knows no country, because knowledge belongs to humanity.", "author": "Louis Pasteur"},
+            {"text": "The science of today is the technology of tomorrow.", "author": "Edward Teller"},
+            {"text": "Nothing in life is to be feared, it is only to be understood.", "author": "Marie Curie"},
+            {"text": "Research is what I'm doing when I don't know what I'm doing.", "author": "Wernher von Braun"},
+            {"text": "The universe is not required to be in perfect harmony with human ambition.", "author": "Carl Sagan"}
         ];
 
         const quoteContainer = document.getElementById('quoteContainer');
         const quoteText = document.getElementById('quoteText');
         const quoteAuthor = document.getElementById('quoteAuthor');
 
-        function getRandomQuote() {{
+        function getRandomQuote() {
             return quotes[Math.floor(Math.random() * quotes.length)];
-        }}
+        }
 
-        function displayQuote() {{
+        function displayQuote() {
             quoteContainer.style.opacity = '0';
-            setTimeout(() => {{
+            setTimeout(() => {
                 const quote = getRandomQuote();
                 quoteText.textContent = '"' + quote.text + '"';
                 quoteAuthor.textContent = '— ' + quote.author;
                 quoteContainer.style.opacity = '1';
-            }}, 500);
-        }}
+            }, 500);
+        }
 
         setInterval(displayQuote, 10000);
     </script>
@@ -871,6 +841,7 @@ Frameshifts: {primary['frameshifts']}
             font-size: 14px;
         }}
         .timestamp {{ color: #fbbf24; font-weight: bold; }}
+        .authorship {{ margin-top: 15px; padding: 15px; background: rgba(255, 255, 255, 0.1); border-radius: 8px; font-size: 12px; }}
         @media (max-width: 768px) {{
             .ascii-art {{ font-size: 6px; }}
             .summary-table {{ font-size: 12px; }}
@@ -969,49 +940,48 @@ Frameshifts: {primary['frameshifts']}
                     </tr>
 '''
 
-        html_content += f'''
+        html_content += '''
                 </tbody>
             </table>
         </div>
+'''
 
-        <div class="footer">
-            <p><strong>STAPHSCOPE</strong> - Batch agr Typing Analysis Summary</p>
-            <p class="timestamp">Generated: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}</p>
-            <p>Github: bbeckley-hub | Email: brownbeckley94@gmail.com</p>
-        </div>
+        html_content += self._render_footer("Batch agr Typing Analysis Summary")
+
+        html_content += '''
     </div>
 
     <script>
         const quotes = [
-            {{"text": "The important thing is not to stop questioning. Curiosity has its own reason for existing.", "author": "Albert Einstein"}},
-            {{"text": "Science is not only a disciple of reason but also one of romance and passion.", "author": "Stephen Hawking"}},
-            {{"text": "Somewhere, something incredible is waiting to be known.", "author": "Carl Sagan"}},
-            {{"text": "The good thing about science is that it's true whether or not you believe in it.", "author": "Neil deGrasse Tyson"}},
-            {{"text": "In science, there are no shortcuts to truth.", "author": "Karl Popper"}},
-            {{"text": "Science knows no country, because knowledge belongs to humanity.", "author": "Louis Pasteur"}},
-            {{"text": "The science of today is the technology of tomorrow.", "author": "Edward Teller"}},
-            {{"text": "Nothing in life is to be feared, it is only to be understood.", "author": "Marie Curie"}},
-            {{"text": "Research is what I'm doing when I don't know what I'm doing.", "author": "Wernher von Braun"}},
-            {{"text": "The universe is not required to be in perfect harmony with human ambition.", "author": "Carl Sagan"}}
+            {"text": "The important thing is not to stop questioning. Curiosity has its own reason for existing.", "author": "Albert Einstein"},
+            {"text": "Science is not only a disciple of reason but also one of romance and passion.", "author": "Stephen Hawking"},
+            {"text": "Somewhere, something incredible is waiting to be known.", "author": "Carl Sagan"},
+            {"text": "The good thing about science is that it's true whether or not you believe in it.", "author": "Neil deGrasse Tyson"},
+            {"text": "In science, there are no shortcuts to truth.", "author": "Karl Popper"},
+            {"text": "Science knows no country, because knowledge belongs to humanity.", "author": "Louis Pasteur"},
+            {"text": "The science of today is the technology of tomorrow.", "author": "Edward Teller"},
+            {"text": "Nothing in life is to be feared, it is only to be understood.", "author": "Marie Curie"},
+            {"text": "Research is what I'm doing when I don't know what I'm doing.", "author": "Wernher von Braun"},
+            {"text": "The universe is not required to be in perfect harmony with human ambition.", "author": "Carl Sagan"}
         ];
 
         const quoteContainer = document.getElementById('quoteContainer');
         const quoteText = document.getElementById('quoteText');
         const quoteAuthor = document.getElementById('quoteAuthor');
 
-        function getRandomQuote() {{
+        function getRandomQuote() {
             return quotes[Math.floor(Math.random() * quotes.length)];
-        }}
+        }
 
-        function displayQuote() {{
+        function displayQuote() {
             quoteContainer.style.opacity = '0';
-            setTimeout(() => {{
+            setTimeout(() => {
                 const quote = getRandomQuote();
                 quoteText.textContent = '"' + quote.text + '"';
                 quoteAuthor.textContent = '— ' + quote.author;
                 quoteContainer.style.opacity = '1';
-            }}, 500);
-        }}
+            }, 500);
+        }
 
         setInterval(displayQuote, 10000);
     </script>
@@ -1035,7 +1005,8 @@ Frameshifts: {primary['frameshifts']}
                 "total_samples": len(all_results),
                 "analysis_type": "agr typing",
                 "version": "1.0",
-                "analysis_method": "agrVATE with typing-only mode"
+                "analysis_method": "agrVATE with typing-only mode",
+                "citation": self.citation
             },
             "statistics": self._calculate_agr_json_statistics(all_results),
             "samples": {},
@@ -1183,6 +1154,14 @@ Examples:
   python agr_typing_module.py -i sample.fna -o results/
   python agr_typing_module.py -i /path/to/fasta/files -o results/ -t 8
   python agr_typing_module.py -i . -o agr_results/
+
+Per-sample output (1 file each):
+  • agr_typing_report.html
+
+Batch-level outputs:
+  • agr_summary.tsv
+  • agr_summary.html
+  • agr_summary.json
         """
     )
 

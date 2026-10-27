@@ -2,7 +2,7 @@
 """
 STAPHSCOPE ULTIMATE REPORTER - GENE-CENTRIC S. AUREUS ANALYSIS
 ===================================================================
-Version 3.0.0
+Version 3.1.0
 
 Gene-centric cross-genome analysis with dynamic grouping by typing.
 Single master TSV for all typing (MLST, spa, agr, capsule, SCCmec CGE/RPet/Subtype, MRSA).
@@ -10,7 +10,7 @@ Gene-centric tabs (AMR, Virulence, BACMET, Plasmids, Mutations) with dropdown gr
 filter buttons, gene-family info boxes, and rich acknowledgements.
 New: Capsule tab, merged SCCmec tab, MGE tab, comparison tab.
 
-Find a superbug? Say Hi or Open an ISSUE!!!!!
+Find a superbug? Say Hi or Open an ISSUE!!!!! 2026-10-22
 
 Author: Brown Beckley <brownbeckley94@gmail.com>
 Affiliation: University of Ghana Medical School
@@ -171,9 +171,9 @@ class StaphHTMLParser:
             genes_by_genome_table = gene_frequency_table = None
             for table in tables:
                 t = table.get_text()
-                if 'Genome' in t and 'Critical Genes' in t:
+                if 'Genome' in t and 'Genes Detected' in t:
                     genes_by_genome_table = table
-                elif 'Gene' in t and 'Frequency' in t and 'Prevalence' in t:
+                elif 'Gene' in t and 'Frequency' in t and 'Genomes' in t:
                     gene_frequency_table = table
 
             if genes_by_genome_table:
@@ -181,25 +181,27 @@ class StaphHTMLParser:
                     df_genomes = pd.read_html(io.StringIO(str(genes_by_genome_table)))[0]
                     genome_col = next((c for c in df_genomes.columns
                                        if 'genome' in c.lower()), df_genomes.columns[0])
-                    crit_col = next((c for c in df_genomes.columns
-                                     if 'critical' in c.lower()), None)
-                    hr_col = next((c for c in df_genomes.columns
-                                   if 'high risk' in c.lower() or 'high' in c.lower()), None)
+                    detected_col = next(
+                        (c for c in df_genomes.columns
+                         if 'gene' in c.lower() and 'detected' in c.lower()),
+                        None,
+                    )
+                    if not detected_col:
+                        detected_col = next((c for c in df_genomes.columns
+                                             if 'gene' in c.lower()), None)
                     for _, row in df_genomes.iterrows():
                         sample = self.normalize_sample_id(row[genome_col])
-                        crit, hr = [], []
-                        if crit_col and pd.notna(row.get(crit_col)):
-                            v = str(row[crit_col]).strip()
+                        if not sample:
+                            continue
+                        all_genes = []
+                        if detected_col and pd.notna(row.get(detected_col)):
+                            v = str(row[detected_col]).strip()
                             if v.lower() not in ('none', 'nan', ''):
-                                crit = [g.strip() for g in v.split(',') if g.strip()]
-                        if hr_col and pd.notna(row.get(hr_col)):
-                            v = str(row[hr_col]).strip()
-                            if v.lower() not in ('none', 'nan', ''):
-                                hr = [g.strip() for g in v.split(',') if g.strip()]
+                                all_genes = [g.strip() for g in v.split(',') if g.strip()]
                         genes_by_genome[sample] = {
-                            'critical_genes': crit,
-                            'high_risk_genes': hr,
-                            'all_genes': []
+                            'critical_genes': [],
+                            'high_risk_genes': [],
+                            'all_genes': all_genes,
                         }
                 except Exception as e:
                     print(f"    Error parsing genes-by-genome table: {e}")
@@ -209,29 +211,36 @@ class StaphHTMLParser:
                     df_genes = pd.read_html(io.StringIO(str(gene_frequency_table)))[0]
                     gene_col = next((c for c in df_genes.columns if 'gene' in c.lower()), None)
                     freq_col = next((c for c in df_genes.columns if 'freq' in c.lower()), None)
-                    prev_col = next((c for c in df_genes.columns if 'prev' in c.lower()), None)
-                    risk_col = next((c for c in df_genes.columns if 'risk' in c.lower()), None)
                     genomes_col = next((c for c in df_genes.columns if 'genome' in c.lower()), None)
+                    # FIX (AMR %): never bake a percentage here — the true
+                    # total sample count isn't known until all genomes are
+                    # registered below. _gene_table recomputes it from the
+                    # authoritative total_samples. Fixes the "38600.0%" bug.
                     if gene_col:
                         for _, row in df_genes.iterrows():
                             if pd.isna(row[gene_col]):
                                 continue
                             gene = str(row[gene_col]).strip()
-                            frequency = str(row[freq_col]).strip() if freq_col and pd.notna(row.get(freq_col)) else '0'
-                            prevalence = str(row[prev_col]).strip() if prev_col and pd.notna(row.get(prev_col)) else 'ND'
-                            risk = str(row[risk_col]).strip() if risk_col and pd.notna(row.get(risk_col)) else 'STANDARD'
+                            if not gene:
+                                continue
+                            count = 0
+                            if freq_col and pd.notna(row.get(freq_col)):
+                                fstr = str(row[freq_col]).strip()
+                                m = re.search(r'(\d+)', fstr)
+                                if m:
+                                    count = int(m.group(1))
+                            frequency = str(count)
+                            prevalence = "ND"
                             genomes = []
                             if genomes_col and pd.notna(row.get(genomes_col)):
                                 gstr = str(row[genomes_col]).replace('tet(38)', 'tet38')
                                 genomes = [self.normalize_sample_id(g.replace('tet38', 'tet(38)'))
                                            for g in gstr.split(',') if g.strip()]
-                            match = re.search(r'(\d+)', frequency)
-                            count = int(match.group(1)) if match else 0
                             gene_frequencies[gene] = {
                                 'frequency': frequency,
                                 'count': count,
                                 'prevalence': prevalence,
-                                'risk_level': risk,
+                                'risk_level': 'STANDARD',
                                 'genomes': genomes,
                                 'database': 'amrfinder'
                             }
@@ -698,13 +707,14 @@ class StaphHTMLGenerator:
         self.analyzer = analyzer
         self._current_samples_data = {}
         self.tab_colors = {
-            'summary': '#4CAF50', 'sample_overview': '#2196F3', 'qc': '#607D8B',
-            'mlst': '#FF9800', 'spa': '#9C27B0', 'sccmec': '#009688',
-            'capsule': '#00ACC1', 'mrsa': '#795548', 'agr': '#8B5CF6',
-            'amr': '#F44336', 'virulence': '#E91E63', 'bacmet': '#FF5722',
-            'plasmids': '#673AB7', 'mutation': '#00BCD4', 'mge': '#16A085',
-            'patterns': '#3F51B5', 'compare': '#0d9488', 'aiguide': '#00BCD4', 'calltoaction': '#F472B6',
-            'citation': '#8BC34A', 'funding': '#FFC107', 'export': '#9E9E9E'
+            'summary': '#2e7d32', 'sample_overview': '#388e3c', 'qc': '#43a047',
+            'mlst': '#4caf50', 'spa': '#66bb6a', 'sccmec': '#81c784',
+            'capsule': '#2e7d32', 'mrsa': '#388e3c', 'agr': '#43a047',
+            'amr': '#4caf50', 'virulence': '#66bb6a', 'bacmet': '#81c784',
+            'plasmids': '#2e7d32', 'mutation': '#388e3c', 'mge': '#43a047',
+            'patterns': '#4caf50', 'compare': '#66bb6a', 'aiguide': '#81c784',
+            'calltoaction': '#2e7d32', 'citation': '#388e3c', 'funding': '#43a047',
+            'export': '#4caf50',
         }
 
     # -------------------------------------------------------------------------
@@ -954,13 +964,13 @@ class StaphHTMLGenerator:
         return """
 <style>
 :root{
-  --summary-color:#4CAF50;--sample_overview-color:#2196F3;--qc-color:#607D8B;
-  --mlst-color:#FF9800;--spa-color:#9C27B0;--sccmec-color:#009688;--capsule-color:#00ACC1;
-  --mrsa-color:#795548;--agr-color:#8B5CF6;--amr-color:#F44336;
-  --virulence-color:#E91E63;--bacmet-color:#FF5722;--plasmids-color:#673AB7;
-  --mutation-color:#00BCD4;--mge-color:#16A085;--patterns-color:#3F51B5;
-  --aiguide-color:#00BCD4;--citation-color:#8BC34A;--funding-color:#FFC107;
-  --export-color:#9E9E9E;--calltoaction-color:#F472B6;
+  --summary-color:#2e7d32;--sample_overview-color:#388e3c;--qc-color:#43a047;
+  --mlst-color:#4caf50;--spa-color:#66bb6a;--sccmec-color:#81c784;--capsule-color:#2e7d32;
+  --mrsa-color:#388e3c;--agr-color:#43a047;--amr-color:#4caf50;
+  --virulence-color:#66bb6a;--bacmet-color:#81c784;--plasmids-color:#2e7d32;
+  --mutation-color:#388e3c;--mge-color:#43a047;--patterns-color:#4caf50;
+  --aiguide-color:#66bb6a;--citation-color:#388e3c;--funding-color:#43a047;
+  --export-color:#4caf50;--calltoaction-color:#2e7d32;
 }
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;line-height:1.6;color:#333;background:#f5f5f5;min-width:1200px}
@@ -987,28 +997,9 @@ body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;line-height:1.6;col
 .card-patterns{border-left-color:var(--patterns-color)}
 .tab-navigation{display:flex;gap:5px;margin-bottom:20px;flex-wrap:wrap;background:white;padding:15px;border-radius:12px;box-shadow:0 5px 20px rgba(0,0,0,.1);position:sticky;top:10px;z-index:100}
 .tab-button{padding:10px 16px;background:#f5f5f5;border:none;border-radius:8px;cursor:pointer;font-weight:600;color:#666;transition:all .3s ease;display:flex;align-items:center;gap:6px;font-size:.88em}
-.tab-button.active{color:white}
-.tab-button.summary.active{background:var(--summary-color)}
-.tab-button.sample_overview.active{background:var(--sample_overview-color)}
-.tab-button.qc.active{background:var(--qc-color)}
-.tab-button.mlst.active{background:var(--mlst-color)}
-.tab-button.spa.active{background:var(--spa-color)}
-.tab-button.sccmec.active{background:var(--sccmec-color)}
-.tab-button.capsule.active{background:var(--capsule-color)}
-.tab-button.mrsa.active{background:var(--mrsa-color)}
-.tab-button.agr.active{background:var(--agr-color)}
-.tab-button.amr.active{background:var(--amr-color)}
-.tab-button.virulence.active{background:var(--virulence-color)}
-.tab-button.bacmet.active{background:var(--bacmet-color)}
-.tab-button.plasmids.active{background:var(--plasmids-color)}
-.tab-button.mutation.active{background:var(--mutation-color)}
-.tab-button.mge.active{background:var(--mge-color)}
-.tab-button.patterns.active{background:var(--patterns-color)}
-.tab-button.aiguide.active{background:var(--aiguide-color)}
-.tab-button.calltoaction.active{background:var(--calltoaction-color)}
-.tab-button.citation.active{background:var(--citation-color)}
-.tab-button.funding.active{background:var(--funding-color)}
-.tab-button.export.active{background:var(--export-color)}
+.tab-button.active{color:white;background:#2e7d32}
+.tab-button:hover{background:#c8e6c9;color:#1b5e20}
+.tab-button.active:hover{background:#2e7d32;color:white}
 .tab-content{display:none;background:white;padding:30px;border-radius:15px;box-shadow:0 10px 30px rgba(0,0,0,.1);margin-bottom:30px;animation:fadeIn .5s ease;width:100%;overflow-x:auto}
 .tab-content.active{display:block}
 @keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
@@ -1052,7 +1043,7 @@ body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;line-height:1.6;col
 .gene-centric-table td:nth-child(4){width:110px;box-sizing:border-box;text-align:center}
 .gene-centric-table th:last-child,
 .gene-centric-table td:last-child{width:700px}
-.data-table:not(.gene-centric-table) th{white-space:normal;word-break:break-word}
+.data-table:not(.gene-centric-table) th{white-space:nowrap;word-break:keep-all;min-width:90px}
 .genome-list{display:flex;flex-wrap:wrap;gap:6px;padding:8px;background:#f8f9fa;border-radius:5px;width:100%;max-height:280px;overflow:auto;box-sizing:border-box}
 .genome-group{margin-bottom:10px;width:100%;box-sizing:border-box}
 .genome-group-header{font-weight:bold;background:#e0e0e0;padding:5px 10px;border-radius:4px;margin:6px 0;font-size:.9em;display:inline-block;max-width:100%;box-sizing:border-box;word-break:break-word}
@@ -1121,6 +1112,10 @@ body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;line-height:1.6;col
 .citation-list li:last-child{border-bottom:none}
 .copy-btn{background:#006400;color:white;border:none;padding:4px 12px;border-radius:20px;cursor:pointer;font-size:.8em;margin-left:10px}
 .copy-btn:hover{background:#228B22}
+.edu-details summary{list-style:none}
+.edu-details summary::-webkit-details-marker{display:none}
+.edu-details summary::before{content:'▸ ';display:inline-block;margin-right:6px;transition:transform .2s}
+.edu-details[open] summary::before{content:'▾ '}
 @media print{body *{visibility:hidden}.tab-content.active,.tab-content.active *{visibility:visible}.tab-content.active{position:absolute;left:0;top:0;width:100%;padding:20px;box-shadow:none;border-radius:0}.print-section-btn,.tab-navigation,.dashboard-grid,.search-box,.action-buttons,.grouping-controls{display:none !important}}
 /* Compare tab */
 .compare-header { border-color: #0d9488; }
@@ -1163,9 +1158,11 @@ body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;line-height:1.6;col
 .gene-prop-segment.only-a { background: #3b82f6; }
 .gene-prop-segment.only-b { background: #ec4899; }
 
-/* Cluster cards */
-.cluster-card { background: white; border-radius: 10px; padding: 16px 20px;
-                margin-bottom: 12px; border-left: 5px solid;
+/* Cluster cards — grid so they sit side-by-side */
+#cluster-clusters { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+                    gap: 14px; margin-bottom: 24px; }
+.cluster-card { background: white; border-radius: 10px; padding: 14px 18px;
+                border-left: 5px solid;
                 box-shadow: 0 2px 8px rgba(0,0,0,0.06); transition: transform 0.15s; }
 .cluster-card:hover { transform: translateX(4px); }
 .cluster-header { display: flex; align-items: center; gap: 14px; margin-bottom: 12px; flex-wrap: wrap; }
@@ -1188,19 +1185,19 @@ body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;line-height:1.6;col
 .heatmap-wrapper { background: white; border-radius: 12px; padding: 20px;
                    margin-top: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
 .heatmap-wrapper h3 { margin-bottom: 8px; color: #1e293b; }
-.heatmap-grid { display: grid; gap: 2px; margin-top: 16px;
-                overflow-x: auto; padding: 4px; }
+.heatmap-grid { display: grid; gap: 2px; margin-top: 16px; padding: 4px; }
 .heatmap-cell { width: 32px; height: 32px; display: flex;
                 align-items: center; justify-content: center;
                 font-size: 0.7em; font-weight: 700; border-radius: 3px;
-                transition: transform 0.15s; cursor: default; }
+                transition: transform 0.15s; cursor: default;
+                overflow: hidden; }
 .heatmap-cell:hover { transform: scale(1.15); z-index: 2; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
 .heatmap-col-header, .heatmap-row-header { background: transparent; color: #64748b;
                                            font-size: 0.75em; }
 .heatmap-row-header { justify-content: flex-start; padding-left: 6px;
                       font-family: 'Consolas', monospace; }
 .heatmap-col-header { writing-mode: vertical-rl; text-orientation: mixed;
-                      height: 70px; width: 32px; padding: 4px 0;
+                      height: 110px; width: 32px; padding: 4px 0;
                       font-family: 'Consolas', monospace; }
 .heatmap-header-label { font-size: 0.85em; }
 .heatmap-corner { background: transparent; }
@@ -1263,9 +1260,8 @@ body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;line-height:1.6;col
 @media (max-width: 900px) {
     .compare-full-profile { grid-template-columns: 1fr; }
     .compare-row { grid-template-columns: 1fr; }
-}
     .compare-visuals-grid { grid-template-columns: 1fr; }
-    .heatmap-grid { grid-template-columns: 120px repeat(var(--n, 10), 28px) !important; }
+}
 </style>"""
 
     def _get_js(self, typing_json: str) -> str:
@@ -1778,138 +1774,194 @@ function resetCompare() {{
 }}
 
 // ---------- CLUSTER MODE ----------
+function getPrecomputedSim(i, j) {{
+    if (i === j) return 100;
+    if (i > j) {{ var t = i; i = j; j = t; }}
+    var sim = window.STAPHSCOPE_SIM;
+    if (!sim || !sim.flat) return 0;
+    var n = sim.n;
+    return sim.flat[i * n - i * (i + 1) / 2 + (j - i - 1)];
+}}
+
 function runCluster() {{
-    var data = window.STAPHSCOPE_COMPARE_DATA || {{}};
-    var samples = Object.keys(data).sort();
-    if (samples.length < 2) {{
-        document.getElementById('cluster-heatmap').innerHTML =
-            '<div class="compare-warning">Need at least two samples.</div>';
+    var simData = window.STAPHSCOPE_SIM;
+    if (!simData || !simData.samples || simData.samples.length < 2) {{
+        var el = document.getElementById('cluster-heatmap');
+        if (el) el.innerHTML = '<div class="compare-warning">Need at least two samples.</div>';
         return;
     }}
-
+    var samples = simData.samples;
+    var n = simData.n;
     var thresholdEl = document.getElementById('cluster-threshold');
     var threshold = thresholdEl ? parseInt(thresholdEl.value) : 90;
 
-    // Compute N×N similarity matrix
-    var matrix = {{}};
-    samples.forEach(function(s) {{ matrix[s] = {{}}; }});
-    samples.forEach(function(s1) {{
-        samples.forEach(function(s2) {{
-            if (s1 === s2) {{
-                matrix[s1][s2] = 100;
-            }} else {{
-                var sim = computeSimilarity(data[s1], data[s2]);
-                matrix[s1][s2] = sim.overall;
-            }}
-        }});
-    }});
-
-    // Detect clusters using union-find
+    // Union-find over precomputed similarities — no N² set ops
     var parent = {{}};
-    samples.forEach(function(s) {{ parent[s] = s; }});
+    for (var i = 0; i < n; i++) parent[i] = i;
     function find(x) {{
-        while (parent[x] !== x) {{
-            parent[x] = parent[parent[x]];
-            x = parent[x];
-        }}
+        while (parent[x] !== x) {{ parent[x] = parent[parent[x]]; x = parent[x]; }}
         return x;
     }}
     function union(a, b) {{
         var ra = find(a), rb = find(b);
         if (ra !== rb) parent[ra] = rb;
     }}
-    for (var i = 0; i < samples.length; i++) {{
-        for (var j = i + 1; j < samples.length; j++) {{
-            if (matrix[samples[i]][samples[j]] >= threshold) {{
-                union(samples[i], samples[j]);
-            }}
+    for (var i = 0; i < n; i++) {{
+        for (var j = i + 1; j < n; j++) {{
+            if (getPrecomputedSim(i, j) >= threshold) union(i, j);
         }}
     }}
 
-    // Group samples by root
     var groups = {{}};
-    samples.forEach(function(s) {{
-        var r = find(s);
+    for (var k = 0; k < n; k++) {{
+        var r = find(k);
         if (!groups[r]) groups[r] = [];
-        groups[r].push(s);
-    }});
-
-    // Only keep clusters with ≥2 samples
+        groups[r].push(samples[k]);
+    }}
     var clusters = Object.values(groups).filter(function(g) {{ return g.length >= 2; }});
     clusters.sort(function(a, b) {{ return b.length - a.length; }});
 
-    // ---- Cluster summary cards ----
     var clusterHtml = '';
     if (clusters.length === 0) {{
         clusterHtml = '<div class="no-alerts">' +
-            'No clusters detected at ≥' + threshold + '% similarity. ' +
-            'Every sample is sufficiently distinct.</div>';
+            'No clusters detected at ≥' + threshold + '% similarity.</div>';
     }} else {{
         clusters.forEach(function(cluster, idx) {{
-            // Compute mean intra-cluster similarity
-            var sum = 0, count = 0;
-            for (var i = 0; i < cluster.length; i++) {{
-                for (var j = i + 1; j < cluster.length; j++) {{
-                    sum += matrix[cluster[i]][cluster[j]];
-                    count++;
+            var sum = 0, cnt = 0;
+            for (var a = 0; a < cluster.length; a++) {{
+                for (var b = a + 1; b < cluster.length; b++) {{
+                    var ia = samples.indexOf(cluster[a]);
+                    var ib = samples.indexOf(cluster[b]);
+                    sum += getPrecomputedSim(ia, ib);
+                    cnt++;
                 }}
             }}
-            var mean = count ? (sum / count).toFixed(1) : '100';
+            var mean = cnt ? (sum / cnt).toFixed(1) : '100';
             var color = similarityColor(parseFloat(mean));
             clusterHtml += '<div class="cluster-card" style="border-left-color:' + color + ';">' +
                 '<div class="cluster-header">' +
-                    '<span class="cluster-badge" style="background:' + color + ';">' +
-                    'Cluster ' + (idx + 1) + '</span>' +
-                    '<span class="cluster-stats">' + cluster.length + ' samples · mean ' +
-                    mean + '% similar</span>' +
+                '<span class="cluster-badge" style="background:' + color + ';">Cluster ' + (idx + 1) + '</span>' +
+                '<span class="cluster-stats">' + cluster.length + ' samples · mean ' + mean + '% similar</span>' +
                 '</div>' +
                 '<div class="cluster-samples">' +
-                    cluster.map(s => '<span class="cluster-sample-pill">' + escapeHtml(s) + '</span>').join('') +
+                cluster.map(function(s) {{ return '<span class="cluster-sample-pill">' + escapeHtml(s) + '</span>'; }}).join('') +
                 '</div></div>';
         }});
     }}
-
-    // ---- Heatmap ----
-    var heatmapHtml = '<div class="heatmap-wrapper">' +
-        '<h3>🔷 Pairwise Similarity Matrix</h3>' +
-        '<p style="font-size:0.9em;color:#64748b;margin-bottom:12px;">' +
-        'Colored by overall similarity: ' +
-        '<span style="color:#059669;font-weight:700;">green ≥95%</span>, ' +
-        '<span style="color:#eab308;font-weight:700;">yellow 70–80%</span>, ' +
-        '<span style="color:#dc2626;font-weight:700;">red &lt;50%</span>. ' +
-        'Hover any cell for details.</p>' +
-        '<div class="heatmap-grid" style="grid-template-columns: 180px repeat(' +
-        samples.length + ', 32px);">';
-
-    // Header row
-    heatmapHtml += '<div class="heatmap-cell heatmap-corner"></div>';
-    samples.forEach(function(s) {{
-        heatmapHtml += '<div class="heatmap-cell heatmap-col-header" title="' + escapeHtml(s) + '">' +
-            '<span class="heatmap-header-label">' + escapeHtml(s.slice(-6)) + '</span></div>';
-    }});
-
-    // Rows
-    samples.forEach(function(s1) {{
-        heatmapHtml += '<div class="heatmap-cell heatmap-row-header" title="' + escapeHtml(s1) + '">' +
-            '<span class="heatmap-header-label">' + escapeHtml(s1) + '</span></div>';
-        samples.forEach(function(s2) {{
-            var pct = matrix[s1][s2];
-            var color = (s1 === s2) ? '#1e293b' : similarityColor(pct);
-            var text = (s1 === s2) ? '—' : Math.round(pct);
-            heatmapHtml += '<div class="heatmap-cell" style="background:' + color + ';color:white;" ' +
-                'title="' + escapeHtml(s1) + ' vs ' + escapeHtml(s2) + ': ' + pct + '%">' +
-                text + '</div>';
-        }});
-    }});
-    heatmapHtml += '</div></div>';
-
     document.getElementById('cluster-clusters').innerHTML = clusterHtml;
-    document.getElementById('cluster-heatmap').innerHTML = heatmapHtml;
+
+    if (n <= 60) {{
+        renderHeatmapDOM(samples, n);
+    }} else {{
+        renderHeatmapCanvas(samples, n);
+    }}
 
     var summary = document.getElementById('cluster-summary');
-    if (summary) {{
-        summary.textContent = clusters.length + ' cluster(s) detected at ≥' + threshold + '%';
+    if (summary) summary.textContent =
+        clusters.length + ' cluster(s) at ≥' + threshold + '% (' + n + ' samples)';
+}}
+
+function renderHeatmapDOM(samples, n) {{
+    var rowLabelWidth = 220;
+    var cellSize = 28;
+    var truncate = function(s, max) {{ return s.length > max ? s.substring(0, max - 1) + '…' : s; }};
+    var html = '<div class="heatmap-wrapper">' +
+        '<h3>🔷 Pairwise Similarity Matrix</h3>' +
+        '<p style="font-size:0.9em;color:#64748b;margin-bottom:12px;">' +
+        'Hover any cell or label for the full sample name.</p>' +
+        '<div style="overflow-x:auto;padding-bottom:10px;">' +
+        '<div class="heatmap-grid" style="grid-template-columns: ' +
+        rowLabelWidth + 'px repeat(' + n + ', ' + cellSize + 'px);">';
+    html += '<div class="heatmap-cell heatmap-corner"></div>';
+    samples.forEach(function(s) {{
+        html += '<div class="heatmap-cell heatmap-col-header" title="' +
+            escapeHtml(s) + '"><span class="heatmap-header-label">' +
+            escapeHtml(s) + '</span></div>';
+    }});
+    samples.forEach(function(s1, i) {{
+        html += '<div class="heatmap-cell heatmap-row-header" style="justify-content:flex-start;padding-left:8px;width:' +
+            rowLabelWidth + 'px;" title="' + escapeHtml(s1) + '">' +
+            '<span class="heatmap-header-label">' + escapeHtml(truncate(s1, 26)) + '</span></div>';
+        samples.forEach(function(s2, j) {{
+            var pct = (i === j) ? 100 : getPrecomputedSim(i, j);
+            var color = (i === j) ? '#1e293b' : similarityColor(pct);
+            var text = (i === j) ? '—' : Math.round(pct);
+            html += '<div class="heatmap-cell" style="background:' + color +
+                ';color:white;" title="' + escapeHtml(s1) + ' vs ' + escapeHtml(s2) +
+                ': ' + pct + '%">' + text + '</div>';
+        }});
+    }});
+    html += '</div></div></div>';
+    document.getElementById('cluster-heatmap').innerHTML = html;
+}}
+
+function renderHeatmapCanvas(samples, n) {{
+    var cellSize = Math.max(3, Math.min(12, Math.floor(700 / n)));
+    var rowLabelW = 160;
+    var headerH = 60;
+    var canvasW = rowLabelW + n * cellSize + 20;
+    var canvasH = headerH + n * cellSize + 20;
+
+    var canvas = document.createElement('canvas');
+    canvas.width = canvasW;
+    canvas.height = canvasH;
+    canvas.style.display = 'block';
+    canvas.style.maxWidth = '100%';
+    canvas.style.cursor = 'crosshair';
+
+    var ctx = canvas.getContext('2d');
+    ctx.font = Math.max(8, Math.min(11, cellSize - 1)) + 'px sans-serif';
+    ctx.textBaseline = 'middle';
+
+    for (var i = 0; i < n; i++) {{
+        for (var j = 0; j < n; j++) {{
+            var pct = (i === j) ? 100 : getPrecomputedSim(i, j);
+            ctx.fillStyle = (i === j) ? '#1e293b' : similarityColor(pct);
+            ctx.fillRect(rowLabelW + j * cellSize, headerH + i * cellSize, cellSize, cellSize);
+        }}
     }}
+
+    ctx.fillStyle = '#333';
+    ctx.textAlign = 'right';
+    var rowStep = Math.max(1, Math.floor(n / 40));
+    for (var i = 0; i < n; i += rowStep) {{
+        var lb = samples[i].length > 20 ? samples[i].substring(0, 19) + '…' : samples[i];
+        ctx.fillText(lb, rowLabelW - 5, headerH + i * cellSize + cellSize / 2);
+    }}
+
+    ctx.save();
+    ctx.translate(0, headerH - 5);
+    ctx.rotate(-Math.PI / 2);
+    ctx.textAlign = 'left';
+    var colStep = Math.max(1, Math.floor(n / 40));
+    for (var j = 0; j < n; j += colStep) {{
+        var lb2 = samples[j].length > 15 ? samples[j].substring(0, 14) + '…' : samples[j];
+        ctx.fillText(lb2, 5, rowLabelW + j * cellSize + cellSize / 2);
+    }}
+    ctx.restore();
+
+    canvas.addEventListener('click', function(e) {{
+        var rect = canvas.getBoundingClientRect();
+        var x = (e.clientX - rect.left) * (canvas.width / rect.width) - rowLabelW;
+        var y = (e.clientY - rect.top) * (canvas.height / rect.height) - headerH;
+        var jj = Math.floor(x / cellSize);
+        var ii = Math.floor(y / cellSize);
+        if (ii >= 0 && ii < n && jj >= 0 && jj < n && ii !== jj) {{
+            document.getElementById('compare-a').value = samples[ii];
+            document.getElementById('compare-b').value = samples[jj];
+            setCompareMode('pair');
+            runCompare();
+        }}
+    }});
+
+    var wrapper = document.getElementById('cluster-heatmap');
+    wrapper.innerHTML =
+        '<div class="heatmap-wrapper"><h3>🔷 Pairwise Similarity Matrix</h3>' +
+        '<p style="font-size:0.9em;color:#64748b;margin-bottom:12px;">' +
+        '🎨 Canvas-rendered for ' + n + ' samples. ' +
+        '<strong>Click any cell to open pair compare for those two samples.</strong></p>' +
+        '<div id="canvas-heatmap-host" style="overflow-x:auto;"></div></div>';
+    wrapper.querySelector('#canvas-heatmap-host').appendChild(canvas);
 }}
 document.addEventListener('DOMContentLoaded', function(){{
     var hash = window.location.hash.substring(1);
@@ -2056,35 +2108,35 @@ document.addEventListener('DOMContentLoaded', function(){{
         dash_html = f'''
         <div class="dashboard-grid">
             <div class="dashboard-card card-summary" onclick="switchTab('summary')">
-                <i class="fas fa-vial fa-2x" style="color:#4CAF50;"></i>
+                <i class="fas fa-vial fa-2x" style="color:#2e7d32;"></i>
                 <div class="card-number">{total_samples}</div>
                 <div class="card-label">Total Samples</div></div>
             <div class="dashboard-card card-mlst" onclick="switchTab('mlst')">
-                <i class="fas fa-code-branch fa-2x" style="color:#FF9800;"></i>
+                <i class="fas fa-code-branch fa-2x" style="color:#4caf50;"></i>
                 <div class="card-number">{n_mlst}</div>
                 <div class="card-label">Unique STs</div></div>
             <div class="dashboard-card card-spa" onclick="switchTab('spa')">
-                <i class="fas fa-dna fa-2x" style="color:#9C27B0;"></i>
+                <i class="fas fa-dna fa-2x" style="color:#66bb6a;"></i>
                 <div class="card-number">{n_spa}</div>
                 <div class="card-label">spa Types</div></div>
             <div class="dashboard-card card-amr" onclick="switchTab('amr')">
-                <i class="fas fa-biohazard fa-2x" style="color:#F44336;"></i>
+                <i class="fas fa-biohazard fa-2x" style="color:#43a047;"></i>
                 <div class="card-number">{n_amr}</div>
                 <div class="card-label">AMR Genes</div></div>
             <div class="dashboard-card card-virulence" onclick="switchTab('virulence')">
-                <i class="fas fa-virus fa-2x" style="color:#E91E63;"></i>
+                <i class="fas fa-virus fa-2x" style="color:#388e3c;"></i>
                 <div class="card-number">{n_vir}</div>
                 <div class="card-label">Virulence Genes</div></div>
             <div class="dashboard-card card-agr" onclick="switchTab('agr')">
-                <i class="fas fa-dna fa-2x" style="color:#8B5CF6;"></i>
+                <i class="fas fa-dna fa-2x" style="color:#43a047;"></i>
                 <div class="card-number">{n_agr}</div>
                 <div class="card-label">agr Types</div></div>
             <div class="dashboard-card card-mge" onclick="switchTab('mge')">
-                <i class="fas fa-mobile-alt fa-2x" style="color:#16A085;"></i>
+                <i class="fas fa-mobile-alt fa-2x" style="color:#2e7d32;"></i>
                 <div class="card-number">{n_mge}</div>
                 <div class="card-label">MGE-profiled Samples</div></div>
             <div class="dashboard-card card-patterns" onclick="switchTab('patterns')">
-                <i class="fas fa-project-diagram fa-2x" style="color:#3F51B5;"></i>
+                <i class="fas fa-project-diagram fa-2x" style="color:#4caf50;"></i>
                 <div class="card-number">{len(patterns.get('high_risk_combinations', []))}</div>
                 <div class="card-label">High-Risk Combos</div></div>
         </div>'''
@@ -2094,7 +2146,7 @@ document.addEventListener('DOMContentLoaded', function(){{
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>STAPHSCOPE Ultimate S. aureus Report v3.0.0</title>
+    <title>STAPHSCOPE Ultimate S. aureus Report v3.1.0</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     {css}
     {js}
@@ -2107,7 +2159,7 @@ document.addEventListener('DOMContentLoaded', function(){{
         <div class="metadata-bar">
             <div class="metadata-item"><i class="fas fa-calendar"></i><span>Generated: {metadata.get('analysis_date', 'Unknown')}</span></div>
             <div class="metadata-item"><i class="fas fa-database"></i><span>Samples: {total_samples}</span></div>
-            <div class="metadata-item"><i class="fas fa-code-branch"></i><span>Tool: STAPHSCOPE Ultimate v3.0.0</span></div>
+            <div class="metadata-item"><i class="fas fa-code-branch"></i><span>Tool: STAPHSCOPE Ultimate v3.1.0</span></div>
             <div class="metadata-item"><i class="fas fa-university"></i><span>University of Ghana Medical School</span></div>
         </div>
     </div>
@@ -2115,7 +2167,7 @@ document.addEventListener('DOMContentLoaded', function(){{
     <div class="tab-navigation">{nav_html}</div>
     {tabs_html}
     <div class="footer">
-        <h3>STAPHSCOPE Ultimate S. aureus Reporter v3.0.0</h3>
+        <h3>STAPHSCOPE Ultimate S. aureus Reporter v3.1.0</h3>
         <p>University of Ghana Medical School | Brown Beckley &lt;brownbeckley94@gmail.com&gt;</p>
         <p>Generated on {metadata.get('analysis_date', 'Unknown')}</p>
         <p>⭐ Please give a big STAR on GitHub if you found this useful!</p>
@@ -2194,7 +2246,7 @@ document.addEventListener('DOMContentLoaded', function(){{
                     <li>Pick any single field or combination — the genome column re‑organises instantly.</li>
                     <li>Click <strong>"Reset"</strong> to return to a flat list.</li>
                 </ol>
-                <p><strong>Why it matters:</strong> you can instantly ask “Does <em>mecA</em> only appear in ST5?” or “Which agr types carry PVL?”</p>
+                <p><strong>Why it matters:</strong> you can instantly ask "Does <em>mecA</em> only appear in ST5?" or "Which agr types carry PVL?"</p>
             </div>
         </div>
         <h3><i class="fas fa-chart-bar"></i> Key Statistics</h3>
@@ -2284,33 +2336,33 @@ document.addEventListener('DOMContentLoaded', function(){{
             <h4><i class="fas fa-book-medical"></i> What Each Column Means</h4>
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:15px;margin-top:10px;">
 
-                <div style="background:#fff;padding:14px;border-radius:8px;border-left:4px solid #FF9800;">
-                    <strong style="color:#FF9800;">🔬 MLST (Multi-Locus Sequence Typing)</strong>
+                <div style="background:#fff;padding:14px;border-radius:8px;border-left:4px solid #4caf50;">
+                    <strong style="color:#4caf50;">🔬 MLST (Multi-Locus Sequence Typing)</strong>
                     <p style="font-size:.92em;margin-top:6px;">Sequences seven conserved <em>housekeeping genes</em>. Each unique allele combination defines a <strong>Sequence Type (ST)</strong>. STs are the <em>lingua franca</em> of global <em>S. aureus</em> epidemiology — they reveal the deep population structure and let you compare your isolates to thousands worldwide. <strong>Example:</strong> ST5, ST8, ST239, ST398, ST22.</p>
                 </div>
 
-                <div style="background:#fff;padding:14px;border-radius:8px;border-left:4px solid #9C27B0;">
-                    <strong style="color:#9C27B0;">🧬 spa Typing</strong>
+                <div style="background:#fff;padding:14px;border-radius:8px;border-left:4px solid #66bb6a;">
+                    <strong style="color:#66bb6a;">🧬 spa Typing</strong>
                     <p style="font-size:.92em;margin-top:6px;">Sequences the variable repeat region of the <em>spa</em> gene (protein A). Gives <strong>outbreak-resolution discrimination</strong> within a single ST — two isolates from the same ST5 lineage might carry different spa types (e.g. t002 vs t688), telling you they came from different introductions. Used worldwide by reference labs and PulseNet-style surveillance.</p>
                 </div>
 
-                <div style="background:#fff;padding:14px;border-radius:8px;border-left:4px solid #009688;">
-                    <strong style="color:#009688;">🛡️ SCCmec (CGE &amp; RPet callers)</strong>
+                <div style="background:#fff;padding:14px;border-radius:8px;border-left:4px solid #81c784;">
+                    <strong style="color:#81c784;">🛡️ SCCmec (CGE &amp; RPet callers)</strong>
                     <p style="font-size:.92em;margin-top:6px;">The Staphylococcal Cassette Chromosome <em>mec</em> carries <strong>mecA</strong> or <strong>mecC</strong> — the genetic determinant of methicillin resistance. Its <strong>type</strong> (I–XIII) and <strong>subtype</strong> (IIa, IVc, …) trace MRSA lineage origin. Two callers (CGE and RPet) are shown side-by-side so you can see where they agree or disagree. Subtype is the finest grain — useful for tracking regional clones.</p>
                 </div>
 
-                <div style="background:#fff;padding:14px;border-radius:8px;border-left:4px solid #8B5CF6;">
-                    <strong style="color:#8B5CF6;">🧬 agr Typing</strong>
+                <div style="background:#fff;padding:14px;border-radius:8px;border-left:4px solid #43a047;">
+                    <strong style="color:#43a047;">🧬 agr Typing</strong>
                     <p style="font-size:.92em;margin-top:6px;">The <em>accessory gene regulator</em> system — a quorum-sensing circuit that globally controls virulence gene expression. Four types (I–IV) exist. agr type influences <strong>toxin production, biofilm formation, and infection severity</strong>, and correlates with certain clonal complexes. It's the key axis linking <em>genotype</em> to <em>virulence phenotype</em>.</p>
                 </div>
 
-                <div style="background:#fff;padding:14px;border-radius:8px;border-left:4px solid #00ACC1;">
-                    <strong style="color:#00ACC1;">💊 Capsule Type</strong>
+                <div style="background:#fff;padding:14px;border-radius:8px;border-left:4px solid #2e7d32;">
+                    <strong style="color:#2e7d32;">💊 Capsule Type</strong>
                     <p style="font-size:.92em;margin-top:6px;">Capsular polysaccharide serotype — mainly <strong>Type 5</strong> and <strong>Type 8</strong>. The capsule helps the bacterium evade phagocytosis and is a major <strong>vaccine target</strong>. Type 5 is more common in MSSA, Type 8 in MRSA ST8 / ST239 lineages. Knowing the capsule type helps interpret vaccine coverage and immune-evasion potential.</p>
                 </div>
 
-                <div style="background:#fff;padding:14px;border-radius:8px;border-left:4px solid #795548;">
-                    <strong style="color:#795548;">🦠 MRSA / MSSA Status</strong>
+                <div style="background:#fff;padding:14px;border-radius:8px;border-left:4px solid #388e3c;">
+                    <strong style="color:#388e3c;">🦠 MRSA / MSSA Status</strong>
                     <p style="font-size:.92em;margin-top:6px;">Methicillin-<strong>R</strong>esistant vs Methicillin-<strong>S</strong>usceptible <em>S. aureus</em>. This is the <strong>clinical bottom line</strong> — MRSA excludes standard β-lactam therapy (methicillin, oxacillin, cefazolin) and forces clinicians to second-line agents (vancomycin, daptomycin, linezolid). MRSA rows are highlighted in red throughout the report.</p>
                 </div>
             </div>
@@ -2447,7 +2499,7 @@ document.addEventListener('DOMContentLoaded', function(){{
         credit = self._credit_bar('#FF9800', '🧬',
             'MLST Typing – Acknowledgments &amp; Licensing',
             '<strong>MLST scheme</strong> powered by '
-            '<a href="https://github.com/tseemann/mlst" target="_blank" style="color:#FF9800;font-weight:bold;">Prof. Torsten Seemann’s Perl scripts</a> '
+            '<a href="https://github.com/tseemann/mlst" target="_blank" style="color:#FF9800;font-weight:bold;">Prof. Torsten Seemann\'s Perl scripts</a> '
             'and the '
             '<a href="https://pubmlst.org/" target="_blank" style="color:#FF9800;font-weight:bold;">PubMLST database</a> '
             '(Jolley et al., <em>Wellcome Open Res</em> 2018).<br>'
@@ -2578,6 +2630,7 @@ document.addEventListener('DOMContentLoaded', function(){{
         {self._combo_table('cap-agr-table', 'Capsule – agr', P.get('agr_capsule', {}))}
         {self._combo_table('cap-scc-table', 'Capsule – SCCmec (CGE)', P.get('capsule_sccmec_cge', {}))}
         {self._combo_table('cap-sub-table', 'Capsule – SCCmec Subtype', P.get('capsule_subtype', {}))}'''
+
     # =========================================================================
     # MRSA
     # =========================================================================
@@ -2673,7 +2726,6 @@ document.addEventListener('DOMContentLoaded', function(){{
             '<span style="font-size:0.9em;color:#6c757d;"><i class="fas fa-gratipay"></i> '
             'We are deeply grateful to all developers and curators for their open‑source contributions.</span>')
 
-        # ---- Educational box: why multiple databases ----
         why_multi_db = '''
         <div class="alert-box alert-info" style="border-left-color:#00695c; background:#e8f5e9; border-radius:8px; padding:18px 22px; margin:20px 0;">
             <div style="display:flex; gap:15px; align-items:flex-start;">
@@ -2703,7 +2755,6 @@ document.addEventListener('DOMContentLoaded', function(){{
         </div>
         '''
 
-        # ---- Confidence tiers box ----
         confidence_box = '''
         <div class="alert-box" style="border-left-color:#0891b2; background:#e0f2fe; border-radius:8px; padding:16px 20px; margin:20px 0;">
             <div style="display:flex; gap:15px; align-items:flex-start;">
@@ -2721,7 +2772,6 @@ document.addEventListener('DOMContentLoaded', function(){{
         </div>
         '''
 
-        # ---- Acquired vs intrinsic box ----
         acquired_intrinsic = '''
         <div class="alert-box" style="border-left-color:#6f42c1; background:#f3e8ff; border-radius:8px; padding:16px 20px; margin:20px 0;">
             <div style="display:flex; gap:15px; align-items:flex-start;">
@@ -2739,7 +2789,6 @@ document.addEventListener('DOMContentLoaded', function(){{
         </div>
         '''
 
-        # ---- Genotype ≠ phenotype caveat ----
         caveat = '''
         <div class="alert-box alert-warning" style="border-left-color:#ffc107;">
             <i class="fas fa-exclamation-triangle fa-2x"></i>
@@ -2760,7 +2809,6 @@ document.addEventListener('DOMContentLoaded', function(){{
         </div>
         '''
 
-        # ---- Filter buttons ----
         filter_buttons = self._filter_buttons('amr-table', [
             ('mecA (MRSA)', 'mecA', 'btn-danger', 'fa-skull-crossbones'),
             ('mecC', 'mecC', 'btn-danger', 'fa-skull-crossbones'),
@@ -2780,7 +2828,6 @@ document.addEventListener('DOMContentLoaded', function(){{
             ('pco (Copper)', 'pco', 'btn-light', 'fa-tablets'),
         ])
 
-        # ---- Gene family roles ----
         info_block = self._gene_family_info('#F44336',
             'Role of each AMR gene family in <em>S. aureus</em>:', [
                 ('mecA/mecC', 'Methicillin resistance (MRSA) — confers resistance to all β‑lactam antibiotics.'),
@@ -2797,7 +2844,6 @@ document.addEventListener('DOMContentLoaded', function(){{
                 ('pco', 'Copper resistance — often linked to metal tolerance.'),
             ])
 
-        # ---- Database roles ----
         db_roles = '''
         <div class="database-section" style="margin-top:30px;">
             <h3 style="color:#2c3e50; border-bottom:2px solid #3b82f6; padding-bottom:10px;">
@@ -2859,21 +2905,34 @@ document.addEventListener('DOMContentLoaded', function(){{
         </div>
         '''
 
+        def collapsible(title, color, inner_html):
+            return (
+                f'<details class="edu-details">'
+                f'<summary style="cursor:pointer;padding:12px 16px;'
+                f'background:#f0f7f0;border-left:4px solid {color};'
+                f'border-radius:6px;margin:12px 0;font-weight:600;color:#2c3e50;">'
+                f'{title}</summary>'
+                f'<div style="padding:6px 0 16px 0;">{inner_html}</div>'
+                f'</details>'
+            )
+
         return f'''
         {credit}
         {self._alert('info', 'fa-biohazard',
             '<h3>🧬 AMR Genes – Gene-Centric View + Grouping</h3>'
             '<p>Each gene is shown with all genomes carrying it. Use the dropdown to reveal clone associations.</p>')}
-        {why_multi_db}
-        {confidence_box}
-        {acquired_intrinsic}
-        {caveat}
         {filter_buttons}
-        {info_block}
         {self._gene_table('amr-table', 'All AMR Genes Across Databases',
                           all_genes, total_samples, self.analyzer.critical_amr_genes)}
         {self._database_cards(amr_dbs, {'amrfinder': 'AMRfinder'})}
-        {db_roles}'''
+        <h3 style="margin-top:30px;">📚 Educational Context</h3>
+        <p style="color:#666;font-size:0.9em;margin-bottom:10px;">Expand any section below for AMR interpretation guidance. All panels are collapsed by default so the gene table stays in focus.</p>
+        {collapsible('🔬 Why Do We Use Multiple Databases?', '#00695c', why_multi_db)}
+        {collapsible('🎯 Cross-Database Confidence Tiers', '#0891b2', confidence_box)}
+        {collapsible('🧬 Acquired vs Intrinsic Resistance', '#6f42c1', acquired_intrinsic)}
+        {collapsible('⚠️ Gene Presence ≠ Phenotypic Resistance', '#f59e0b', caveat)}
+        {collapsible('🧪 Role of Each AMR Gene Family', '#F44336', info_block)}
+        {collapsible('🗄️ Roles & Strengths of Each Database', '#3b82f6', db_roles)}'''
 
     # =========================================================================
     # VIRULENCE
@@ -3506,6 +3565,47 @@ document.addEventListener('DOMContentLoaded', function(){{
     # Comparison of two samples
     #------------------------------------------------------
 
+    def _precompute_similarity(self, compare_data: Dict[str, Dict]) -> Dict[str, Any]:
+        """Precompute the pairwise similarity matrix as a flat upper-triangular
+        array. For N samples this yields N*(N-1)/2 floats; client JS resolves
+        any pair in O(1) via index math — no N² compute in the browser."""
+        samples = sorted(compare_data.keys())
+        n = len(samples)
+        if n < 2:
+            return {'samples': samples, 'flat': [], 'n': n}
+
+        cats = ('AMR', 'Virulence', 'BACMET', 'Plasmids', 'Mutations')
+        gene_sets, typing_data = {}, {}
+        for s in samples:
+            d = compare_data[s]
+            gene_sets[s] = {cat: set(d['genes'].get(cat, [])) for cat in cats}
+            typing_data[s] = d['typing']
+
+        typing_keys = list(typing_data[samples[0]].keys()) if samples else []
+        n_keys = len(typing_keys)
+
+        flat = []
+        for i in range(n):
+            s1 = samples[i]
+            for j in range(i + 1, n):
+                s2 = samples[j]
+                matches = sum(
+                    1 for k in typing_keys
+                    if typing_data[s1].get(k) == typing_data[s2].get(k)
+                )
+                typing_pct = (matches / n_keys * 100) if n_keys else 0
+                cat_scores = []
+                for cat in cats:
+                    sa, sb = gene_sets[s1][cat], gene_sets[s2][cat]
+                    union = sa | sb
+                    if not union:
+                        continue
+                    cat_scores.append(len(sa & sb) / len(union) * 100)
+                gene_pct = (sum(cat_scores) / len(cat_scores)) if cat_scores else 0
+                overall = round(typing_pct * 0.5 + gene_pct * 0.5, 1)
+                flat.append(overall)
+        return {'samples': samples, 'flat': flat, 'n': n}
+
     def _sec_compare(self, d):
         """Pairwise + cluster comparison with colored visuals."""
         samples_data = d.get('samples', {})
@@ -3577,6 +3677,11 @@ document.addEventListener('DOMContentLoaded', function(){{
             for i, s in enumerate(sorted_samples)
         )
         blob_json = json.dumps(compare_data, default=str, ensure_ascii=False)
+
+        # FIX (perf): precompute pairwise similarity in Python so the browser
+        # never has to do N² set operations (freezes / crashes at 300+ samples).
+        precomp = self._precompute_similarity(compare_data)
+        precomp_json = json.dumps(precomp, default=str, ensure_ascii=False)
 
         return f'''
         <div class="alert-box alert-info">
@@ -3655,6 +3760,7 @@ document.addEventListener('DOMContentLoaded', function(){{
 
         <script>
         window.STAPHSCOPE_COMPARE_DATA = {blob_json};
+        window.STAPHSCOPE_SIM = {precomp_json};
         </script>'''
 
     # =========================================================================
@@ -3783,7 +3889,7 @@ document.addEventListener('DOMContentLoaded', function(){{
                 <li><strong>P</strong>seudomonas aeruginosa</li>
                 <li><strong>E</strong>nterobacter species</li>
             </ul>
-            <p>These bacteria “escape” the effects of antibiotics — hence the name. But we believe the name is also a global call to action:</p>
+            <p>These bacteria "escape" the effects of antibiotics — hence the name. But we believe the name is also a global call to action:</p>
             <div style="background:#fff3e0;padding:15px;border-radius:8px;margin:15px 0;">
                 <p><strong>🔹 E</strong>veryone must join forces — researchers, clinicians, policymakers, and citizens.<br>
                 <strong>🔹 S</strong>mart surveillance is our first line of defence. No more guessing — we need genomic data.<br>
@@ -3792,7 +3898,7 @@ document.addEventListener('DOMContentLoaded', function(){{
                 <strong>🔹 P</strong>revention is cheaper than cure. Let's stop resistant infections before they spread.<br>
                 <strong>🔹 E</strong>very day we delay, more lives are at stake. The time to act is now, not tomorrow.</p>
             </div>
-            <p><i class="fas fa-laugh-squint"></i> <strong>“We didn't choose the name ESKAPE because it sounds cool (though it does). We chose it because it reminds us every single day: we must ESCAPE the AMR crisis — together, urgently, and with the best science we have.”</strong><br>— Brown Beckley, lead developer (who secretly hopes this pun makes you smile, not roll your eyes 😉)</p>
+            <p><i class="fas fa-laugh-squint"></i> <strong>"We didn't choose the name ESKAPE because it sounds cool (though it does). We chose it because it reminds us every single day: we must ESCAPE the AMR crisis — together, urgently, and with the best science we have."</strong><br>— Brown Beckley, lead developer (who secretly hopes this pun makes you smile, not roll your eyes 😉)</p>
         </div>
         <div style="text-align:center;margin:40px 0;">
             <i class="fas fa-star" style="font-size:3em;color:#ffc107;"></i>
@@ -3807,11 +3913,11 @@ document.addEventListener('DOMContentLoaded', function(){{
             <p><i class="fas fa-hand-holding-heart"></i> If you are a funder or organisation interested in supporting the <strong>ESCAPE AMR</strong> project, please reach out. Together we can build a free, open-source ecosystem for genomic surveillance of all ESKAPE pathogens.</p>
         </div>
         <div style="background:#f8f9fa;padding:15px;border-radius:8px;">
-            <i class="fas fa-quote-left"></i> “AMR is a silent pandemic, but we have the tools to fight it — if we share them, if we teach each other, and if we act with urgency. Let's escape the era of untreatable infections.”<br>
+            <i class="fas fa-quote-left"></i> "AMR is a silent pandemic, but we have the tools to fight it — if we share them, if we teach each other, and if we act with urgency. Let's escape the era of untreatable infections."<br>
             <strong>— The ESCAPE AMR Team, University of Ghana Medical School</strong>
         </div>'''
 
-    # =========================================================================
+ # =========================================================================
     # CITATION
     # =========================================================================
     def _sec_citation(self, d):
@@ -4310,7 +4416,7 @@ class StaphUltimateReporter:
     def run(self) -> bool:
         """Execute the full pipeline end-to-end."""
         print("=" * 80)
-        print("🧬 STAPHSCOPE ULTIMATE S. AUREUS REPORTER v3.0.0")
+        print("🧬 STAPHSCOPE ULTIMATE S. AUREUS REPORTER v3.1.0")
         print("=" * 80)
         print(f"📁 Input:  {self.input_dir}")
         print(f"📁 Output: {self.output_dir}")
@@ -4347,7 +4453,7 @@ class StaphUltimateReporter:
 def main():
     """Command-line entry point."""
     parser = argparse.ArgumentParser(
-        description='STAPHSCOPE Ultimate S. aureus Reporter v3.0.0',
+        description='STAPHSCOPE Ultimate S. aureus Reporter v3.1.0',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""Examples:\n  python staphscope_ultimate_reporter.py -i /path/to/reports\n\nAuthor: Brown Beckley <brownbeckley94@gmail.com>""")
     parser.add_argument('-i', '--input-dir', required=True,

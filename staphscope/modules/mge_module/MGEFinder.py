@@ -2,7 +2,7 @@
 """
 MGEFinder - Mobile Genetic Element Detection Module for StaphScope
 Integrated by: Beckley Brown <brownbeckley94@gmail.com>
-Date: 2026-09-17
+Date: 2026-10-22
 Affiliation: University of Ghana Medical School - Department of Medical Biochemistry
 
 Detects mobile genetic elements using Prodigal for ORF prediction and DIAMOND
@@ -15,7 +15,14 @@ Supports automatic CPU and RAM detection with tiered scaling, plus two-level
 parallelism: multiple genomes processed concurrently while DIAMOND threads are
 split evenly across workers.
 
-Per-sample deep-dive HTML/JSON reports plus top-level batch summaries.
+Per-sample output (1 file each):
+    <sample>/<sample>_mge.html
+
+Batch-level outputs:
+    <prefix>_summary.tsv             (per-sample aggregate counts)
+    <prefix>_all_hits.tsv            (gene-level TSV — one row per hit across all samples)
+    <prefix>_summary.json
+    <prefix>_summary.html
 
 Acknowledgements:
     - mobileOG-db team (Brown et al.) for the curated database
@@ -40,6 +47,7 @@ import os
 import re
 import subprocess
 import sys
+import tempfile
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
@@ -105,6 +113,15 @@ KEY_GENES = {
     "ardA", "mazE", "mazF", "yefM", "yoeB",
 }
 
+STAPHSCOPE_BANNER = (
+    "███████╗████████╗ █████╗ ██████╗ ██╗  ██╗███████╗ ██████╗ ██████╗ ██████╗ ███████╗\n"
+    "██╔════╝╚══██╔══╝██╔══██╗██╔══██╗██║  ██║██╔════╝██╔════╝██╔═══██╗██╔══██╗██╔════╝\n"
+    "███████╗   ██║   ███████║██████╔╝███████║███████╗██║     ██║   ██║██████╔╝█████╗  \n"
+    "╚════██║   ██║   ██╔══██║██╔═══╝ ██╔══██║╚════██║██║     ██║   ██║██╔═══╝ ██╔══╝  \n"
+    "███████║   ██║   ██║  ██║██║     ██║  ██║███████║╚██████╗╚██████╔╝██║     ███████╗\n"
+    "╚══════╝   ╚═╝   ╚═╝  ╚═╝╚═╝     ╚═╝  ╚═╝╚══════╝ ╚═════╝ ╚═════╝ ╚═╝     ╚══════╝"
+)
+
 
 # ---------------------------------------------------------------------------
 # Data containers
@@ -160,7 +177,6 @@ class SampleResult:
     """All MGE detection results and supporting evidence for one sample."""
     sample: str
     input_file: str
-    faa_file: str = ""
     total_hits: int = 0
     category_hits: Dict[str, List[BlastHit]] = field(default_factory=dict)
     key_gene_hits: List[BlastHit] = field(default_factory=list)
@@ -172,10 +188,7 @@ class SampleResult:
     @property
     def category_counts(self) -> Dict[str, int]:
         """Number of hits per functional category (ORF-level)."""
-        counts: Dict[str, int] = {}
-        for cat, hits in self.category_hits.items():
-            counts[cat] = len(hits)
-        return counts
+        return {cat: len(hits) for cat, hits in self.category_hits.items()}
 
     @property
     def source_class_counts(self) -> Dict[str, int]:
@@ -325,24 +338,30 @@ class MGETyper:
     def run(
         self,
         assembly_path: Path,
-        annotations_dir: Path,
         diamond_threads: Optional[int] = None,
     ) -> SampleResult:
-        """Annotate (if needed), search, and type one assembly."""
+        """Annotate, search, and type one assembly.
+
+        All Prodigal intermediates (the .faa ORF file) live inside a
+        TemporaryDirectory that is destroyed as soon as DIAMOND finishes —
+        no intermediate files are left on disk.
+        """
         sample_name = assembly_path.stem
         threads = max(1, diamond_threads or self.cpus)
 
-        faa_path = self._annotate(assembly_path, annotations_dir)
-        if faa_path is None:
-            result = SampleResult(sample=sample_name, input_file=str(assembly_path))
-            result.warnings.append("ORF prediction failed; unable to run MGE detection.")
-            return result
+        with tempfile.TemporaryDirectory(prefix=f"mge_{sample_name}_") as temp_dir:
+            temp_path = Path(temp_dir)
+            faa_path = self._annotate(assembly_path, temp_path)
+            if faa_path is None:
+                result = SampleResult(sample=sample_name, input_file=str(assembly_path))
+                result.warnings.append("ORF prediction failed; unable to run MGE detection.")
+                return result
 
-        raw_hits = self._diamond_search(faa_path, threads)
+            raw_hits = self._diamond_search(faa_path, threads)
+
         result = SampleResult(
             sample=sample_name,
             input_file=str(assembly_path),
-            faa_file=str(faa_path),
             raw_hits=raw_hits,
             total_hits=len(raw_hits),
         )
@@ -390,13 +409,10 @@ class MGETyper:
     # -- annotation -------------------------------------------------------
 
     @staticmethod
-    def _annotate(assembly_path: Path, annotations_dir: Path) -> Optional[Path]:
-        """Run Prodigal to predict ORFs, caching the .faa in annotations_dir."""
-        annotations_dir.mkdir(parents=True, exist_ok=True)
-        faa_path = annotations_dir / f"{assembly_path.stem}.faa"
-
-        if faa_path.exists() and faa_path.stat().st_mtime >= assembly_path.stat().st_mtime:
-            return faa_path
+    def _annotate(assembly_path: Path, working_dir: Path) -> Optional[Path]:
+        """Run Prodigal to predict ORFs, writing the .faa into working_dir."""
+        working_dir.mkdir(parents=True, exist_ok=True)
+        faa_path = working_dir / f"{assembly_path.stem}.faa"
 
         cmd = [
             "prodigal",
@@ -404,7 +420,7 @@ class MGETyper:
             "-a", str(faa_path),
             "-p", "single",
             "-q",
-            "-o", "/dev/null",
+            "-o", os.devnull,
         ]
         try:
             subprocess.run(cmd, check=True, capture_output=True)
@@ -592,88 +608,8 @@ class MGETyper:
 
 
 # ---------------------------------------------------------------------------
-# Per-sample report writers
+# Per-sample report writer (HTML only)
 # ---------------------------------------------------------------------------
-
-def write_sample_json(result: SampleResult, output_dir: Path) -> Path:
-    """Write a per-sample JSON report with full evidence details."""
-    output_dir.mkdir(parents=True, exist_ok=True)
-    payload = {
-        "sample": result.sample,
-        "input_file": result.input_file,
-        "faa_file": result.faa_file,
-        "mobileog_hits": result.total_hits,
-        "category_counts": result.category_counts,
-        "source_class_counts": result.source_class_counts,
-        "detected_elements": result.elements_summary,
-        "evidence": result.evidence,
-        "warnings": result.warnings,
-        "contig_source_class_composition": result.contig_purity,
-        "interpretation": {
-            "hit_definition": "mobileOG-associated protein hit",
-            "element_definition": "Individual protein hits do not represent independent mobile genetic elements",
-            "element_level_inference": False,
-            "caveats": [
-                "Multiple proteins from the same mobile element may generate multiple hits.",
-                "Some mobileOG-db families, particularly replication/recombination/repair proteins, also occur in the bacterial chromosome.",
-                "A single protein may match multiple source databases and be counted in more than one source class.",
-                "Stronger element-level inference requires genomic context, co-localization of compatible MGE-associated genes, and, where appropriate, complementary databases or analyses."
-            ],
-            "functional_category_note": "Functional categories are inherited from mobileOG-db and indicate association with MGE-related protein families. A protein classified as 'Transfer' is not thereby asserted to mediate horizontal transfer itself."
-        },
-        "key_mge_associated_genes": [
-            {
-                "query": h.qseqid,
-                "mobileog_id": h.mobileog_id,
-                "gene_name": h.gene_name,
-                "major_category": h.major_category,
-                "minor_category": h.minor_category,
-                "source_classes": h.source_classes,
-                "contig": h.specific_contig,
-                "orf_start": h.orf_start,
-                "orf_stop": h.orf_stop,
-                "strand": h.strand,
-                "pident": round(h.pident, 2),
-                "coverage": round(h.coverage, 2),
-                "annotation": h.annotation,
-            }
-            for h in result.key_gene_hits
-        ],
-        "all_hits": [
-            {
-                "query": h.qseqid,
-                "mobileog_id": h.mobileog_id,
-                "gene_name": h.gene_name,
-                "major_category": h.major_category,
-                "minor_category": h.minor_category,
-                "source_classes": h.source_classes,
-                "source_databases": h.source_databases,
-                "contig": h.specific_contig,
-                "orf_start": h.orf_start,
-                "orf_stop": h.orf_stop,
-                "strand": h.strand,
-                "partial": h.partial,
-                "start_codon": h.start_codon,
-                "rbs_motif": h.rbs_motif,
-                "rbs_spacer": h.rbs_spacer,
-                "gc_content": h.gc_content,
-                "pident": round(h.pident, 2),
-                "length": h.length,
-                "qlen": h.qlen,
-                "coverage": round(h.coverage, 2),
-                "bitscore": h.bitscore,
-                "annotation": h.annotation,
-                "database": h.database,
-                "evidence": h.evidence,
-            }
-            for h in result.raw_hits
-        ],
-    }
-    path = output_dir / f"{result.sample}_mge.json"
-    with open(path, "w") as fh:
-        json.dump(payload, fh, indent=2)
-    return path
-
 
 def _hit_rows_html(hits: List[BlastHit]) -> str:
     """Render MGE hit rows as HTML table rows with coverage colouring."""
@@ -950,12 +886,7 @@ body {{
 <body>
 <div class="container">
 <div class="ascii-container">
-<div class="ascii-art">███████╗████████╗ █████╗ ██████╗ ██╗  ██╗███████╗ ██████╗ ██████╗ ██████╗ ███████╗
-██╔════╝╚══██╔══╝██╔══██╗██╔══██╗██║  ██║██╔════╝██╔════╝██╔═══██╗██╔══██╗██╔════╝
-███████╗   ██║   ███████║██████╔╝███████║███████╗██║     ██║   ██║██████╔╝█████╗  
-╚════██║   ██║   ██╔══██║██╔═══╝ ██╔══██║╚════██║██║     ██║   ██║██╔═══╝ ██╔══╝  
-███████║   ██║   ██║  ██║██║     ██║  ██║███████║╚██████╗╚██████╔╝██║     ███████╗
-╚══════╝   ╚═╝   ╚═╝  ╚═╝╚═╝     ╚═╝  ╚═╝╚══════╝ ╚═════╝ ╚═════╝ ╚═╝     ╚══════╝</div>
+<div class="ascii-art">{STAPHSCOPE_BANNER}</div>
 </div>
 
 <div class="quote-container" id="quoteContainer">
@@ -1120,7 +1051,7 @@ setInterval(displayQuote, 10000);
 # ---------------------------------------------------------------------------
 
 def write_summary_tsv(results: List[SampleResult], output_path: Path) -> None:
-    """Write a batch TSV summary with one row per sample."""
+    """Write a batch TSV summary with one row per sample (aggregate counts)."""
     columns = [
         "sample", "total_hits", "key_genes",
         "functional_integration", "functional_transfer", "functional_stability",
@@ -1151,6 +1082,59 @@ def write_summary_tsv(results: List[SampleResult], output_path: Path) -> None:
                 r.elements_summary,
             ]
             fh.write("\t".join(str(v) for v in row) + "\n")
+
+
+def write_all_hits_tsv(results: List[SampleResult], output_path: Path) -> None:
+    """Write a gene-level TSV with one row per mobileOG hit across all samples.
+
+    Columns mirror the "All mobileOG-db Hits" table in the per-sample HTML
+    report exactly, with a leading `Sample` column so hits can be grouped
+    by genome.
+
+    `Rank` is the per-sample rank by bitscore (1 = best hit), matching the
+    HTML table order. Missing values are written as '-'.
+    """
+    columns = [
+        "Sample",
+        "Rank",
+        "mobileOG_ID",
+        "Gene",
+        "Contig",
+        "Start",
+        "Stop",
+        "Strand",
+        "Major_Category",
+        "Minor_Category",
+        "Percent_Identity",
+        "Align_Over_Qlen",
+        "Coverage_Percent",
+    ]
+    with open(output_path, "w", encoding="utf-8") as fh:
+        fh.write("\t".join(columns) + "\n")
+        for r in results:
+            sorted_hits = sorted(r.raw_hits, key=lambda h: h.bitscore, reverse=True)
+            for rank, h in enumerate(sorted_hits, 1):
+                start = h.orf_start if h.orf_start is not None else "-"
+                stop = h.orf_stop if h.orf_stop is not None else "-"
+                strand = h.strand or "-"
+                gene = h.gene_name or "-"
+                minor = h.minor_category or "-"
+                row = [
+                    r.sample,
+                    rank,
+                    h.mobileog_id,
+                    gene,
+                    h.specific_contig,
+                    start,
+                    stop,
+                    strand,
+                    h.major_category or "",
+                    minor,
+                    f"{h.pident:.2f}",
+                    f"{h.length}/{h.qlen}",
+                    f"{h.coverage:.2f}",
+                ]
+                fh.write("\t".join(str(v) for v in row) + "\n")
 
 
 def write_summary_json(results: List[SampleResult], output_path: Path) -> None:
@@ -1322,12 +1306,7 @@ body {{
 <body>
 <div class="container">
 <div class="ascii-container">
-<div class="ascii-art">███████╗████████╗ █████╗ ██████╗ ██╗  ██╗███████╗ ██████╗ ██████╗ ██████╗ ███████╗
-██╔════╝╚══██╔══╝██╔══██╗██╔══██╗██║  ██║██╔════╝██╔════╝██╔═══██╗██╔══██╗██╔════╝
-███████╗   ██║   ███████║██████╔╝███████║███████╗██║     ██║   ██║██████╔╝█████╗  
-╚════██║   ██║   ██╔══██║██╔═══╝ ██╔══██║╚════██║██║     ██║   ██║██╔═══╝ ██╔══╝  
-███████║   ██║   ██║  ██║██║     ██║  ██║███████║╚██████╗╚██████╔╝██║     ███████╗
-╚══════╝   ╚═╝   ╚═╝  ╚═╝╚═╝     ╚═╝  ╚═╝╚══════╝ ╚═════╝ ╚═════╝ ╚═╝     ╚══════╝</div>
+<div class="ascii-art">{STAPHSCOPE_BANNER}</div>
 </div>
 <div class="quote-container" id="quoteContainer">
 <div class="quote-text" id="quoteText"></div>
@@ -1443,7 +1422,8 @@ setInterval(displayQuote, 10000);
 # Batch orchestration
 # ---------------------------------------------------------------------------
 
-def _resolve_batch_plan(total_cpus: int, n_jobs: int, ram_gb: float, user_workers: Optional[int] = None):
+def _resolve_batch_plan(total_cpus: int, n_jobs: int, ram_gb: float,
+                        user_workers: Optional[int] = None):
     """
     Compute (workers, threads_per_worker) so that workers * threads_per_worker
     never exceeds total_cpus. Uses RAM to cap concurrent workers conservatively.
@@ -1455,9 +1435,10 @@ def _resolve_batch_plan(total_cpus: int, n_jobs: int, ram_gb: float, user_worker
     return workers, threads_per_worker
 
 
-def _process_one(typer: MGETyper, fasta_path: Path, annotations_dir: Path, diamond_threads: int) -> SampleResult:
+def _process_one(typer: MGETyper, fasta_path: Path,
+                 diamond_threads: int) -> SampleResult:
     """Worker function: run the typer on a single assembly."""
-    return typer.run(fasta_path, annotations_dir, diamond_threads=diamond_threads)
+    return typer.run(fasta_path, diamond_threads=diamond_threads)
 
 
 # ---------------------------------------------------------------------------
@@ -1486,10 +1467,6 @@ def main():
         help="Prefix for top-level summary files",
     )
     parser.add_argument(
-        "--annotations-dir", default=None,
-        help="Directory for cached Prodigal .faa files (default: <output-dir>/annotations)",
-    )
-    parser.add_argument(
         "--min-id", type=float, default=80.0,
         help="Minimum percent identity for a DIAMOND hit",
     )
@@ -1513,9 +1490,6 @@ def main():
 
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
-
-    annotations_dir = Path(args.annotations_dir) if args.annotations_dir else output_dir / "annotations"
-    annotations_dir.mkdir(parents=True, exist_ok=True)
 
     start = time.time()
     try:
@@ -1557,9 +1531,9 @@ def main():
     )
 
     if len(fasta_paths) == 1 or workers == 1:
-        print(f"Batch plan: sequential (1 worker × {threads_per_worker} thread(s) per worker)")
+        print(f"Batch plan: sequential (1 worker x {threads_per_worker} thread(s) per worker)")
     else:
-        print(f"Batch plan: {workers} concurrent worker(s) × {threads_per_worker} thread(s) per worker")
+        print(f"Batch plan: {workers} concurrent worker(s) x {threads_per_worker} thread(s) per worker")
     print(f"Total thread budget: {workers * threads_per_worker} of {typer.cpus} available cores")
     print()
 
@@ -1568,16 +1542,15 @@ def main():
     if workers == 1 or len(fasta_paths) == 1:
         for fasta in fasta_paths:
             print(f"Processing {fasta.name} ...")
-            result = typer.run(fasta, annotations_dir, diamond_threads=threads_per_worker)
+            result = typer.run(fasta, diamond_threads=threads_per_worker)
             results.append(result)
             print(f"  {result.sample}: {result.total_hits} mobileOG hit(s) | {len(result.key_gene_hits)} key MGE-associated gene(s)")
             sample_out = output_dir / result.sample
-            write_sample_json(result, sample_out)
             write_sample_html(result, sample_out)
     else:
         with ThreadPoolExecutor(max_workers=workers) as executor:
             futures = {
-                executor.submit(_process_one, typer, fasta, annotations_dir, threads_per_worker): fasta
+                executor.submit(_process_one, typer, fasta, threads_per_worker): fasta
                 for fasta in fasta_paths
             }
             for future in as_completed(futures):
@@ -1587,7 +1560,6 @@ def main():
                     results.append(result)
                     print(f"  {result.sample}: {result.total_hits} mobileOG hit(s) | {len(result.key_gene_hits)} key MGE-associated gene(s)")
                     sample_out = output_dir / result.sample
-                    write_sample_json(result, sample_out)
                     write_sample_html(result, sample_out)
                 except Exception as e:
                     print(f"  Failed: {fasta.name} - {e}")
@@ -1597,17 +1569,19 @@ def main():
         sys.exit(1)
 
     write_summary_tsv(results, output_dir / f"{args.prefix}_summary.tsv")
+    write_all_hits_tsv(results, output_dir / f"{args.prefix}_all_hits.tsv")
     write_summary_json(results, output_dir / f"{args.prefix}_summary.json")
     write_summary_html(results, output_dir / f"{args.prefix}_summary.html", time.time() - start)
 
     elapsed = time.time() - start
+    total_hits_written = sum(r.total_hits for r in results)
+
     print(f"\nResults written to {output_dir}")
-    print(f"  {args.prefix}_summary.tsv")
+    print(f"  {args.prefix}_summary.tsv              (per-sample aggregate counts)")
+    print(f"  {args.prefix}_all_hits.tsv             ({total_hits_written} gene-level hits across all samples)")
     print(f"  {args.prefix}_summary.json")
     print(f"  {args.prefix}_summary.html")
     print(f"  <sample>/<sample>_mge.html  (per-sample deep-dive)")
-    print(f"  <sample>/<sample>_mge.json  (per-sample JSON)")
-    print(f"  annotations/                (cached Prodigal .faa files)")
     print(f"\nCompleted {len(results)} sample(s) in {elapsed:.1f} seconds")
     print(f"Processing mode: {'parallel (' + str(workers) + ' workers)' if workers > 1 else 'sequential'}")
 

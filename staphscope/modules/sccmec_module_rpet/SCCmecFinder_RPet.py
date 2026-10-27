@@ -3,11 +3,19 @@
 SCCmecFinder_RPet - Reference-based SCCmec Typing Module
 Original Module/Logic Author: Robert Petit
 Integrated and extended by: Beckley Brown <brownbeckley94@gmail.com>
-Date: 2026-09-17
+Date: 2026-10-22
 Affiliation: University of Ghana Medical School - Department of Medical Biochemistry
 
 Combines BLAST-based SCCmec target typing and region-based subtyping with
-per-sample deep-dive HTML/JSON reports and batch summaries.
+per-sample deep-dive HTML reports and batch summaries.
+
+Per-sample output (1 file each):
+    <sample>/<sample>_sccmec_rpet.html
+
+Batch-level outputs:
+    <prefix>_summary.tsv
+    <prefix>_summary.json
+    <prefix>_summary.html
 
 Usage:
     python3 SCCmecFinder_RPet.py -i *.fna -d results -db_dir database
@@ -29,7 +37,7 @@ import pandas as pd
 
 # ---------------------------------------------------------------------------
 # Type-name mapping (RPet gene-content names to CGE-style names)
-# So you don't get confused about naming structure!!
+# So you don't get confused about naming structure!!!!!
 # ---------------------------------------------------------------------------
 
 RPET_TO_CGE = {
@@ -524,53 +532,8 @@ class SCCmecTyper:
 
 
 # ---------------------------------------------------------------------------
-# Per-sample report writers
+# Per-sample report writer (HTML only)
 # ---------------------------------------------------------------------------
-
-def write_sample_json(result: SampleResult, output_dir: Path) -> Path:
-    """Write a per-sample JSON report with full evidence details."""
-    output_dir.mkdir(parents=True, exist_ok=True)
-    payload = {
-        "sample": result.sample,
-        "input_file": result.input_file,
-        "sccmec_type": result.sccmec_type,
-        "sccmec_subtype": result.sccmec_subtype,
-        "cge_equivalent_type": result.cge_type,
-        "sccmec_genes": result.sccmec_genes,
-        "mrsa_status": result.mrsa_status,
-        "mrsa_evidence": result.mrsa_evidence,
-        "mec_class": result.mec_class,
-        "ccr_complexes": result.ccr_complexes,
-        "found_genes": sorted(result.found_genes),
-        "target_hits": [
-            {
-                "sseqid": h.sseqid,
-                "pident": round(h.pident, 2),
-                "length": h.length,
-                "slen": h.slen,
-                "coverage": round(h.coverage, 2),
-                "bitscore": h.bitscore,
-            }
-            for h in result.target_hits
-        ],
-        "region_hits": [
-            {
-                "sseqid": h.sseqid,
-                "pident": round(h.pident, 2),
-                "length": h.length,
-                "slen": h.slen,
-                "coverage": round(h.coverage, 2),
-                "bitscore": h.bitscore,
-            }
-            for h in result.region_hits
-        ],
-        "warnings": result.warnings,
-    }
-    path = output_dir / f"{result.sample}_sccmec_rpet.json"
-    with open(path, "w") as fh:
-        json.dump(payload, fh, indent=2)
-    return path
-
 
 def _hit_rows_html(hits: List[BlastHit]) -> str:
     """Render BLAST hit rows as HTML table rows with coverage colouring."""
@@ -1171,7 +1134,6 @@ def main():
         print(f"  {result.sample}: {result.sccmec_type} | {result.mrsa_status}")
 
         sample_out = output_dir / result.sample
-        write_sample_json(result, sample_out)
         write_sample_html(result, sample_out)
 
     if not results:
@@ -1187,7 +1149,6 @@ def main():
     print(f"  {args.prefix}_summary.json")
     print(f"  {args.prefix}_summary.html")
     print(f"  <sample>/<sample>_sccmec_rpet.html  (per-sample deep-dive)")
-    print(f"  <sample>/<sample>_sccmec_rpet.json  (per-sample JSON)")
 
 
 if __name__ == "__main__":

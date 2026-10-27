@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-StaphScope Main Orchestrator - v2.0.0
+StaphScope Main Orchestrator - v2.1.0
 All module writes happen in /tmp, final results are copied to user output.
 HPC / Docker-friendly.
 
@@ -12,8 +12,8 @@ Modules:
 Find a bug? Please reach out!!!
 Author: Brown Beckley <brownbeckley94@gmail.com>
 Affiliation: University of Ghana Medical School
-Version: 2.0.0
-Date: 2026-09-19
+Version: 2.1.0
+Date: 2026-10-22
 MIT License
 """
 
@@ -39,7 +39,7 @@ except (ImportError, SystemError):
     sys.path.insert(0, str(Path(__file__).parent))
     from core.banner import StaphScopeBanner
 
-__version__ = "2.0.0"
+__version__ = "2.1.0"
 
 
 class ColoredHelpFormatter(argparse.HelpFormatter):
@@ -106,6 +106,7 @@ class StaphScopeOrchestrator:
         self.logger = None
         self.keep_temp = False
         self.temp_dirs = []
+        self.report_level = 'summary'
 
         signal.signal(signal.SIGINT, self._signal_handler)
         signal.signal(signal.SIGTERM, self._signal_handler)
@@ -187,6 +188,26 @@ class StaphScopeOrchestrator:
         user_db.mkdir(parents=True, exist_ok=True)
         return user_db
 
+    def _copy_module_results(self, src: Path, dst: Path) -> None:
+        """Copy module results to user output, respecting report_level.
+
+        Batch-level files (top-level files in src) are always copied.
+        Per-sample folders (subdirectories) are only copied when report_level
+        is 'full'. This prevents the results folder from ballooning on large
+        batches before the final cleanup runs.
+        """
+        if not src.exists():
+            return
+        if dst.exists():
+            shutil.rmtree(dst)
+        dst.mkdir(parents=True, exist_ok=True)
+
+        for item in src.iterdir():
+            if item.is_file():
+                shutil.copy2(item, dst / item.name)
+            elif item.is_dir() and self.report_level == 'full':
+                shutil.copytree(item, dst / item.name)
+
     def run_module_in_temp(self, module_name: str, fasta_files: List[Path],
                            cmd_str: str, result_subdir: str = None) -> bool:
         module_orig = self.get_module_path(module_name)
@@ -218,12 +239,9 @@ class StaphScopeOrchestrator:
 
             if result_subdir:
                 src = temp_dir / result_subdir
-                if src.exists():
-                    dst = self.user_output_dir / result_subdir
-                    if dst.exists():
-                        shutil.rmtree(dst)
-                    shutil.copytree(src, dst)
-                    self.logger.info(f"Results copied to {dst}")
+                dst = self.user_output_dir / result_subdir
+                self._copy_module_results(src, dst)
+                self.logger.info(f"Results copied to {dst}")
 
             for extra in ["mutation_summary.html", "mutation_summary.tsv", "mutation_master_summary.json"]:
                 extra_src = temp_dir / extra
@@ -284,12 +302,9 @@ class StaphScopeOrchestrator:
                 return False
 
             src = temp_dir / "mlst_results"
-            if src.exists():
-                dst = self.user_output_dir / "mlst_results"
-                if dst.exists():
-                    shutil.rmtree(dst)
-                shutil.copytree(src, dst)
-                self.logger.info(f"MLST results copied to {dst}")
+            dst = self.user_output_dir / "mlst_results"
+            self._copy_module_results(src, dst)
+            self.logger.info(f"MLST results copied to {dst}")
             return True
         except Exception as e:
             self.logger.error(f"MLST exception: {e}")
@@ -324,12 +339,9 @@ class StaphScopeOrchestrator:
 
             if result.returncode == 0:
                 src = temp_dir / "spa_results"
-                if src.exists():
-                    dst = self.user_output_dir / "spa_results"
-                    if dst.exists():
-                        shutil.rmtree(dst)
-                    shutil.copytree(src, dst)
-                    self.logger.info(f"Spa results copied to {dst}")
+                dst = self.user_output_dir / "spa_results"
+                self._copy_module_results(src, dst)
+                self.logger.info(f"Spa results copied to {dst}")
                 return True
             else:
                 self.logger.error(f"spa typing failed: {result.stderr}")
@@ -342,7 +354,12 @@ class StaphScopeOrchestrator:
                 shutil.rmtree(temp_dir, ignore_errors=True)
 
     def run_sccmec_analysis(self, fasta_files: List[Path], output_dir: Path, threads: int) -> bool:
-        """Run the CGE SCCmec caller in an isolated temp directory."""
+        """Run the CGE SCCmec caller in an isolated temp directory.
+
+        run_sccmec_batch.sh internally invokes generate_staphscope_summary.sh
+        and cleans up _staphscope_sccmec_meta/ before exiting, so we do not
+        call the summary script a second time here.
+        """
         pattern_with_quotes = self.get_file_pattern(fasta_files)
         pattern_unquoted = pattern_with_quotes.strip('"')
         temp_dir = Path(tempfile.mkdtemp(prefix="staphscope_sccmec_"))
@@ -360,7 +377,6 @@ class StaphScopeOrchestrator:
             self.banner.display_info(f"Running SCCmec (CGE) analysis with pattern: {pattern_with_quotes}")
 
             batch_script = temp_dir / "run_sccmec_batch.sh"
-            summary_script = temp_dir / "generate_staphscope_summary.sh"
 
             cmd_batch = f"bash {batch_script} {pattern_unquoted}"
             result_batch = subprocess.run(cmd_batch, shell=True, cwd=temp_dir, capture_output=True, text=True)
@@ -373,25 +389,58 @@ class StaphScopeOrchestrator:
                 self.logger.error(f"SCCmec (CGE) batch failed: {result_batch.stderr}")
                 return False
 
-            if summary_script.exists():
-                subprocess.run(f"bash {summary_script}", shell=True, cwd=temp_dir,
-                               capture_output=True, text=True)
-
             target_dir = self.user_output_dir / "sccmec_cge_results"
             target_dir.mkdir(parents=True, exist_ok=True)
 
-            for s_dir in temp_dir.glob("s_*"):
-                if s_dir.is_dir():
-                    shutil.copytree(s_dir, target_dir / s_dir.name, dirs_exist_ok=True)
+            if self.report_level == 'full':
+                skip_dirs = {"script_dir", "database", "_staphscope_sccmec_meta", "__pycache__"}
+                for sample_dir in temp_dir.iterdir():
+                    if sample_dir.is_dir() and sample_dir.name not in skip_dirs:
+                        dst = target_dir / sample_dir.name
+                        if dst.exists():
+                            shutil.rmtree(dst)
+                        shutil.copytree(sample_dir, dst)
 
-            for fname in ["staphscope_sccmec_cge_summary.html",
-                          "staphscope_sccmec_cge_summary.tsv",
-                          "staphscope_sccmec_cge_detailed_results.csv"]:
+            summary_files = ["staphscope_sccmec_cge_summary.html",
+                             "staphscope_sccmec_cge_summary.tsv",
+                             "staphscope_sccmec_cge_detailed_results.csv"]
+
+            missing = [f for f in summary_files if not (temp_dir / f).exists()]
+            if missing:
+                self.logger.warning(
+                    f"SCCmec summary files missing after batch run "
+                    f"({', '.join(missing)}); invoking generate_staphscope_summary.sh"
+                )
+                summary_script = temp_dir / "generate_staphscope_summary.sh"
+                if summary_script.exists():
+                    result_summary = subprocess.run(
+                        f"bash {summary_script}", shell=True, cwd=temp_dir,
+                        capture_output=True, text=True
+                    )
+                    if result_summary.stdout:
+                        self.logger.info(result_summary.stdout)
+                    if result_summary.stderr:
+                        self.logger.warning(result_summary.stderr)
+
+            copied = 0
+            for fname in summary_files:
                 src = temp_dir / fname
                 if src.exists():
                     shutil.copy2(src, target_dir / fname)
+                    copied += 1
 
-            self.logger.info(f"SCCmec (CGE) results copied to {target_dir}")
+            if copied == 0:
+                self.logger.error(
+                    "SCCmec (CGE) produced no batch summary files. "
+                    "SCCmecFinder_v4.py and generate_staphscope_summary.sh "
+                    "need to be checked. Aborting SCCmec module."
+                )
+                return False
+
+            self.logger.info(
+                f"SCCmec (CGE) results copied to {target_dir} "
+                f"({copied}/3 summary files)"
+            )
             return True
         except Exception as e:
             self.logger.error(f"SCCmec (CGE) exception: {e}")
@@ -443,17 +492,11 @@ class StaphScopeOrchestrator:
                 return False
 
             src = temp_dir / "sccmec_rpet_results"
-            if src.exists():
-                dst = self.user_output_dir / "sccmec_rpet_results"
-                if dst.exists():
-                    shutil.rmtree(dst)
-                shutil.copytree(src, dst)
-                self.logger.info(f"SCCmec RPet results copied to {dst}")
-                self.banner.display_success("✅ SCCmec RPet analysis completed successfully.")
-                return True
-            else:
-                self.logger.error("sccmec_rpet_results directory not found after running the module")
-                return False
+            dst = self.user_output_dir / "sccmec_rpet_results"
+            self._copy_module_results(src, dst)
+            self.logger.info(f"SCCmec RPet results copied to {dst}")
+            self.banner.display_success("✅ SCCmec RPet analysis completed successfully.")
+            return True
 
         except Exception as e:
             self.logger.error(f"SCCmec RPet exception: {e}\n{traceback.format_exc()}")
@@ -504,17 +547,11 @@ class StaphScopeOrchestrator:
                 return False
 
             src = temp_dir / "capsule_results"
-            if src.exists():
-                dst = self.user_output_dir / "capsule_results"
-                if dst.exists():
-                    shutil.rmtree(dst)
-                shutil.copytree(src, dst)
-                self.logger.info(f"Capsule results copied to {dst}")
-                self.banner.display_success("✅ Capsule typing completed successfully.")
-                return True
-            else:
-                self.logger.error("capsule_results directory not found after running the module")
-                return False
+            dst = self.user_output_dir / "capsule_results"
+            self._copy_module_results(src, dst)
+            self.logger.info(f"Capsule results copied to {dst}")
+            self.banner.display_success("✅ Capsule typing completed successfully.")
+            return True
 
         except Exception as e:
             self.logger.error(f"Capsule exception: {e}\n{traceback.format_exc()}")
@@ -562,17 +599,11 @@ class StaphScopeOrchestrator:
                 return False
 
             src = temp_dir / "agr_results"
-            if src.exists():
-                dst = self.user_output_dir / "agr_results"
-                if dst.exists():
-                    shutil.rmtree(dst)
-                shutil.copytree(src, dst)
-                self.logger.info(f"agr results copied to {dst}")
-                self.banner.display_success("✅ Agr typing completed successfully.")
-                return True
-            else:
-                self.logger.error("agr_results directory not found after running agr module")
-                return False
+            dst = self.user_output_dir / "agr_results"
+            self._copy_module_results(src, dst)
+            self.logger.info(f"agr results copied to {dst}")
+            self.banner.display_success("✅ Agr typing completed successfully.")
+            return True
 
         except Exception as e:
             self.logger.error(f"Agr exception: {e}\n{traceback.format_exc()}")
@@ -652,20 +683,47 @@ class StaphScopeOrchestrator:
                 return False
 
             src = temp_dir / "mge_results"
-            if src.exists():
-                dst = self.user_output_dir / "mge_results"
-                if dst.exists():
-                    shutil.rmtree(dst)
-                shutil.copytree(
-                    src, dst,
-                    ignore=shutil.ignore_patterns('annotations'),
+            dst = self.user_output_dir / "mge_results"
+            if dst.exists():
+                shutil.rmtree(dst)
+            dst.mkdir(parents=True, exist_ok=True)
+            for item in src.iterdir():
+                if item.name == 'annotations':
+                    continue
+                if item.is_file():
+                    shutil.copy2(item, dst / item.name)
+                elif item.is_dir() and self.report_level == 'full':
+                    shutil.copytree(item, dst / item.name)
+            expected_mge_files = [
+                "staphscope_mge_summary.tsv",
+                "staphscope_mge_all_hits.tsv",
+                "staphscope_mge_summary.json",
+                "staphscope_mge_summary.html",
+            ]
+            missing_from_dst = [f for f in expected_mge_files if not (dst / f).exists()]
+            if missing_from_dst:
+                self.logger.error(
+                    f"MGE module ran but these summary files are missing from {dst}: "
+                    f"{', '.join(missing_from_dst)}. "
+                    f"Temp MGE contents: {sorted([i.name for i in src.iterdir()]) if src.exists() else 'N/A'}. "
+                    f"The sample-centric reporter will show an empty MGE tab."
                 )
-                self.logger.info(f"MGE results copied to {dst} (annotations cache skipped)")
-                self.banner.display_success("✅ MGE analysis completed successfully.")
-                return True
-            else:
-                self.logger.error("mge_results directory not found after running the module")
                 return False
+
+            stable_dir = self.user_output_dir / "Staphscope_final_report"
+            stable_dir.mkdir(parents=True, exist_ok=True)
+            for stable_file in ["staphscope_mge_summary.html", "staphscope_mge_all_hits.tsv"]:
+                src_file = dst / stable_file
+                if src_file.exists():
+                    shutil.copy2(src_file, stable_dir / stable_file)
+                    self.logger.info(f"Proactively copied {stable_file} to {stable_dir}")
+
+            self.logger.info(
+                f"MGE results copied to {dst} "
+                f"({len(expected_mge_files)}/4 summary files, annotations cache skipped)"
+            )
+            self.banner.display_success("✅ MGE analysis completed successfully.")
+            return True
 
         except Exception as e:
             self.logger.error(f"MGE exception: {e}\n{traceback.format_exc()}")
@@ -806,6 +864,7 @@ class StaphScopeOrchestrator:
                 ("staph_amrfinder_results", "mutation_summary.tsv"),
                 ("fasta_qc_results", "FASTA_QC_summary.html"),
                 ("mge_results", "staphscope_mge_summary.html"),
+                ("mge_results", "staphscope_mge_all_hits.tsv"),
             ]
             abricate_sources = [
                 ("abricate_results", "staph_argannot_abricate_summary.tsv"),
@@ -824,6 +883,13 @@ class StaphScopeOrchestrator:
                     src = output_dir / subdir / filename
                 else:
                     src = output_dir / filename
+
+                if not src.exists() and filename.startswith("staphscope_mge_"):
+                    fallback = output_dir / "Staphscope_final_report" / filename
+                    if fallback.exists():
+                        src = fallback
+                        self.logger.info(f"Using fallback source for {filename}: {fallback}")
+
                 if src.exists():
                     shutil.copy2(src, temp_dir / filename)
                     self.logger.info(f"Copied {filename} to sample-centric temp dir")
@@ -919,7 +985,6 @@ class StaphScopeOrchestrator:
         self.logger.info(f"Temporary directory for visualization: {temp_dir}")
         try:
             vis_module_orig = self.get_module_path("visualization_module")
-            # Skip stale CSVs / TSVs / HTMLs that may live in the module folder
             shutil.copytree(
                 vis_module_orig, temp_dir, dirs_exist_ok=True,
                 ignore=shutil.ignore_patterns(
@@ -928,16 +993,12 @@ class StaphScopeOrchestrator:
                 ),
             )
 
-            # The visualizer reads from two final-output subfolders
             final_report_dir = output_dir / "Staphscope_final_report"
             gene_centric_dir = final_report_dir / "STAPHSCOPE_ULTIMATE_GENE_CENTRIC_REPORTS"
 
-            # (source_path, filename_to_copy_into_temp_dir)
             required_files = [
-                # Master typing table
                 (final_report_dir / "staphscope_comprehensive_report.tsv",
                  "staphscope_comprehensive_report.tsv"),
-                # Gene tables exported by the gene-centric module
                 (gene_centric_dir / "amr_genes.csv",         "amr_genes.csv"),
                 (gene_centric_dir / "virulence_genes.csv",   "virulence_genes.csv"),
                 (gene_centric_dir / "bacmet_genes.csv",      "bacmet_genes.csv"),
@@ -1013,6 +1074,64 @@ class StaphScopeOrchestrator:
                 shutil.rmtree(temp_dir, ignore_errors=True)
                 self.logger.info(f"Removed temporary directory: {temp_dir}")
 
+    def _finalize_output_by_report_level(self, output_path: Path, report_level: str,
+                                          module_dirs: List[str]) -> None:
+        """Prune intermediate files based on the selected report level.
+
+        final:   Staphscope_final_report/ only. All module directories are
+                 deleted; no batch summaries are retained.
+        summary: Staphscope_final_report/ + batch summaries in module dirs.
+                 Per-sample folders are never copied.
+        full:    Everything preserved.
+        """
+        if report_level == 'full':
+            self.banner.display_info("Report level: full (all intermediate files kept)")
+            return
+
+        final_report_dir = output_path / "Staphscope_final_report"
+        final_report_exists = (
+            final_report_dir.exists() and any(final_report_dir.iterdir())
+        )
+
+        if not final_report_exists:
+            self.banner.display_warning(
+                "Final report directory is missing or empty — skipping prune "
+                "to avoid losing all output."
+            )
+            return
+
+        if report_level == 'final':
+            removed = 0
+            for module_dir_name in module_dirs:
+                module_dir = output_path / module_dir_name
+                if not module_dir.exists() or module_dir_name == "Staphscope_final_report":
+                    continue
+                shutil.rmtree(module_dir, ignore_errors=True)
+                removed += 1
+            self.banner.display_success(
+                f"Report level: final — removed {removed} module directories"
+            )
+            return
+
+        if report_level == 'summary':
+            removed = 0
+            for module_dir_name in module_dirs:
+                module_dir = output_path / module_dir_name
+                if not module_dir.exists() or module_dir_name == "Staphscope_final_report":
+                    continue
+                for item in list(module_dir.iterdir()):
+                    if item.is_dir():
+                        shutil.rmtree(item, ignore_errors=True)
+                        removed += 1
+            if removed:
+                self.banner.display_success(
+                    f"Report level: summary — removed {removed} residual per-sample folders"
+                )
+            else:
+                self.banner.display_success(
+                    "Report level: summary — only batch summaries retained"
+                )
+
     def copy_summary_results_to_final_directory(self, output_dir: Path):
         try:
             self.banner.display_info("Copying summary results to final directory...")
@@ -1045,6 +1164,12 @@ class StaphScopeOrchestrator:
                     shutil.rmtree(target_sample_dir)
                 shutil.copytree(sample_centric_dir, target_sample_dir)
                 self.banner.display_info("  ✓ Copied: STAPHSCOPE_ULTIMATE_SAMPLE_CENTRIC_REPORTS directory")
+
+            for mge_file in ["staphscope_mge_summary.html", "staphscope_mge_all_hits.tsv"]:
+                mge_src = output_dir / "mge_results" / mge_file
+                if mge_src.exists():
+                    shutil.copy2(mge_src, final_report_dir / mge_file)
+                    self.banner.display_info(f"  ✓ Copied: {mge_file}")
 
             self.banner.display_success(f"✅ All results copied to: {final_report_dir}")
             self.banner.display_info("Summary Reports Generated:")
@@ -1234,12 +1359,15 @@ class StaphScopeOrchestrator:
                               clean_output: bool = False,
                               skip_sample_centric: bool = False,
                               abricate_min_identity: int = 80,
-                              abricate_min_coverage: int = 80):
+                              abricate_min_coverage: int = 80,
+                              report_level: str = 'summary'):
         if skip_modules is None:
             skip_modules = {}
         if update_amr_db_only:
             self.update_amr_database(force=False)
             return
+
+        self.report_level = report_level
 
         start_time = datetime.now()
         try:
@@ -1288,6 +1416,7 @@ class StaphScopeOrchestrator:
             for analysis, enabled in analyses_to_run:
                 status = "✅ ENABLED" if enabled else "⏸️  SKIPPED"
                 print(f"   {status} - {analysis}")
+            print(f"\n   Report level: {report_level}")
             sys.stdout.flush()
 
             analysis_results = self.run_sequential_analyses(
@@ -1342,6 +1471,8 @@ class StaphScopeOrchestrator:
                 visualization_success = self.run_visualization_analysis(output_path)
                 analysis_results["Visualization"] = visualization_success
                 print()
+
+            self._finalize_output_by_report_level(output_path, report_level, subdirs)
 
             analysis_time = datetime.now() - start_time
             analysis_time_str = str(analysis_time).split('.')[0]
@@ -1450,7 +1581,6 @@ class StaphScopeOrchestrator:
                 else:
                     self.banner.display_warning(f"'{dirname}' not found in repository, skipping.")
 
-            # Copy helper scripts when writing to a user-local target
             if target_path != system_path:
                 for script in ['mlst_module.py', 'mlst_database.sh']:
                     src_script = system_path / script
@@ -1458,7 +1588,6 @@ class StaphScopeOrchestrator:
                         shutil.copy2(src_script, target_path / script)
                         self.logger.info(f"Copied {script} to {target_path / script}")
 
-            # Verify the scheme landed
             db_check = target_path / "db" / "pubmlst" / "saureus"
             if not db_check.exists():
                 self.banner.display_error(f"MLST scheme missing after pull: {db_check}")
@@ -1579,6 +1708,11 @@ def main():
   # ABRicate with custom thresholds
   staphscope -i "*.fna" -o results --abricate-minid 85 --abricate-mincov 90
 
+  # Report level control (manage disk usage on large batches)
+  staphscope -i "*.fna" -o results --report-level summary   # default
+  staphscope -i "*.fna" -o results --report-level final     # final reports only
+  staphscope -i "*.fna" -o results --report-level full      # keep everything
+
 {ColoredHelpFormatter.BOLD}{ColoredHelpFormatter.GREEN}MLST Database Management:{ColoredHelpFormatter.RESET}
   --pull-mlst-db     : Download a pre-built S. aureus MLST database from GitHub.
                        Recommended for first-time users (no API key needed).
@@ -1594,6 +1728,18 @@ def main():
   5. After setup, run staphscope --update-mlst-db whenever you want to refresh the database.
 
 {ColoredHelpFormatter.BOLD}{ColoredHelpFormatter.GREEN}Supported FASTA formats:{ColoredHelpFormatter.RESET} .fna, .fasta
+
+{ColoredHelpFormatter.BOLD}{ColoredHelpFormatter.GREEN}Report Levels:{ColoredHelpFormatter.RESET}
+  final    : Only Staphscope_final_report/ is kept (ultimate gene-centric
+             and sample-centric reports + comprehensive report). All module
+             directories are deleted. Best for archival and large batches.
+             Peak disk usage during run is minimized: per-sample files never
+             leave the module temp directory.
+  summary  : Staphscope_final_report/ plus the batch TSVs, HTMLs and JSONs in
+             each module folder. Per-sample HTMLs and raw files are never
+             copied to the output directory at all. (default)
+  full     : Everything is kept, including every per-sample HTML and raw file.
+             Best for small batches or when debugging a specific module.
 
 {ColoredHelpFormatter.BOLD}{ColoredHelpFormatter.GREEN}Analysis Modules:{ColoredHelpFormatter.RESET}
   • FASTA QC (Quality Control & Statistics)
@@ -1615,6 +1761,7 @@ def main():
 {ColoredHelpFormatter.BOLD}{ColoredHelpFormatter.GREEN}Output:{ColoredHelpFormatter.RESET}
   Comprehensive results for all analyses in organized directories.
   A detailed log file (staphscope_run.log) is written to the output directory.
+  Control how much intermediate data is retained with --report-level.
 
 {ColoredHelpFormatter.BOLD}{ColoredHelpFormatter.GREEN}Citation:{ColoredHelpFormatter.RESET}
   Beckley B, Amarh V. StaphScope: a species-optimized computational pipeline for rapid and accessible
@@ -1681,6 +1828,16 @@ def main():
     parser.add_argument('--clean-output', action='store_true',
                         help='Delete output directory before analysis (prevents mixing results from different runs)')
 
+    parser.add_argument('--report-level', choices=['final', 'summary', 'full'],
+                        default='summary',
+                        help='Controls which files are kept after the run. '
+                             'final = only Staphscope_final_report/ (batch summaries moved '
+                             'into its Batch_Summaries/ subfolder); '
+                             'summary = final report + batch TSVs/HTMLs/JSONs in module dirs '
+                             '(per-sample folders are never copied); '
+                             'full = everything, including per-sample HTMLs (best for small '
+                             'batches or debugging). Default: summary.')
+
     parser.add_argument('-v', '--version', action='version', version=f'StaphScope version {__version__}')
 
     args = parser.parse_args()
@@ -1708,6 +1865,11 @@ def main():
     if not args.input or not args.output:
         parser.error("When not using --update-amr-db, --force-update-amr-db, "
                      "--pull-mlst-db, or --update-mlst-db, both -i/--input and -o/--output are required.")
+
+    if args.report_level == 'final' and args.skip_comprehensive and args.skip_sample_centric:
+        parser.error("--report-level final requires at least one of the reporters to run "
+                     "(comprehensive or sample-centric). Without them, the final report "
+                     "would be empty and pruning would delete all output.")
 
     skip_modules = {
         'fasta_qc': args.skip_fasta_qc,
@@ -1740,6 +1902,7 @@ def main():
         skip_sample_centric=args.skip_sample_centric,
         abricate_min_identity=args.abricate_minid,
         abricate_min_coverage=args.abricate_mincov,
+        report_level=args.report_level,
     )
 
 

@@ -5,7 +5,7 @@ Beautiful ASCII art and scientific quotes for terminal display
 Author: Brown Beckley <brownbeckley94@gmail.com>
 Send a quick mail for any issues or further explanations.
 Affiliation: University of Ghana Medical School-Department of Medical Biochemistry
-version 2.0.0(2026-09-01)
+version 2.1.0(2026-10-22)
 """
 
 import random
@@ -22,7 +22,7 @@ class StaphScopeBanner:
     def __init__(self):
         self.banner_art = self._get_banner_art()
         self.quotes = self._get_scientific_quotes()
-        self.version = "v2.0.0"
+        self.version = "v2.1.0"
         self.author_info = self._get_author_info()
         self.terminal_width = self._get_terminal_width()
     

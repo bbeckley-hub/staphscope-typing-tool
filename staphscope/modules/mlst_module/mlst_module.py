@@ -4,7 +4,15 @@ MLST Module for StaphScope - Complete with Beautiful HTML Reports
 Author: Brown Beckley <brownbeckley94@gmail.com>
 GitHub: bbeckley-hub
 Affiliation: University of Ghana Medical School - Department of Medical Biochemistry
-Date: 2026-09-02
+Date: 2026-10-22
+
+Per-sample output (1 file each):
+    <sample>/mlst_report.html
+
+Batch-level outputs:
+    mlst_summary.tsv
+    mlst_summary.html
+    mlst_summary.json
 """
 
 import os
@@ -33,7 +41,6 @@ class ModularMLSTAnalyzer:
             database_dir: Path to the directory containing blast/ and pubmlst/.
             script_dir: Path to the directory containing the 'mlst' executable.
         """
-        # Allow override via environment variable (set by orchestrator)
         env_db = os.environ.get('STAPHSCOPE_MLST_DB')
         if env_db:
             database_dir = Path(env_db)
@@ -86,7 +93,7 @@ class ModularMLSTAnalyzer:
         return sorted(set(files))
 
     def run_mlst_single(self, input_file: Path, output_dir: Path, scheme: str = "saureus") -> Dict:
-        """Run MLST on a single file and generate per‑sample reports."""
+        """Run MLST on a single file and generate per-sample reports."""
         print(f"🔬 Processing: {input_file.name}")
         sample_out = output_dir / input_file.stem
         sample_out.mkdir(parents=True, exist_ok=True)
@@ -99,19 +106,11 @@ class ModularMLSTAnalyzer:
             "--nopath",
         ]
 
-        # The perl mlst script reads its database location from the
-        # MLST_DATADIR environment variable. Without it, it falls back to
-        # <bin>/../db/. Setting it here lets the orchestrator point mlst at
-        # a user-local or scratch database without touching the packaged tree.
         env = os.environ.copy()
         env["MLST_DATADIR"] = str(self.database_dir)
 
         try:
             result = subprocess.run(cmd, capture_output=True, text=True, check=True, env=env)
-            (sample_out / "mlst_raw_output.txt").write_text(
-                f"STDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}"
-            )
-
             print(f"Raw MLST output: {result.stdout.strip()}")
             mlst_results = self.parse_mlst_csv(result.stdout, input_file.name)
             mlst_results.update(self.get_lineage_info(mlst_results.get('st', 'ND')))
@@ -131,7 +130,7 @@ class ModularMLSTAnalyzer:
             return error_result
 
     def parse_mlst_csv(self, stdout: str, sample_name: str) -> Dict:
-        """Parse the comma‑separated MLST output."""
+        """Parse the comma-separated MLST output."""
         print(f"Parsing CSV output for {sample_name}")
         lines = stdout.strip().split('\n')
         if not lines:
@@ -178,7 +177,6 @@ class ModularMLSTAnalyzer:
     def get_lineage_info(self, st: str) -> Dict:
         """Get comprehensive lineage information based on ST"""
         lineage_db = {
-            # ==================== CC1 ====================
             '1': {
                 "clonal_complex": "CC1",
                 "classification": "Community-associated MRSA",
@@ -300,7 +298,6 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["t044", "t037"],
                 "resistance_profile": ["Methicillin", "Multi-drug resistant"]
             },
-            # ==================== CC2 ====================
             '2': {
                 "clonal_complex": "CC2",
                 "classification": "Healthcare-associated MRSA",
@@ -312,7 +309,6 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["t002", "t037"],
                 "resistance_profile": ["Methicillin", "Variable resistance"]
             },
-            # ==================== CC3 ====================
             '3': {
                 "clonal_complex": "CC3",
                 "classification": "Healthcare-associated MRSA",
@@ -324,9 +320,8 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["t037", "t045"],
                 "resistance_profile": ["Methicillin", "Multi-drug resistant including aminoglycosides"]
             },
-            # ==================== CC4 (rare) ====================
             '4': {
-                "clonal_complex": "CC45", 
+                "clonal_complex": "CC45",
                 "classification": "Rare lineage",
                 "geographic_distribution": "Variable",
                 "clinical_significance": "Limited documentation; CC45 typically includes USA600 clone",
@@ -336,7 +331,6 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["Unknown"],
                 "resistance_profile": ["Variable"]
             },
-            # ==================== CC5 ====================
             '5': {
                 "clonal_complex": "CC5",
                 "classification": "Healthcare-associated MRSA",
@@ -579,7 +573,6 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["t002", "t037"],
                 "resistance_profile": ["Methicillin", "Multi-drug resistant"]
             },
-            # ==================== CC6 ====================
             '6': {
                 "clonal_complex": "CC6",
                 "classification": "Healthcare-associated MRSA",
@@ -591,7 +584,6 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["t701", "t304"],
                 "resistance_profile": ["Methicillin", "Gentamicin", "Erythromycin"]
             },
-            # ==================== CC7 ====================
             '7': {
                 "clonal_complex": "CC7",
                 "classification": "Community-associated MRSA",
@@ -603,7 +595,6 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["t091", "t657"],
                 "resistance_profile": ["Methicillin", "Fusidic acid"]
             },
-            # ==================== CC8 ====================
             '8': {
                 "clonal_complex": "CC8",
                 "classification": "Community and Healthcare-associated MRSA",
@@ -780,7 +771,6 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["t032", "t022"],
                 "resistance_profile": ["Methicillin", "Variable resistance"]
             },
-            # ==================== CC9 ====================
             '9': {
                 "clonal_complex": "CC9",
                 "classification": "Livestock-associated MRSA",
@@ -792,7 +782,6 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["t899", "t337"],
                 "resistance_profile": ["Methicillin", "Tetracycline", "Multi-drug resistance common"]
             },
-            # ==================== CC10 ====================
             '10': {
                 "clonal_complex": "CC81",
                 "classification": "Community-associated MRSA",
@@ -804,7 +793,6 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["t021", "t045"],
                 "resistance_profile": ["Variable resistance patterns"]
             },
-            # ==================== CC12 ====================
             '12': {
                 "clonal_complex": "CC12",
                 "classification": "Healthcare-associated MRSA",
@@ -816,7 +804,6 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["t032", "t037"],
                 "resistance_profile": ["Methicillin", "Multi-drug resistance"]
             },
-            # ==================== CC13 ====================
             '13': {
                 "clonal_complex": "CC13",
                 "classification": "Rare lineage",
@@ -828,7 +815,6 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["Unknown"],
                 "resistance_profile": ["Variable"]
             },
-            # ==================== CC14 ====================
             '14': {
                 "clonal_complex": "CC15",
                 "classification": "Rare lineage",
@@ -840,7 +826,6 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["Unknown"],
                 "resistance_profile": ["Variable"]
             },
-            # ==================== CC15 ====================
             '15': {
                 "clonal_complex": "CC15",
                 "classification": "Community-associated MRSA",
@@ -929,7 +914,6 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["t657", "t324"],
                 "resistance_profile": ["Methicillin", "Variable resistance"]
             },
-            # ==================== CC17 ====================
             '17': {
                 "clonal_complex": "CC30",
                 "classification": "Rare lineage",
@@ -941,7 +925,6 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["Unknown"],
                 "resistance_profile": ["Variable"]
             },
-            # ==================== CC19 ====================
             '19': {
                 "clonal_complex": "CC30",
                 "classification": "Rare lineage",
@@ -953,7 +936,6 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["Unknown"],
                 "resistance_profile": ["Variable"]
             },
-            # ==================== CC20 ====================
             '20': {
                 "clonal_complex": "CC20",
                 "classification": "Healthcare-associated MRSA",
@@ -965,7 +947,6 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["t164", "t021"],
                 "resistance_profile": ["Methicillin", "Aminoglycosides"]
             },
-            # ==================== CC21 ====================
             '21': {
                 "clonal_complex": "CC22",
                 "classification": "Rare lineage",
@@ -977,7 +958,6 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["Unknown"],
                 "resistance_profile": ["Variable"]
             },
-            # ==================== CC22 ====================
             '22': {
                 "clonal_complex": "CC22",
                 "classification": "Healthcare-associated MRSA",
@@ -1055,7 +1035,6 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["Unknown"],
                 "resistance_profile": ["Variable"]
             },
-            # ==================== CC24 ====================
             '24': {
                 "clonal_complex": "CC30",
                 "classification": "Rare lineage",
@@ -1067,7 +1046,6 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["Unknown"],
                 "resistance_profile": ["Variable"]
             },
-            # ==================== CC25 ====================
             '25': {
                 "clonal_complex": "CC25",
                 "classification": "Livestock-associated MRSA",
@@ -1079,7 +1057,6 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["t078", "t387"],
                 "resistance_profile": ["Methicillin", "Penicillin", "Tetracycline"]
             },
-            # ==================== CC26 ====================
             '26': {
                 "clonal_complex": "CC26",
                 "classification": "Rare lineage",
@@ -1091,7 +1068,6 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["Unknown"],
                 "resistance_profile": ["Variable"]
             },
-            # ==================== CC28 ====================
             '28': {
                 "clonal_complex": "CC28",
                 "classification": "Rare lineage",
@@ -1103,7 +1079,6 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["Unknown"],
                 "resistance_profile": ["Variable"]
             },
-            # ==================== CC29 ====================
             '29': {
                 "clonal_complex": "CC121",
                 "classification": "Rare lineage",
@@ -1115,7 +1090,6 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["Unknown"],
                 "resistance_profile": ["Variable"]
             },
-            # ==================== CC30 ====================
             '30': {
                 "clonal_complex": "CC30",
                 "classification": "Healthcare and Community-associated",
@@ -1292,7 +1266,6 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["Unknown"],
                 "resistance_profile": ["Variable"]
             },
-            # ==================== CC42 ====================
             '42': {
                 "clonal_complex": "CC42",
                 "classification": "Rare lineage",
@@ -1304,7 +1277,6 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["Unknown"],
                 "resistance_profile": ["Variable"]
             },
-            # ==================== CC45 ====================
             '45': {
                 "clonal_complex": "CC45",
                 "classification": "Community and Healthcare-associated",
@@ -1393,7 +1365,6 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["Unknown"],
                 "resistance_profile": ["Variable"]
             },
-            # ==================== CC49 ====================
             '49': {
                 "clonal_complex": "CC49",
                 "classification": "Rare lineage",
@@ -1405,7 +1376,6 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["Unknown"],
                 "resistance_profile": ["Variable"]
             },
-            # ==================== CC50 ====================
             '50': {
                 "clonal_complex": "CC50",
                 "classification": "Rare lineage",
@@ -1417,7 +1387,6 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["Unknown"],
                 "resistance_profile": ["Variable"]
             },
-            # ==================== CC51 ====================
             '51': {
                 "clonal_complex": "CC121",
                 "classification": "Rare lineage",
@@ -1429,7 +1398,6 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["Unknown"],
                 "resistance_profile": ["Variable"]
             },
-            # ==================== CC55 ====================
             '55': {
                 "clonal_complex": "CC55",
                 "classification": "Rare lineage",
@@ -1441,7 +1409,6 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["Unknown"],
                 "resistance_profile": ["Variable"]
             },
-            # ==================== CC59 ====================
             '59': {
                 "clonal_complex": "CC59",
                 "classification": "Community-associated MRSA",
@@ -1464,7 +1431,6 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["t437", "t163"],
                 "resistance_profile": ["Methicillin", "Often fluoroquinolone resistant"]
             },
-            # ==================== CC64 ====================
             '64': {
                 "clonal_complex": "CC64",
                 "classification": "Rare lineage",
@@ -1476,7 +1442,6 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["Unknown"],
                 "resistance_profile": ["Variable"]
             },
-            # ==================== CC65 ====================
             '65': {
                 "clonal_complex": "CC65",
                 "classification": "Rare lineage",
@@ -1488,7 +1453,6 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["Unknown"],
                 "resistance_profile": ["Variable"]
             },
-            # ==================== CC66 ====================
             '66': {
                 "clonal_complex": "CC66",
                 "classification": "Rare lineage",
@@ -1500,7 +1464,6 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["Unknown"],
                 "resistance_profile": ["Variable"]
             },
-            # ==================== CC67 ====================
             '67': {
                 "clonal_complex": "CC67",
                 "classification": "Rare lineage",
@@ -1512,7 +1475,6 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["Unknown"],
                 "resistance_profile": ["Variable"]
             },
-            # ==================== CC68 ====================
             '68': {
                 "clonal_complex": "CC68",
                 "classification": "Rare lineage",
@@ -1524,7 +1486,6 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["Unknown"],
                 "resistance_profile": ["Variable"]
             },
-            # ==================== CC70-71 ====================
             '70': {
                 "clonal_complex": "CC97",
                 "classification": "Rare lineage",
@@ -1547,7 +1508,6 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["Unknown"],
                 "resistance_profile": ["Variable"]
             },
-            # ==================== CC78 ====================
             '78': {
                 "clonal_complex": "CC88",
                 "classification": "Livestock-associated MRSA",
@@ -1559,7 +1519,6 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["t078", "t1773"],
                 "resistance_profile": ["Methicillin", "Tetracycline"]
             },
-            # ==================== CC80 ====================
             '80': {
                 "clonal_complex": "CC80",
                 "classification": "Community-associated MRSA",
@@ -1571,7 +1530,6 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["t044", "t131", "t186"],
                 "resistance_profile": ["Methicillin", "Often fusidic acid resistant"]
             },
-            # ==================== CC82 ====================
             '82': {
                 "clonal_complex": "CC82",
                 "classification": "Rare lineage",
@@ -1583,7 +1541,6 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["Unknown"],
                 "resistance_profile": ["Variable"]
             },
-            # ==================== CC84 ====================
             '84': {
                 "clonal_complex": "CC84",
                 "classification": "Rare lineage",
@@ -1595,7 +1552,6 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["Unknown"],
                 "resistance_profile": ["Variable"]
             },
-            # ==================== CC87 ====================
             '87': {
                 "clonal_complex": "CC87",
                 "classification": "Rare lineage",
@@ -1607,7 +1563,6 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["Unknown"],
                 "resistance_profile": ["Variable"]
             },
-            # ==================== CC88 ====================
             '88': {
                 "clonal_complex": "CC88",
                 "classification": "Community-associated MRSA",
@@ -1619,7 +1574,6 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["t186", "t325"],
                 "resistance_profile": ["Methicillin", "Variable resistance"]
             },
-            # ==================== CC89 ====================
             '89': {
                 "clonal_complex": "CC89",
                 "classification": "Rare lineage",
@@ -1631,7 +1585,6 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["Unknown"],
                 "resistance_profile": ["Variable"]
             },
-            # ==================== CC91 ====================
             '91': {
                 "clonal_complex": "CC91",
                 "classification": "Rare lineage",
@@ -1643,7 +1596,6 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["Unknown"],
                 "resistance_profile": ["Variable"]
             },
-            # ==================== CC92 ====================
             '92': {
                 "clonal_complex": "CC92",
                 "classification": "Rare lineage",
@@ -1655,7 +1607,6 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["Unknown"],
                 "resistance_profile": ["Variable"]
             },
-            # ==================== CC93 ====================
             '93': {
                 "clonal_complex": "CC93",
                 "classification": "Community-associated MRSA",
@@ -1667,7 +1618,6 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["t202", "t1340"],
                 "resistance_profile": ["Methicillin", "Variable resistance"]
             },
-            # ==================== CC95 ====================
             '95': {
                 "clonal_complex": "CC121",
                 "classification": "Rare lineage",
@@ -1679,7 +1629,6 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["Unknown"],
                 "resistance_profile": ["Variable"]
             },
-            # ==================== CC96 ====================
             '96': {
                 "clonal_complex": "CC96",
                 "classification": "Rare lineage",
@@ -1691,7 +1640,6 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["Unknown"],
                 "resistance_profile": ["Variable"]
             },
-            # ==================== CC97 ====================
             '97': {
                 "clonal_complex": "CC97",
                 "classification": "Livestock-associated MRSA",
@@ -1791,7 +1739,6 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["Unknown"],
                 "resistance_profile": ["Variable"]
             },
-            # ==================== CC101 ====================
             '101': {
                 "clonal_complex": "CC101",
                 "classification": "Community-associated MRSA",
@@ -1803,7 +1750,6 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["t571", "t1274"],
                 "resistance_profile": ["Methicillin", "Variable resistance"]
             },
-            # ==================== CC102 ====================
             '102': {
                 "clonal_complex": "CC102",
                 "classification": "Rare lineage",
@@ -1815,7 +1761,6 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["Unknown"],
                 "resistance_profile": ["Variable"]
             },
-            # ==================== CC103 ====================
             '103': {
                 "clonal_complex": "CC103",
                 "classification": "Rare lineage",
@@ -1827,7 +1772,6 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["Unknown"],
                 "resistance_profile": ["Variable"]
             },
-            # ==================== CC104 ====================
             '104': {
                 "clonal_complex": "CC104",
                 "classification": "Rare lineage",
@@ -1839,7 +1783,6 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["Unknown"],
                 "resistance_profile": ["Variable"]
             },
-            # ==================== CC106 ====================
             '106': {
                 "clonal_complex": "CC106",
                 "classification": "Rare lineage",
@@ -1851,7 +1794,6 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["Unknown"],
                 "resistance_profile": ["Variable"]
             },
-            # ==================== CC107 ====================
             '107': {
                 "clonal_complex": "CC107",
                 "classification": "Rare lineage",
@@ -1863,7 +1805,6 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["Unknown"],
                 "resistance_profile": ["Variable"]
             },
-            # ==================== CC121 ====================
             '121': {
                 "clonal_complex": "CC121",
                 "classification": "Community-associated MRSA",
@@ -1908,7 +1849,6 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["Unknown"],
                 "resistance_profile": ["Variable"]
             },
-            # ==================== CC129 ====================
             '129': {
                 "clonal_complex": "CC129",
                 "classification": "Rare lineage",
@@ -1920,7 +1860,6 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["Unknown"],
                 "resistance_profile": ["Variable"]
             },
-            # ==================== CC130 ====================
             '130': {
                 "clonal_complex": "CC130",
                 "classification": "Livestock-associated MRSA",
@@ -1932,7 +1871,6 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["t843", "t1736"],
                 "resistance_profile": ["Methicillin (mecC)", "Tetracycline"]
             },
-            # ==================== CC131 ====================
             '131': {
                 "clonal_complex": "CC131",
                 "classification": "Rare lineage",
@@ -1944,7 +1882,6 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["Unknown"],
                 "resistance_profile": ["Variable"]
             },
-            # ==================== CC132 ====================
             '132': {
                 "clonal_complex": "CC132",
                 "classification": "Rare lineage",
@@ -1956,7 +1893,6 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["Unknown"],
                 "resistance_profile": ["Variable"]
             },
-            # ==================== CC133 ====================
             '133': {
                 "clonal_complex": "CC133",
                 "classification": "Livestock-associated MRSA",
@@ -1968,7 +1904,6 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["t1166", "t1730"],
                 "resistance_profile": ["Methicillin", "Tetracycline"]
             },
-            # ==================== CC136 ====================
             '136': {
                 "clonal_complex": "CC136",
                 "classification": "Rare lineage",
@@ -1980,7 +1915,6 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["Unknown"],
                 "resistance_profile": ["Variable"]
             },
-            # ==================== CC138 ====================
             '138': {
                 "clonal_complex": "CC138",
                 "classification": "Rare lineage",
@@ -1992,7 +1926,6 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["Unknown"],
                 "resistance_profile": ["Variable"]
             },
-            # ==================== CC139 ====================
             '139': {
                 "clonal_complex": "CC139",
                 "classification": "Rare lineage",
@@ -2004,7 +1937,6 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["Unknown"],
                 "resistance_profile": ["Variable"]
             },
-            # ==================== CC140 ====================
             '140': {
                 "clonal_complex": "CC140",
                 "classification": "Rare lineage",
@@ -2016,7 +1948,6 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["Unknown"],
                 "resistance_profile": ["Variable"]
             },
-            # ==================== CC144 ====================
             '144': {
                 "clonal_complex": "CC144",
                 "classification": "Rare lineage",
@@ -2028,7 +1959,6 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["Unknown"],
                 "resistance_profile": ["Variable"]
             },
-            # ==================== CC145 ====================
             '145': {
                 "clonal_complex": "CC145",
                 "classification": "Rare lineage",
@@ -2040,7 +1970,6 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["Unknown"],
                 "resistance_profile": ["Variable"]
             },
-            # ==================== CC150 ====================
             '150': {
                 "clonal_complex": "CC150",
                 "classification": "Rare lineage",
@@ -2052,7 +1981,6 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["Unknown"],
                 "resistance_profile": ["Variable"]
             },
-            # ==================== CC151 ====================
             '151': {
                 "clonal_complex": "CC151",
                 "classification": "Rare lineage",
@@ -2064,7 +1992,6 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["Unknown"],
                 "resistance_profile": ["Variable"]
             },
-            # ==================== CC152 ====================
             '152': {
                 "clonal_complex": "CC152",
                 "classification": "Community-associated MRSA",
@@ -2076,7 +2003,6 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["t355", "t657"],
                 "resistance_profile": ["Methicillin", "Variable resistance"]
             },
-            # ==================== CC153 ====================
             '153': {
                 "clonal_complex": "CC153",
                 "classification": "Rare lineage",
@@ -2088,7 +2014,6 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["Unknown"],
                 "resistance_profile": ["Variable"]
             },
-            # ==================== CC154 ====================
             '154': {
                 "clonal_complex": "CC154",
                 "classification": "Rare lineage",
@@ -2100,7 +2025,6 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["Unknown"],
                 "resistance_profile": ["Variable"]
             },
-            # ==================== CC156 ====================
             '156': {
                 "clonal_complex": "CC156",
                 "classification": "Rare lineage",
@@ -2112,7 +2036,6 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["Unknown"],
                 "resistance_profile": ["Variable"]
             },
-            # ==================== CC352 ====================
             '352': {
                 "clonal_complex": "CC352",
                 "classification": "Community-associated MRSA",
@@ -2124,7 +2047,6 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["t1048", "t2370"],
                 "resistance_profile": ["Methicillin", "Variable resistance"]
             },
-            # ==================== CC398 ====================
             '398': {
                 "clonal_complex": "CC398",
                 "classification": "Livestock-associated MRSA",
@@ -2136,7 +2058,6 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["t011", "t034", "t108"],
                 "resistance_profile": ["Methicillin", "Tetracycline", "Often multidrug-resistant"]
             },
-            # ==================== CC425 ====================
             '425': {
                 "clonal_complex": "CC425",
                 "classification": "Livestock-associated MRSA",
@@ -2148,7 +2069,6 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["t2245", "t1730"],
                 "resistance_profile": ["Methicillin", "Tetracycline"]
             },
-            # ==================== CC672 ====================
             '672': {
                 "clonal_complex": "CC672",
                 "classification": "Community-associated MRSA",
@@ -2160,7 +2080,6 @@ class ModularMLSTAnalyzer:
                 "typical_spa": ["t664", "t3092"],
                 "resistance_profile": ["Methicillin", "Multi-drug resistant"]
             },
-            # ==================== Additional rare/novel ====================
             '291': {
                 "clonal_complex": "CC291",
                 "classification": "Emerging lineage",
@@ -2284,11 +2203,9 @@ class ModularMLSTAnalyzer:
             },
         }
 
-        # Existing logic for known STs
         if st in lineage_db:
             return lineage_db[st]
         else:
-            # For unknown STs - not in our database
             if st.isdigit():
                 return {
                     "clonal_complex": f"Unknown (ST{st})",
@@ -2303,7 +2220,6 @@ class ModularMLSTAnalyzer:
                     "database_note": "Consider submitting to PubMLST for characterization"
                 }
             else:
-                # For non-numeric STs (ND, -, etc.)
                 return {
                     "clonal_complex": 'Not Assigned',
                     "classification": "MLST typing failed",
@@ -2315,11 +2231,10 @@ class ModularMLSTAnalyzer:
                     "typical_spa": ["Cannot determine"],
                     "resistance_profile": ["Cannot determine"]
                 }
-                
+
     def get_identity_coverage(self, st: str) -> Dict:
         """Get identity and coverage information based on MLST assignment"""
         if st and st != '-' and st != 'ND' and st != 'UNKNOWN':
-            # MLST assigned - identity and coverage are 100%
             return {
                 "identity": "100%",
                 "coverage": "100%",
@@ -2331,7 +2246,6 @@ class ModularMLSTAnalyzer:
                 }
             }
         else:
-            # MLST not assigned
             return {
                 "identity": "Not Assigned",
                 "coverage": "Not Assigned",
@@ -2369,93 +2283,16 @@ class ModularMLSTAnalyzer:
         }
 
     def generate_output_files(self, mlst_results: Dict, output_dir: Path):
-        """Generate only 3 output files: HTML, TXT, and TSV"""
-        # Add identity and coverage if not already present
+        """Generate the per-sample output file: HTML report only."""
         if 'identity' not in mlst_results:
             mlst_results.update(self.get_identity_coverage(mlst_results.get('st', 'ND')))
-        
-        # 1. Beautiful HTML Report
+
         self.generate_html_report(mlst_results, output_dir)
-        
-        # 2. Detailed Text Report
-        self.generate_text_report(mlst_results, output_dir)
-        
-        # 3. Simple TSV Report
-        self.generate_tsv_report(mlst_results, output_dir)
-
-    def generate_text_report(self, mlst_results: Dict, output_dir: Path):
-        """Generate detailed text report"""
-        report = f"""MLST Analysis Report
-===================
-
-Sample: {mlst_results['sample']}
-Analysis Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-
-MLST TYPING RESULTS:
--------------------
-Sequence Type (ST): {mlst_results['st']}
-Scheme: {mlst_results['scheme']}
-Confidence: {mlst_results['confidence']}
-MLST Status: {mlst_results.get('mlst_status', 'Not Assigned')}
-
-Identity & Coverage:
-Identity: {mlst_results.get('identity', 'Not Assigned')}
-Coverage: {mlst_results.get('coverage', 'Not Assigned')}
-
-Allele Profile:
-{mlst_results['allele_profile']}
-
-Detailed Alleles:
-"""
-        for gene, allele in mlst_results['alleles'].items():
-            report += f"- {gene}: {allele}\n"
-        
-        # Lineage information
-        report += f"""
-LINEAGE ANALYSIS:
------------------
-Clonal Complex: {mlst_results.get('clonal_complex', 'Unknown')}
-Classification: {mlst_results.get('classification', 'Unknown')}
-Geographic Distribution: {mlst_results.get('geographic_distribution', 'Unknown')}
-Clinical Significance: {mlst_results.get('clinical_significance', 'Unknown')}
-Outbreak Potential: {mlst_results.get('outbreak_potential', 'UNKNOWN')}
-
-Typical SCCmec Types: {', '.join(mlst_results.get('typical_sccmec', ['Unknown']))}
-Typical spa Types: {', '.join(mlst_results.get('typical_spa', ['Unknown']))}
-Resistance Profile: {', '.join(mlst_results.get('resistance_profile', ['Unknown']))}
-
-Common Virulence Factors:
-"""
-        for virulence in mlst_results.get('common_virulence', []):
-            report += f"- {virulence}\n"
-        
-        # Quality metrics
-        if 'quality_metrics' in mlst_results:
-            report += f"""
-QUALITY METRICS:
-----------------
-Assembly Quality: {mlst_results['quality_metrics'].get('assembly_quality', 'Unknown')}
-Allele Completeness: {mlst_results['quality_metrics'].get('allele_completeness', 'Unknown')}
-Database Match: {mlst_results['quality_metrics'].get('database_match', 'Unknown')}
-"""
-        
-        with open(output_dir / "mlst_report.txt", 'w') as f:
-            f.write(report)
-
-    def generate_tsv_report(self, mlst_results: Dict, output_dir: Path):
-        """Generate simple TSV report"""
-        tsv_content = f"Sample\tST\tScheme\tMLST_Status\tIdentity\tCoverage\tClonal_Complex\tClassification\tOutbreak_Potential\tTypical_SCCmec\tTypical_spa\tResistance_Profile\n"
-        tsv_content += f"{mlst_results['sample']}\t{mlst_results['st']}\t{mlst_results['scheme']}\t{mlst_results.get('mlst_status', 'Not Assigned')}\t{mlst_results.get('identity', 'Not Assigned')}\t{mlst_results.get('coverage', 'Not Assigned')}\t{mlst_results.get('clonal_complex', 'Unknown')}\t{mlst_results.get('classification', 'Unknown')}\t{mlst_results.get('outbreak_potential', 'UNKNOWN')}\t{','.join(mlst_results.get('typical_sccmec', ['Unknown']))}\t{','.join(mlst_results.get('typical_spa', ['Unknown']))}\t{','.join(mlst_results.get('resistance_profile', ['Unknown']))}\n"
-        
-        with open(output_dir / "mlst_report.tsv", 'w') as f:
-            f.write(tsv_content)
 
     def generate_html_report(self, mlst_results: Dict, output_dir: Path):
         """Generate beautiful HTML report in StaphScope style"""
-        # Get a random quote for this report
         random_quote = self.get_random_quote()
-        
-        # Extract variables for template
+
         sample = mlst_results['sample']
         st = mlst_results['st']
         scheme = mlst_results['scheme']
@@ -2474,8 +2311,7 @@ Database Match: {mlst_results['quality_metrics'].get('database_match', 'Unknown'
         resistance_profile = ', '.join(mlst_results.get('resistance_profile', ['Unknown']))
         common_virulence = mlst_results.get('common_virulence', [])
         quality_metrics = mlst_results.get('quality_metrics', {})
-        
-        # Build alleles HTML
+
         alleles_html = ''
         for gene, allele in mlst_results.get('alleles', {}).items():
             alleles_html += f'''                <div class="allele-card">
@@ -2483,14 +2319,12 @@ Database Match: {mlst_results['quality_metrics'].get('database_match', 'Unknown'
                     <div style="font-size: 18px;">{allele}</div>
                 </div>
 '''
-        
-        # Build virulence factors HTML
+
         virulence_html = ''
         for virulence in common_virulence:
             virulence_html += f'''                        <div class="virulence-card">{virulence}</div>
 '''
-        
-        # Build quality metrics HTML
+
         quality_metrics_html = ''
         if quality_metrics:
             for key, value in quality_metrics.items():
@@ -2499,7 +2333,7 @@ Database Match: {mlst_results['quality_metrics'].get('database_match', 'Unknown'
                     <div class="quality-label">{key.replace('_', ' ').title()}</div>
                 </div>
 '''
-        
+
         html_content = f'''<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -2784,7 +2618,7 @@ Database Match: {mlst_results['quality_metrics'].get('database_match', 'Unknown'
 ██╔════╝╚══██╔══╝██╔══██╗██╔══██╗██║  ██║██╔════╝██╔════╝██╔═══██╗██╔══██╗██╔════╝
 ███████╗   ██║   ███████║██████╔╝███████║███████╗██║     ██║   ██║██████╔╝█████╗  
 ╚════██║   ██║   ██╔══██║██╔═══╝ ██╔══██║╚════██║██║     ██║   ██║██╔═══╝ ██╔══╝  
-███████╗   ██║   ██║  ██║██║     ██║  ██║███████║╚██████╗╚██████╔╝██║     ███████╗
+███████║   ██║   ██║  ██║██║     ██║  ██║███████║╚██████╗╚██████╔╝██║     ███████╗
 ╚══════╝   ╚═╝   ╚═╝  ╚═╝╚═╝     ╚═╝  ╚═╝╚══════╝ ╚═════╝ ╚═════╝ ╚═╝     ╚══════╝</div>
             </div>
             
@@ -2816,11 +2650,10 @@ Database Match: {mlst_results['quality_metrics'].get('database_match', 'Unknown'
             <h2>🎯 Identity & Coverage</h2>
             <div class="identity-coverage-grid">
 '''
-        
-        # Identity and Coverage cards
+
         identity_class = "ic-card" if identity == "100%" else "ic-card not-assigned"
         coverage_class = "ic-card" if coverage == "100%" else "ic-card not-assigned"
-        
+
         html_content += f'''                <div class="{identity_class}">
                     <div class="ic-value">{identity}</div>
                     <div class="ic-label">Identity</div>
@@ -2830,7 +2663,7 @@ Database Match: {mlst_results['quality_metrics'].get('database_match', 'Unknown'
                     <div class="ic-label">Coverage</div>
                 </div>
 '''
-        
+
         html_content += f'''            </div>
             
             <h3>MLST Status: <span style="color: {'#16a34a' if mlst_status == 'Assigned' else '#dc2626'}">{mlst_status}</span></h3>
@@ -2949,86 +2782,70 @@ Database Match: {mlst_results['quality_metrics'].get('database_match', 'Unknown'
             }}, 500);
         }}
 
-        // Rotate quotes every 10 seconds
         setInterval(displayQuote, 10000);
     </script>
 </body>
 </html>'''
-        
+
         with open(output_dir / "mlst_report.html", 'w', encoding='utf-8') as f:
             f.write(html_content)
 
     def create_mlst_summary(self, all_results: Dict[str, Dict], output_dir: Path):
         """Create comprehensive MLST summary files for all samples"""
         print("📊 Creating MLST summary files...")
-        
-        # Create TSV summary
+
         self.create_mlst_tsv_summary(all_results, output_dir)
-        
-        # Create HTML summary
         self.create_mlst_html_summary(all_results, output_dir)
-        
-        # Create JSON summary
         self.create_mlst_json_summary(all_results, output_dir)
-        
+
         print("✅ MLST summary files created successfully!")
 
     def create_mlst_tsv_summary(self, all_results: Dict[str, Dict], output_dir: Path):
         """Create TSV summary file with all samples"""
         summary_file = output_dir / "mlst_summary.tsv"
-        
+
         with open(summary_file, 'w') as f:
-            # Write header
             f.write("Sample\tST\tMLST_Status\tIdentity\tCoverage\tAllele_Profile\t")
-            
-            # Get all unique gene names from all samples
+
             all_genes = set()
             for result in all_results.values():
                 all_genes.update(result['alleles'].keys())
-            
-            # Write gene headers
+
             for gene in sorted(all_genes):
                 f.write(f"{gene}\t")
             f.write("\n")
-            
-            # Write data for each sample
+
             for sample_name, result in all_results.items():
                 f.write(f"{sample_name}\t{result['st']}\t{result.get('mlst_status', 'Not Assigned')}\t{result.get('identity', 'Not Assigned')}\t{result.get('coverage', 'Not Assigned')}\t{result['allele_profile']}\t")
-                
-                # Write allele values for each gene
+
                 for gene in sorted(all_genes):
                     allele = result['alleles'].get(gene, '')
                     f.write(f"{allele}\t")
                 f.write("\n")
-        
+
         print(f"📄 TSV summary created: {summary_file}")
 
     def create_mlst_html_summary(self, all_results: Dict[str, Dict], output_dir: Path):
         """Create beautiful HTML summary with MLST styling"""
         summary_file = output_dir / "mlst_summary.html"
-        
-        # Get a random quote for the summary
+
         random_quote = self.get_random_quote()
-        
-        # Get all unique gene names
+
         all_genes = set()
         for result in all_results.values():
             all_genes.update(result['alleles'].keys())
         sorted_genes = sorted(all_genes)
-        
-        # Calculate statistics
+
         total_samples = len(all_results)
         assigned_samples = sum(1 for result in all_results.values() if result.get('mlst_status') == 'Assigned')
         not_assigned_samples = total_samples - assigned_samples
         assigned_percentage = (assigned_samples / total_samples * 100) if total_samples > 0 else 0
-        
-        # Get unique STs that are assigned (excluding 'ND', '-', 'UNKNOWN')
+
         unique_assigned_sts = set()
         for result in all_results.values():
             if result.get('st') not in ['ND', '-', 'UNKNOWN', ''] and result.get('mlst_status') == 'Assigned':
                 unique_assigned_sts.add(result['st'])
-        
-        # Build table rows
+
         table_rows = ''
         for sample_name, result in all_results.items():
             st = result.get('st', '')
@@ -3036,18 +2853,16 @@ Database Match: {mlst_results['quality_metrics'].get('database_match', 'Unknown'
             identity = result.get('identity', 'Not Assigned')
             coverage = result.get('coverage', 'Not Assigned')
             allele_profile = result.get('allele_profile', '')
-            
-            # Build allele columns
+
             allele_columns = ''
             for gene in sorted_genes:
                 allele = result['alleles'].get(gene, '')
                 allele_columns += f'<td>{allele}</td>\n'
-            
-            # Format row
+
             mlst_status_html = f'<span style="color: {"#10b981" if mlst_status == "Assigned" else "#dc2626"}">{mlst_status}</span>'
             identity_class = 'identity-cell' if identity == '100%' else 'not-assigned-cell'
             coverage_class = 'coverage-cell' if coverage == '100%' else 'not-assigned-cell'
-            
+
             table_rows += f'''                        <tr>
                             <td><strong>{sample_name}</strong></td>
                             <td class="st-cell">ST{st}</td>
@@ -3057,7 +2872,7 @@ Database Match: {mlst_results['quality_metrics'].get('database_match', 'Unknown'
                             <td class="allele-cell">{allele_profile}</td>
 {allele_columns}                        </tr>
 '''
-        
+
         html_content = f'''<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -3360,11 +3175,10 @@ Database Match: {mlst_results['quality_metrics'].get('database_match', 'Unknown'
                             <th>Coverage</th>
                             <th>Allele Profile</th>
 '''
-        
-        # Add gene headers
+
         for gene in sorted_genes:
             html_content += f'                            <th>{gene}</th>\n'
-        
+
         html_content += f'''                        </tr>
                     </thead>
                     <tbody>
@@ -3377,6 +3191,7 @@ Database Match: {mlst_results['quality_metrics'].get('database_match', 'Unknown'
             <p><strong>STAPHSCOPE</strong> - MLST Summary Report</p>
             <p class="timestamp">Generated: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}</p>
             <p>Github: bbeckley-hub | Email: brownbeckley94@gmail.com</p>
+            <p>Affiliation: University of Ghana Medical School - Department of Medical Biochemistry</p>
         </div>
     </div>
 
@@ -3391,12 +3206,7 @@ Database Match: {mlst_results['quality_metrics'].get('database_match', 'Unknown'
             {{"text": "The science of today is the technology of tomorrow.", "author": "Edward Teller"}},
             {{"text": "Nothing in life is to be feared, it is only to be understood.", "author": "Marie Curie"}},
             {{"text": "Research is what I'm doing when I don't know what I'm doing.", "author": "Wernher von Braun"}},
-            {{"text": "The universe is not required to be in perfect harmony with human ambition.", "author": "Carl Sagan"}},
-            {{"text": "Staphscope represents the convergence of genomic surveillance and clinical diagnostics, transforming raw sequences into actionable insights for infection control.", "author": "Brown Beckley"}},
-            {{"text": "In the battle against antimicrobial resistance, tools like Staphscope are our eyes and ears, revealing the genetic blueprints of resistant pathogens.", "author": "Brown Beckley"}},
-            {{"text": "Staphscope isn't just a tool; it's a comprehensive system that bridges the gap between sequencing data and public health action.", "author": "Brown Beckley"}},
-            {{"text": "Through Staphscope, we turn the complexity of bacterial genomes into clear, interpretable reports, empowering clinicians and researchers alike.", "author": "Brown Beckley"}},
-            {{"text": "Staphscope is a testament to the power of bioinformatics in the modern era, making advanced pathogen typing accessible to all.", "author": "Brown Beckley"}}
+            {{"text": "The universe is not required to be in perfect harmony with human ambition.", "author": "Carl Sagan"}}
         ];
 
         const quoteContainer = document.getElementById('quoteContainer');
@@ -3418,24 +3228,22 @@ Database Match: {mlst_results['quality_metrics'].get('database_match', 'Unknown'
             }}, 500);
         }}
 
-        // Rotate quotes every 10 seconds
         setInterval(displayQuote, 10000);
     </script>
 </body>
 </html>'''
-        
+
         with open(summary_file, 'w', encoding='utf-8') as f:
             f.write(html_content)
-        
+
         print(f"🌐 HTML summary created: {summary_file}")
 
     def create_mlst_json_summary(self, all_results: Dict[str, Dict], output_dir: Path):
         """Create JSON summary file with all MLST results"""
         print("📊 Creating MLST JSON summary...")
-        
+
         summary_file = output_dir / "mlst_summary.json"
-        
-        # Prepare the JSON structure
+
         json_summary = {
             "metadata": {
                 "analysis_date": datetime.now().isoformat(),
@@ -3448,8 +3256,7 @@ Database Match: {mlst_results['quality_metrics'].get('database_match', 'Unknown'
             "samples": {},
             "summary_by_st": self._create_st_summary(all_results)
         }
-        
-        # Add each sample's results
+
         for sample_name, result in all_results.items():
             json_summary["samples"][sample_name] = {
                 "sequence_type": result.get('st', 'ND'),
@@ -3472,22 +3279,19 @@ Database Match: {mlst_results['quality_metrics'].get('database_match', 'Unknown'
                 },
                 "quality_metrics": result.get('quality_metrics', {})
             }
-        
-        # Write JSON with pretty formatting
+
         with open(summary_file, 'w', encoding='utf-8') as f:
             json.dump(json_summary, f, indent=2, ensure_ascii=False)
-        
+
         print(f"📄 JSON summary created: {summary_file}")
 
     def _calculate_json_statistics(self, all_results: Dict[str, Dict]) -> Dict:
         """Calculate statistics for JSON summary"""
         total_samples = len(all_results)
-        
-        # Count samples by status
+
         assigned_samples = sum(1 for r in all_results.values() if r.get('mlst_status') == 'Assigned')
         not_assigned_samples = total_samples - assigned_samples
-        
-        # Get unique STs
+
         unique_sts = set()
         st_counts = {}
         for result in all_results.values():
@@ -3495,24 +3299,21 @@ Database Match: {mlst_results['quality_metrics'].get('database_match', 'Unknown'
             if st and st not in ['ND', '-', 'UNKNOWN', '']:
                 unique_sts.add(st)
                 st_counts[st] = st_counts.get(st, 0) + 1
-        
-        # Count samples by confidence
+
         confidence_counts = {}
         for result in all_results.values():
             confidence = result.get('confidence', 'LOW')
             confidence_counts[confidence] = confidence_counts.get(confidence, 0) + 1
-        
-        # Get all unique genes
+
         all_genes = set()
         for result in all_results.values():
             all_genes.update(result.get('alleles', {}).keys())
-        
-        # Get lineage distribution
+
         lineage_distribution = {}
         for result in all_results.values():
             clonal_complex = result.get('clonal_complex', 'Unknown')
             lineage_distribution[clonal_complex] = lineage_distribution.get(clonal_complex, 0) + 1
-        
+
         return {
             "total_samples": total_samples,
             "assigned_samples": assigned_samples,
@@ -3530,7 +3331,7 @@ Database Match: {mlst_results['quality_metrics'].get('database_match', 'Unknown'
     def _create_st_summary(self, all_results: Dict[str, Dict]) -> Dict:
         """Create summary grouped by sequence type"""
         st_summary = {}
-        
+
         for result in all_results.values():
             st = result.get('st', 'ND')
             if st not in ['ND', '-', 'UNKNOWN', '']:
@@ -3547,36 +3348,34 @@ Database Match: {mlst_results['quality_metrics'].get('database_match', 'Unknown'
                             "outbreak_potential": result.get('outbreak_potential', 'UNKNOWN')
                         }
                     }
-                
+
                 st_summary[st]["samples"].append(result['sample'])
                 st_summary[st]["count"] += 1
                 st_summary[st]["allele_profiles"].add(result.get('allele_profile', ''))
-        
-        # Convert sets to lists for JSON serialization
+
         for st in st_summary:
             st_summary[st]["allele_profiles"] = list(st_summary[st]["allele_profiles"])
-        
+
         return st_summary
 
     def run_mlst_batch(self, input_path: str, output_dir: Path, scheme: str = "saureus") -> Dict[str, Dict]:
         """Run MLST analysis for multiple files"""
         print("🔍 Searching for FASTA files...")
         fasta_files = self.find_fasta_files(input_path)
-        
+
         if not fasta_files:
             print("❌ No FASTA files found!")
             return {}
-        
+
         print(f"📁 Found {len(fasta_files)} FASTA files")
-        
+
         results = {}
         for fasta_file in fasta_files:
             result = self.run_mlst_single(fasta_file, output_dir, scheme)
             results[fasta_file.name] = result
-        
-        # Create summary files after processing all samples
+
         self.create_mlst_summary(results, output_dir)
-        
+
         return results
 
 
@@ -3600,7 +3399,6 @@ def update_mlst_database(db_dir: Path, script_dir: Path) -> bool:
         print("🔄 Running mlstdb update (full download, may take 10-20 minutes)...")
         print("   Progress will be shown below:\n")
 
-        # Run mlstdb from the temporary directory – it will write into ./pubmlst/ and ./blast/
         result = subprocess.run(
             ['mlstdb', 'update'],
             input='y\n',
@@ -3615,13 +3413,11 @@ def update_mlst_database(db_dir: Path, script_dir: Path) -> bool:
 
         print("\n✅ Download completed.")
 
-        # Locate S. aureus scheme in temp_dir
         saureus_src = temp_dir / "pubmlst" / "saureus"
         if not saureus_src.exists():
             print("❌ S. aureus scheme not found in downloaded data.")
             return False
 
-        # Copy S. aureus scheme to final db_dir/pubmlst/
         target_pubmlst = db_dir / "pubmlst"
         target_pubmlst.mkdir(parents=True, exist_ok=True)
         target_saureus = target_pubmlst / "saureus"
@@ -3630,7 +3426,6 @@ def update_mlst_database(db_dir: Path, script_dir: Path) -> bool:
         shutil.copytree(saureus_src, target_saureus)
         print(f"📁 Copied S. aureus scheme to {target_saureus}")
 
-        # Copy BLAST database if it exists
         blast_src = temp_dir / "blast"
         if blast_src.exists():
             target_blast = db_dir / "blast"
@@ -3639,7 +3434,6 @@ def update_mlst_database(db_dir: Path, script_dir: Path) -> bool:
             shutil.copytree(blast_src, target_blast)
             print(f"📁 Copied BLAST database to {target_blast}")
 
-        # Prune any other schemes in db_dir/pubmlst/
         removed = 0
         for item in target_pubmlst.iterdir():
             if item.is_dir() and item.name != "saureus":
@@ -3647,14 +3441,10 @@ def update_mlst_database(db_dir: Path, script_dir: Path) -> bool:
                 removed += 1
                 print(f"   🗑️  Removed scheme: {item.name}")
         if removed:
-            print(f"✅ Removed {removed} non‑S. aureus schemes.")
+            print(f"✅ Removed {removed} non-S. aureus schemes.")
         else:
             print("✅ No extra schemes to remove.")
 
-        # Rebuild BLAST to ensure indices match.
-        # The perl mlst-make_blast_db script reads its database location from
-        # the MLST_DATADIR environment variable (it does NOT accept --datadir),
-        # so we set it here to point at the user-local target db_dir.
         rebuild_script = script_dir.parent / "scripts" / "mlst-make_blast_db"
         if rebuild_script.exists():
             print("🔄 Rebuilding BLAST database for S. aureus...")

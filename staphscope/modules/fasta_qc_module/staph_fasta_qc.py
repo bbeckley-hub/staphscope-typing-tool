@@ -4,8 +4,18 @@ StaphScope FASTA QC - Comprehensive Quality Control with Beautiful HTML Reports
 Includes species confirmation using fastANI for Staphylococcus aureus
 Author: Brown Beckley <brownbeckley94@gmail.com>
 Affiliation: University of Ghana Medical School - Department of Medical Biochemistry
-Date: 2026-09-02 (Enhanced with fastANI species confirmation)
+Date: 2026-10-22 (Enhanced with fastANI species confirmation + species filter)
 Send a quick mail for any issues or further explanations.
+
+Per-sample output (1 file each):
+    <sample>/<sample>_fasta_qc_report.html  (only for samples that pass or have unknown species check)
+
+Batch-level outputs:
+    FASTA_QC_summary.tsv              (with S. aureus Confirmed = Yes / No / NA — full audit)
+    FASTA_QC_summary.json             (full audit)
+    FASTA_QC_summary.html             (only passing samples + count-only note about exclusions)
+    FASTA_QC_species_passed.txt       (filenames that pass species check -> forward)
+    FASTA_QC_species_excluded.txt     (filenames that explicitly fail species check)
 """
 
 import os
@@ -58,7 +68,7 @@ class StaphFASTAQC:
         # Metadata
         self.metadata = {
             "tool_name": "StaphScope FASTA QC Analysis",
-            "version": "2.0.0",
+            "version": "2.1.0",
             "authors": ["Brown Beckley"],
             "email": "brownbeckley94@gmail.com",
             "github": "https://github.com/bbeckley-hub",
@@ -85,6 +95,16 @@ class StaphFASTAQC:
             ref_dir = Path(__file__).resolve().parent / "ref_db"
         self.ref_dir = Path(ref_dir)
         self.species_refs = self._load_references()
+
+        # Warn if ref_db is populated but no S. aureus reference is present.
+        # If this happens, every sample would be flagged as "not S. aureus" — a
+        # surprising result that usually indicates a misconfigured ref_db/.
+        if self.species_refs and not any(self._is_s_aureus(sp) for sp in self.species_refs):
+            self.logger.warning(
+                "No S. aureus reference detected in ref_db/. "
+                "Species check will flag ALL samples as non-S. aureus. "
+                "Add staphylococcus_aureus_*.fna to ref_db/ to correct this."
+            )
 
     def _setup_logging(self):
         """Setup logging"""
@@ -132,6 +152,19 @@ class StaphFASTAQC:
         """Return True if the species name indicates S. aureus."""
         s = species_name.lower()
         return ('staphylococcus' in s and 'aureus' in s) or 'staph' in s or 'aureus' in s
+
+    @staticmethod
+    def _species_status(species_check: Optional[Dict]) -> str:
+        """Return 'Yes', 'No', or 'NA' for the species confirmation status.
+
+        - 'Yes': best match is S. aureus AND ANI >= 95%
+        - 'No' : ANI check ran and sample did NOT pass
+        - 'NA' : ANI check could not run (fastANI missing, ref_db empty,
+                 or an error occurred) — we cannot make a determination
+        """
+        if not species_check or 'error' in species_check:
+            return 'NA'
+        return 'Yes' if species_check.get('passed', False) else 'No'
 
     def _run_species_ani(self, query_fasta: str, threads: int = 4) -> Optional[Dict]:
         """Run fastANI against all references; return best match, ANI, and contamination flag.
@@ -340,6 +373,9 @@ class StaphFASTAQC:
                 'n_runs': n_runs,
                 's_aureus_status': s_aureus_status,
                 'species_check': species_result if species_result else {'error': 'Species check not available'},
+                'species_status': self._species_status(
+                    species_result if species_result else {'error': 'Species check not available'}
+                ),
                 'warnings': self._generate_warnings(
                     gc_percent, ambiguous_percent, max_n_run, max_homopolymer,
                     short_sequences, long_sequences, duplicate_sequences, len(sequences),
@@ -349,7 +385,8 @@ class StaphFASTAQC:
 
             self.logger.info(
                 f"✅ {os.path.basename(fasta_file)}: {len(sequences)} sequences, "
-                f"{total_length:,} bp, N50: {n50:,}, GC: {gc_percent:.1f}%"
+                f"{total_length:,} bp, N50: {n50:,}, GC: {gc_percent:.1f}%, "
+                f"Species: {results['species_status']}"
             )
             return results
 
@@ -486,7 +523,8 @@ class StaphFASTAQC:
                 warnings.append({
                     'level': 'danger',
                     'message': (f"Species mismatch: best match is {species_result.get('best_match', 'ND')} "
-                                f"(ANI {species_result.get('ani_percent', 'ND')}%). Expected S. aureus (ANI ≥ 95%).")
+                                f"(ANI {species_result.get('ani_percent', 'ND')}%). Expected S. aureus (ANI ≥ 95%). "
+                                f"Sample will be EXCLUDED from downstream modules.")
                 })
             if species_result.get('contamination_suspected', False):
                 warnings.append({
@@ -500,7 +538,7 @@ class StaphFASTAQC:
         return warnings
 
     # ------------------------------------------------------------------
-    # Individual HTML report
+    # Individual HTML report (per-sample, no JSON)
     # ------------------------------------------------------------------
     def create_individual_html_report(self, results: Dict[str, Any], output_dir: str) -> str:
         filename_no_ext = Path(results['filename']).stem
@@ -519,6 +557,7 @@ class StaphFASTAQC:
         ambiguous_percent = results['ambiguous_percent']
         s_aureus_status = results.get('s_aureus_status', {})
         species_check = results.get('species_check', {})
+        species_status = results.get('species_status', 'NA')
 
         warnings_html = ''
         if results.get('warnings'):
@@ -528,6 +567,20 @@ class StaphFASTAQC:
                     <div style="font-weight: bold; color: {level_color};">{warning['level'].upper()}</div>
                     <div>{warning['message']}</div>
                 </div>
+'''
+
+        # Species exclusion banner (only when explicitly NOT S. aureus)
+        exclusion_banner_html = ''
+        if species_status == 'No':
+            exclusion_banner_html = '''
+        <div class="report-section" style="border-left: 4px solid #dc2626; background: #fef2f2;">
+            <h2 style="color: #dc2626; border-bottom: 3px solid #dc2626;">🚫 Sample Excluded from Downstream Analysis</h2>
+            <p style="color: #991b1b; font-weight: bold;">
+                This sample failed the fastANI species confirmation (best match is not S. aureus
+                or ANI is below 95%). It will NOT be forwarded to MLST, spa, SCCmec, capsule,
+                agr, AMR, ABRicate, or MGE modules.
+            </p>
+        </div>
 '''
 
         composition_html = f'''
@@ -641,6 +694,16 @@ class StaphFASTAQC:
             for sp, ani in species_check.get('all_matches', {}).items():
                 species_html += f'<li>{sp}: {ani}%</li>'
             species_html += '</ul></details></div>'
+        elif species_status == 'NA':
+            species_html = '''
+            <div style="margin-top: 20px; padding: 20px; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border-radius: 10px; color: white;">
+                <h3 style="color: white; margin-bottom: 15px;">🧬 Species Confirmation (fastANI)</h3>
+                <p style="color: #fbbf24; font-weight: bold;">
+                    ⚠️ Species check could not be performed (fastANI not installed or ref_db/ empty).
+                    Sample will be retained in downstream modules because species status is unknown.
+                </p>
+            </div>
+'''
 
         html_content = f'''<!DOCTYPE html>
 <html lang="en">
@@ -692,6 +755,8 @@ class StaphFASTAQC:
                 <div class="quote-author" id="quoteAuthor">— {random_quote['author']}</div>
             </div>
         </div>
+
+        {exclusion_banner_html}
 
         <div class="report-section">
             <h2>📊 Sample Information</h2>
@@ -804,12 +869,7 @@ class StaphFASTAQC:
         with open(html_file, 'w', encoding='utf-8') as f:
             f.write(html_content)
 
-        json_file = os.path.join(sample_dir, f"{filename_no_ext}_fasta_qc_report.json")
-        with open(json_file, 'w', encoding='utf-8') as f:
-            json.dump(results, f, indent=2, default=str)
-
         self.logger.info(f"✅ HTML report generated: {html_file}")
-        self.logger.info(f"✅ JSON report generated: {json_file}")
         return html_file
 
     # ------------------------------------------------------------------
@@ -821,7 +881,7 @@ class StaphFASTAQC:
             self.logger.warning("No successful analyses to create summary report")
             return
 
-        # TSV with species columns
+        # TSV with species columns (full audit — includes excluded samples)
         tsv_file = os.path.join(output_dir, "FASTA_QC_summary.tsv")
         with open(tsv_file, 'w', encoding='utf-8') as f:
             headers = [
@@ -842,7 +902,8 @@ class StaphFASTAQC:
                 sc = result.get('species_check', {}) or {}
                 best_species = sc.get('best_match', 'ND')
                 ani = sc.get('ani_percent', 'ND')
-                ec_confirmed = 'Yes' if sc.get('passed') else 'No'
+                # KEY FIX: use NA (not "No") when check was unavailable
+                species_confirmed = result.get('species_status', self._species_status(sc))
                 contam = 'Yes' if sc.get('contamination_suspected') else 'No'
 
                 row = [
@@ -872,26 +933,90 @@ class StaphFASTAQC:
                     status_str,
                     best_species,
                     str(ani),
-                    ec_confirmed,
+                    species_confirmed,
                     contam
                 ]
                 f.write('\t'.join(row) + '\n')
 
-        # JSON summary
+        # JSON summary (full audit)
         json_summary = self._create_json_summary(successful_results)
         json_file = os.path.join(output_dir, "FASTA_QC_summary.json")
         with open(json_file, 'w', encoding='utf-8') as f:
             json.dump(json_summary, f, indent=2, default=str)
 
-        # HTML summary
-        html_file = os.path.join(output_dir, "FASTA_QC_summary.html")
-        self._create_summary_html_report(successful_results, html_file, json_summary)
+        # HTML summary — only include samples that pass (or have an unknown) species check.
+        # Excluded ('No') samples stay in the TSV/JSON for audit, and in
+        # FASTA_QC_species_excluded.txt, but never appear in any HTML report.
+        display_results = [
+            r for r in successful_results
+            if r.get('species_status', self._species_status(r.get('species_check'))) != 'No'
+        ]
+        excluded_count = len(successful_results) - len(display_results)
+
+        if display_results:
+            html_file = os.path.join(output_dir, "FASTA_QC_summary.html")
+            self._create_summary_html_report(
+                display_results, html_file, json_summary, excluded_count
+            )
+            self.logger.info(f"✅ HTML summary created: {html_file}")
+        else:
+            self.logger.warning(
+                "⚠️  All samples failed the fastANI species check — summary HTML not generated. "
+                "See FASTA_QC_species_excluded.txt."
+            )
+
+        # Species filter files (consumed by the orchestrator)
+        self._write_species_filter_files(successful_results, output_dir)
 
         self.logger.info(f"✅ TSV summary created: {tsv_file}")
         self.logger.info(f"✅ JSON summary created: {json_file}")
-        self.logger.info(f"✅ HTML summary created: {html_file}")
+
+    def _write_species_filter_files(self, successful_results: List[Dict[str, Any]], output_dir: str):
+        """Write species-passed and species-excluded lists.
+
+        The orchestrator reads `FASTA_QC_species_passed.txt` after FASTA QC
+        completes and restricts downstream modules to only those filenames.
+
+        Rules:
+          - 'Yes' -> forward
+          - 'NA'  -> forward (check unavailable; cannot prove it's not S. aureus)
+          - 'No'  -> exclude (explicitly failed fastANI species check)
+        """
+        passed_file = os.path.join(output_dir, "FASTA_QC_species_passed.txt")
+        excluded_file = os.path.join(output_dir, "FASTA_QC_species_excluded.txt")
+
+        passed = []
+        excluded = []
+        for r in successful_results:
+            status = r.get('species_status', self._species_status(r.get('species_check')))
+            if status == 'No':
+                excluded.append(r['filename'])
+            else:
+                passed.append(r['filename'])
+
+        with open(passed_file, 'w', encoding='utf-8') as f:
+            for name in passed:
+                f.write(name + '\n')
+
+        with open(excluded_file, 'w', encoding='utf-8') as f:
+            for name in excluded:
+                f.write(name + '\n')
+
+        self.logger.info(
+            f"✅ Species filter: {len(passed)} passed, {len(excluded)} excluded "
+            f"-> {passed_file}"
+        )
+        if excluded:
+            self.logger.warning(
+                f"⚠️  Samples excluded from downstream modules: {', '.join(excluded)}"
+            )
 
     def _create_json_summary(self, successful_results: List[Dict[str, Any]]) -> Dict[str, Any]:
+        passed_names = [r['filename'] for r in successful_results
+                        if r.get('species_status', self._species_status(r.get('species_check'))) in ('Yes', 'NA')]
+        excluded_names = [r['filename'] for r in successful_results
+                          if r.get('species_status', self._species_status(r.get('species_check'))) == 'No']
+
         summary_data = {
             'metadata': {
                 'tool': self.metadata['tool_name'],
@@ -921,19 +1046,33 @@ class StaphFASTAQC:
                 'files_with_low_gc': sum(1 for r in successful_results if r['gc_percent'] < self.thresholds['gc_normal'][0]),
                 'files_confirmed_s_aureus': sum(
                     1 for r in successful_results
-                    if (r.get('species_check') or {}).get('passed', False)
+                    if r.get('species_status') == 'Yes'
+                ),
+                'files_species_check_na': sum(
+                    1 for r in successful_results
+                    if r.get('species_status') == 'NA'
+                ),
+                'files_failed_species_check': sum(
+                    1 for r in successful_results
+                    if r.get('species_status') == 'No'
                 ),
                 'files_with_contamination_suspected': sum(
                     1 for r in successful_results
                     if (r.get('species_check') or {}).get('contamination_suspected', False)
                 ),
             },
+            'species_filter': {
+                'passed_files': passed_names,
+                'excluded_files': excluded_names,
+                'policy': 'Yes -> forward, NA -> forward (check unavailable), No -> exclude',
+            },
             'files': successful_results
         }
         return summary_data
 
     def _create_summary_html_report(self, successful_results: List[Dict[str, Any]],
-                                    html_file: str, json_summary: Dict[str, Any]):
+                                    html_file: str, json_summary: Dict[str, Any],
+                                    excluded_count: int = 0):
         random_quote = self.get_random_quote()
 
         table_rows = ''
@@ -943,9 +1082,14 @@ class StaphFASTAQC:
             sc = result.get('species_check', {}) or {}
             best_species = sc.get('best_match', 'ND')
             ani = sc.get('ani_percent', 'ND')
-            confirmed = '✓' if sc.get('passed') else '✗'
+            status = result.get('species_status', self._species_status(sc))
+            # Species status symbol: ✓ Yes / — NA (excluded 'No' never reaches this table)
+            if status == 'Yes':
+                confirmed = '✓'
+            else:
+                confirmed = '—'
             contam_flag = '⚠️' if sc.get('contamination_suspected') else ''
-            species_display = f"{best_species} {confirmed} {contam_flag}"
+            species_display = f"{best_species} {confirmed} {contam_flag}".strip()
             ani_display = f"{ani}%" if ani != 'ND' else 'ND'
 
             table_rows += f'''
@@ -981,6 +1125,19 @@ class StaphFASTAQC:
         total_sequences = sum(r['total_sequences'] for r in successful_results)
         total_length = sum(r['total_length'] for r in successful_results)
         total_warnings = sum(len(r.get('warnings', [])) for r in successful_results)
+
+        # Subtle count-only footer note (no filenames shown)
+        excluded_note_html = ''
+        if excluded_count > 0:
+            excluded_note_html = f'''
+        <div class="report-section" style="border-left: 4px solid #94a3b8; background: #f1f5f9;">
+            <p style="color: #475569; font-size: 13px; margin: 0;">
+                <strong>Note:</strong> {excluded_count} additional sample(s) failed the fastANI
+                species check and are not shown here. See
+                <code>FASTA_QC_species_excluded.txt</code> for the list.
+            </p>
+        </div>
+'''
 
         html_content = f'''<!DOCTYPE html>
 <html lang="en">
@@ -1049,9 +1206,15 @@ class StaphFASTAQC:
             <p><strong>BioPython Version:</strong> {self.metadata['biopython_version']}</p>
         </div>
 
+        {excluded_note_html}
+
         <div class="report-section">
             <h2>📈 Detailed FASTA QC Results + Species Check</h2>
-            <p style="color: #666; margin-bottom: 15px;">Scroll horizontally to view all columns. Species column shows best match, S. aureus confirmation (✓/✗), and contamination warning (⚠️). ANI (%) column displays the identity to the best match.</p>
+            <p style="color: #666; margin-bottom: 15px;">
+                Species column shows best match and S. aureus confirmation
+                (✓ Yes · — NA when fastANI unavailable). Samples that explicitly
+                failed the species check are not listed here.
+            </p>
 
             <div class="table-container">
                 <table class="summary-table" id="qc-summary-table">
@@ -1078,6 +1241,7 @@ class StaphFASTAQC:
             <p><strong>STAPHSCOPE</strong> - FASTA QC Summary Report (with fastANI species confirmation)</p>
             <p class="timestamp">Generated: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}</p>
             <p>Github: bbeckley-hub | Email: brownbeckley94@gmail.com</p>
+            <p>Affiliation: University of Ghana Medical School - Department of Medical Biochemistry</p>
         </div>
     </div>
 
@@ -1150,7 +1314,18 @@ class StaphFASTAQC:
                     all_results.append(result)
                     if result.get('status') == 'success':
                         successful_files += 1
-                        self.create_individual_html_report(result, output_dir)
+                        # Only emit per-sample HTML for samples that pass (or have
+                        # unknown) species check. Excluded samples appear only in the
+                        # audit files (TSV/JSON/excluded.txt), never in HTML.
+                        if result.get('species_status') != 'No':
+                            self.create_individual_html_report(result, output_dir)
+                        else:
+                            self.logger.warning(
+                                f"🚫 {result['filename']}: excluded from HTML "
+                                f"(best match: "
+                                f"{(result.get('species_check') or {}).get('best_match', 'ND')}, "
+                                f"ANI {(result.get('species_check') or {}).get('ani_percent', 'ND')}%)"
+                            )
                     else:
                         self.logger.error(f"❌ {result['filename']}: {result.get('error', 'Unknown error')}")
                 except Exception as e:
@@ -1166,13 +1341,26 @@ class StaphFASTAQC:
         print(f"Total files: {len(files)}")
         print(f"Successful analyses: {successful_files}")
         print(f"Failed analyses: {len(files) - successful_files}")
+
+        # Species filter summary
+        successful_results = [r for r in all_results if r.get('status') == 'success']
+        excluded = [r['filename'] for r in successful_results
+                    if r.get('species_status') == 'No']
+        kept = len(successful_results) - len(excluded)
+        print(f"Species check passed/unknown: {kept}")
+        print(f"Species check failed (excluded): {len(excluded)}")
+        if excluded:
+            print(f"   Excluded samples: {', '.join(excluded)}")
+
         print("\n📁 OUTPUT FILES:")
-        print(f"   Individual HTML reports: {output_dir}/*/*_fasta_qc_report.html")
-        print(f"   Individual JSON reports: {output_dir}/*/*_fasta_qc_report.json")
+        print(f"   Per-sample HTML: {output_dir}/*/*_fasta_qc_report.html (passed/unknown only)")
         if successful_files > 1:
             print(f"   Summary TSV: {output_dir}/FASTA_QC_summary.tsv")
             print(f"   Summary JSON: {output_dir}/FASTA_QC_summary.json")
-            print(f"   Summary HTML: {output_dir}/FASTA_QC_summary.html")
+            if kept > 0:
+                print(f"   Summary HTML: {output_dir}/FASTA_QC_summary.html (passed/unknown only)")
+        print(f"   Species passed: {output_dir}/FASTA_QC_species_passed.txt")
+        print(f"   Species excluded: {output_dir}/FASTA_QC_species_excluded.txt")
         print("\n" + "="*80)
         return all_results
 
@@ -1198,6 +1386,16 @@ Examples:
 Supported FASTA extensions: .fasta, .fa, .fna, .faa, .fn
 Species check uses fastANI against all *.fna files in ref_db/.
 For S. aureus confirmation, ensure staphylococcus_aureus_*.fna is present.
+
+Per-sample output (1 file each):
+  <sample>/<sample>_fasta_qc_report.html  (passed/unknown only)
+
+Batch-level outputs:
+  FASTA_QC_summary.tsv               (S. aureus Confirmed = Yes / No / NA — full audit)
+  FASTA_QC_summary.json              (full audit)
+  FASTA_QC_summary.html              (passed/unknown only + count-only exclusion note)
+  FASTA_QC_species_passed.txt        (forward to next modules)
+  FASTA_QC_species_excluded.txt      (drop)
         """
     )
     parser.add_argument('pattern', help='File pattern for FASTA files (e.g., "*.fasta", "genomes/*.fna")')

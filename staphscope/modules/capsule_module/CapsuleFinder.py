@@ -3,12 +3,20 @@
 CapsuleFinder - Capsule Typing Module for StaphScope
 Original Module/Logic Author: Riccardo Bollini (developer of StaphScan)
 Integrated and extended by: Beckley Brown <brownbeckley94@gmail.com>
-Date: 2026-09-17
+Date: 2026-10-22
 Affiliation: University of Ghana Medical School - Department of Medical Biochemistry
 
 Reverse BLAST against a capsule targets database to type S. aureus capsule
 locus 5 or 8, assess operon completeness, and generate per-sample deep-dive
-HTML/JSON reports plus top-level batch summaries.
+HTML reports plus top-level batch summaries.
+
+Per-sample output (1 file each):
+    <sample>/<sample>_capsule.html
+
+Batch-level outputs:
+    <prefix>_summary.tsv
+    <prefix>_summary.json
+    <prefix>_summary.html
 
 Usage:
     python3 CapsuleFinder.py -i *.fna -d capsule_results -db_dir database
@@ -40,6 +48,16 @@ TYPE_LABELS = {
     "cap5": "Type 5",
     "cap8": "Type 8",
 }
+
+# Standard STAPHSCOPE banner used across all StaphScope modules.
+STAPHSCOPE_BANNER = (
+    "███████╗████████╗ █████╗ ██████╗ ██╗  ██╗███████╗ ██████╗ ██████╗ ██████╗ ███████╗\n"
+    "██╔════╝╚══██╔══╝██╔══██╗██╔══██╗██║  ██║██╔════╝██╔════╝██╔═══██╗██╔══██╗██╔════╝\n"
+    "███████╗   ██║   ███████║██████╔╝███████║███████╗██║     ██║   ██║██████╔╝█████╗  \n"
+    "╚════██║   ██║   ██╔══██║██╔═══╝ ██╔══██║╚════██║██║     ██║   ██║██╔═══╝ ██╔══╝  \n"
+    "███████║   ██║   ██║  ██║██║     ██║  ██║███████║╚██████╗╚██████╔╝██║     ███████╗\n"
+    "╚══════╝   ╚═╝   ╚═╝  ╚═╝╚═╝     ╚═╝  ╚═╝╚══════╝ ╚═════╝ ╚═════╝ ╚═╝     ╚══════╝"
+)
 
 
 # ---------------------------------------------------------------------------
@@ -254,52 +272,8 @@ class CapsuleTyper:
 
 
 # ---------------------------------------------------------------------------
-# Per-sample report writers
+# Per-sample report writer (HTML only)
 # ---------------------------------------------------------------------------
-
-def write_sample_json(result: SampleResult, output_dir: Path) -> Path:
-    """Write a per-sample JSON report with full evidence details."""
-    output_dir.mkdir(parents=True, exist_ok=True)
-    payload = {
-        "sample": result.sample,
-        "input_file": result.input_file,
-        "cap_type": result.cap_type,
-        "cap_completeness": result.cap_completeness,
-        "cap_genes": result.cap_genes,
-        "cap5_score": result.cap5_score,
-        "cap8_score": result.cap8_score,
-        "evidence": result.evidence,
-        "warnings": result.warnings,
-        "gene_hits": [
-            {
-                "gene": gene,
-                "contig": hit.sseqid,
-                "pident": round(hit.pident, 2),
-                "length": hit.length,
-                "gene_length": hit.qlen,
-                "coverage": round(hit.coverage, 2),
-                "bitscore": hit.bitscore,
-            }
-            for gene, hit in sorted(result.gene_hits.items())
-        ],
-        "raw_hits": [
-            {
-                "gene": h.qseqid,
-                "contig": h.sseqid,
-                "pident": round(h.pident, 2),
-                "length": h.length,
-                "gene_length": h.qlen,
-                "coverage": round(h.coverage, 2),
-                "bitscore": h.bitscore,
-            }
-            for h in result.raw_hits
-        ],
-    }
-    path = output_dir / f"{result.sample}_capsule.json"
-    with open(path, "w") as fh:
-        json.dump(payload, fh, indent=2)
-    return path
-
 
 def _hit_rows_html(hits: List[BlastHit]) -> str:
     """Render BLAST hit rows as HTML table rows with coverage colouring."""
@@ -470,12 +444,7 @@ body {{
 <body>
 <div class="container">
 <div class="ascii-container">
-<div class="ascii-art">███████╗████████╗ █████╗ ██████╗ ██╗  ██╗███████╗ ██████╗ ██████╗ ██████╗ ███████╗
-██╔════╝╚══██╔══╝██╔══██╗██╔══██╗██║  ██║██╔════╝██╔════╝██╔═══██╗██╔══██╗██╔════╝
-███████╗   ██║   ███████║██████╔╝███████║███████╗██║     ██║   ██║██████╔╝█████╗  
-╚════██║   ██║   ██╔══██║██╔═══╝ ██╔══██║╚════██║██║     ██║   ██║██╔═══╝ ██╔══╝  
-███████║   ██║   ██║  ██║██║     ██║  ██║███████║╚██████╗╚██████╔╝██║     ███████╗
-╚══════╝   ╚═╝   ╚═╝  ╚═╝╚═╝     ╚═╝  ╚═╝╚══════╝ ╚═════╝ ╚═════╝ ╚═╝     ╚══════╝</div>
+<div class="ascii-art">{STAPHSCOPE_BANNER}</div>
 </div>
 
 <div class="quote-container" id="quoteContainer">
@@ -764,12 +733,7 @@ body {{
 <body>
 <div class="container">
 <div class="ascii-container">
-<div class="ascii-art">███████╗████████╗ █████╗ ██████╗ ██╗  ██╗███████╗ ██████╗ ██████╗ ██████╗ ███████╗
-██╔════╝╚══██╔══╝██╔══██╗██╔══██╗██║  ██║██╔════╝██╔════╝██╔═══██╗██╔══██╗██╔════╝
-███████╗   ██║   ███████║██████╔╝███████║███████╗██║     ██║   ██║██████╔╝█████╗  
-╚════██║   ██║   ██╔══██║██╔═══╝ ██╔══██║╚════██║██║     ██║   ██║██╔═══╝ ██╔══╝  
-███████║   ██║   ██║  ██║██║     ██║  ██║███████║╚██████╗╚██████╔╝██║     ███████╗
-╚══════╝   ╚═╝   ╚═╝  ╚═╝╚═╝     ╚═╝  ╚═╝╚══════╝ ╚═════╝ ╚═════╝ ╚═╝     ╚══════╝</div>
+<div class="ascii-art">{STAPHSCOPE_BANNER}</div>
 </div>
 <div class="quote-container" id="quoteContainer">
 <div class="quote-text" id="quoteText"></div>
@@ -922,7 +886,6 @@ def main():
         print(f"  {result.sample}: {result.cap_type} | {result.cap_completeness}")
 
         sample_out = output_dir / result.sample
-        write_sample_json(result, sample_out)
         write_sample_html(result, sample_out)
 
     if not results:
@@ -938,7 +901,6 @@ def main():
     print(f"  {args.prefix}_summary.json")
     print(f"  {args.prefix}_summary.html")
     print(f"  <sample>/<sample>_capsule.html  (per-sample deep-dive)")
-    print(f"  <sample>/<sample>_capsule.json  (per-sample JSON)")
 
 
 if __name__ == "__main__":

@@ -37,7 +37,7 @@ Key features:
 Author: Brown Beckley <brownbeckley94@gmail.com>
 Affiliation: University of Ghana Medical School
 Version: 2.0.0
-Date: 2026-09-20
+Date: 2026-10-22
 MIT License
 """
 

@@ -27,20 +27,41 @@ TSV_SUMMARY="staphscope_sccmec_cge_summary.tsv"
 HTML_SUMMARY="staphscope_sccmec_cge_summary.html"
 DETAILED_CSV="staphscope_sccmec_cge_detailed_results.csv"
 
+# Idempotency: if summaries exist and metadata is gone, we already ran
+if [ ! -d "_staphscope_sccmec_meta" ] && [ -f "$TSV_SUMMARY" ] && [ -f "$HTML_SUMMARY" ] && [ -f "$DETAILED_CSV" ]; then
+    echo "Summary files already exist; nothing to regenerate."
+    exit 0
+fi
+
 # Initialize output files with headers
 echo -e "Sample_Name\tSCCmec_Type\tMRSA_Status\tConfidence\tPrediction_Method\tKmer_Top_Hits\tEvidence" > "$TSV_SUMMARY"
 echo "Sample_Name,SCCmec_Type,MRSA_Status,Confidence,Kmer_Top_Hit_1,Kmer_Coverage_1,Kmer_Top_Hit_2,Kmer_Coverage_2,Evidence,Prediction_Method,Notes" > "$DETAILED_CSV"
 
-# Find all test directories
+# Discover per-sample directories (no s_ prefix; identified by their HTML report)
 echo "Scanning for SCCmec results directories..."
-s_dirs=$(find . -maxdepth 1 -type d -name "s_*" | sort)
+shopt -s nullglob
+s_dirs=""
+for d in */; do
+    d="${d%/}"
+    case "$d" in
+        script_dir|database|_staphscope_sccmec_meta|__pycache__) continue ;;
+    esac
+    if [ -f "$d/sccmec_cge_report.html" ]; then
+        s_dirs="${s_dirs}${d}"$'\n'
+    fi
+done
+shopt -u nullglob
+
+s_dirs=$(printf '%s' "$s_dirs" | sort)
 
 if [ -z "$s_dirs" ]; then
-    echo "No s directories found! Please run SCCmec analysis first."
+    echo "No per-sample SCCmec result directories found!"
+    echo "Run SCCmec analysis first (e.g. ./run_sccmec_batch.sh *.fna)."
     exit 1
 fi
 
-echo "Found $(echo "$s_dirs" | wc -l) result directories"
+sample_count=$(printf '%s\n' "$s_dirs" | wc -l)
+echo "Found $sample_count result director$([ "$sample_count" -eq 1 ] && echo 'y' || echo 'ies')"
 echo
 
 # Process each test directory
@@ -154,10 +175,22 @@ for dir in $s_dirs; do
         continue
     fi
     
-    sample_name="${dir#./s_}"
-    results_file="$dir/sccmec_detailed_results.txt"
-    json_file="$dir/sccmec_enhanced_report.json"
-    kmer_file="$dir/results_MyKmerFinder.txt"
+    sample_name="$dir"
+    
+    # Prefer batch-level metadata; fall back to legacy per-sample files
+    results_file="_staphscope_sccmec_meta/${sample_name}_detailed.txt"
+    json_file="_staphscope_sccmec_meta/${sample_name}_enhanced.json"
+    kmer_file="_staphscope_sccmec_meta/${sample_name}_kmer.txt"
+    
+    if [ ! -f "$results_file" ] && [ -f "$dir/sccmec_detailed_results.txt" ]; then
+        results_file="$dir/sccmec_detailed_results.txt"
+    fi
+    if [ ! -f "$json_file" ] && [ -f "$dir/sccmec_enhanced_report.json" ]; then
+        json_file="$dir/sccmec_enhanced_report.json"
+    fi
+    if [ ! -f "$kmer_file" ] && [ -f "$dir/results_MyKmerFinder.txt" ]; then
+        kmer_file="$dir/results_MyKmerFinder.txt"
+    fi
     
     echo -e "${CYAN}Processing: $sample_name${NC}"
     
@@ -904,3 +937,9 @@ fi
 
 echo
 print_ascii_art
+
+# Clean up intermediate metadata (only needed during summary generation)
+if [ -d "_staphscope_sccmec_meta" ]; then
+    rm -rf "_staphscope_sccmec_meta"
+    echo "Cleaned up intermediate metadata."
+fi
