@@ -379,13 +379,13 @@ Docker runs containers as `root` by default, so files written to bind-mounted di
 
 ```bash
 # Pull the image
-docker pull bbeckleyhub/staphscope:2.0.0
+docker pull bbeckleyhub/staphscope:2.1.0
 
 # Run (no padlock, no sudo chown)
 docker run --rm \
   -u $(id -u):$(id -g) \
   -v $(pwd):/data \
-  bbeckleyhub/staphscope:2.0.0 \
+  bbeckleyhub/staphscope:2.1.0 \
   -i "/data/*.fna" -o /data/output -t 4
 ```
 
@@ -399,10 +399,10 @@ docker run --rm \
 
 ```bash
 # Verify the container runs
-docker run --rm bbeckleyhub/staphscope:2.0.0 --help
+docker run --rm bbeckleyhub/staphscope:2.1.0 --help
 
 # Interactive shell (for debugging)
-docker run --rm -it bbeckleyhub/staphscope:2.0.0 bash
+docker run --rm -it bbeckleyhub/staphscope:2.1.0 bash
 ```
 
 **Image size:** ~1.7 GB compressed / ~8 GB on disk.
